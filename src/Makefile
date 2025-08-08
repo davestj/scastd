@@ -1,7 +1,7 @@
 PACKAGE=scastd
 VERSION=0.1
 AUTOMAKE=automake
-OBJS=Socket.o DB.o Config.o
+OBJS=DB.o Config.o
 
 EXEC=scastd
 CXXFLAGS=@CXXFLAGS@

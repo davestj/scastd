@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string.h>
 #include <string>
 #include <sys/types.h>
-#include <sys/socket.h>
+#include <unistd.h>
 #include <libxml/nanohttp.h>
 #include <libxml/tree.h>
 #include <libxml/parser.h>
@@ -33,7 +33,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "DB.h"
 #include "Config.h"
 
-#include "Socket.h"
 
 FILE	*filep_log = 0;
 char	logfile[2046] = "";
@@ -118,32 +117,29 @@ typedef struct tagServerData {
 
 main(int argc, char **argv)
 {
-	CMySocket	sock;
-	int		sock_fd;
-	xmlDocPtr doc;
-	DB	db;
-	DB	db2;
+        xmlDocPtr doc;
+        DB      db;
+        DB      db2;
         Config  cfg;
 
-	char *contentType;
-	char	request[1024];
-	char	buf[1024];
-	char	buffer[100000];
-	int	ret = 0;
-	void *ctx;
-	char	*p1;
-	xmlNodePtr cur;
-	MYSQL_ROW	row;
-	serverData	sData;
-	char	query[2046] = "";
-	char	serverURL[255] = "";
-	char	IP[255] = "";
-	int	port = 0;
-	char	password[255] = "";
-	char	*p2;
-	char	*p3;
-	int	sleeptime = 0;
-	int	insert_flag = 0;
+        char *contentType;
+        char    url[1024];
+        char    buf[1024];
+        char    buffer[100000];
+        void *ctx;
+        char    *p1;
+        xmlNodePtr cur;
+        MYSQL_ROW       row;
+        serverData      sData;
+        char    query[2046] = "";
+        char    serverURL[255] = "";
+        char    IP[255] = "";
+        int     port = 0;
+        char    password[255] = "";
+        char    *p2;
+        char    *p3;
+        int     sleeptime = 0;
+        int     insert_flag = 0;
         std::string configPath = "scastd.conf";
         if (argc > 1) {
                 configPath = argv[1];
@@ -184,9 +180,11 @@ main(int argc, char **argv)
 	sleeptime = atoi(row[0]);
 	strcpy(logfile, row[1]);
 	
-	openLog();
+        openLog();
 
-	writeToLog("SCASTD starting...\n");
+        xmlNanoHTTPInit();
+
+        writeToLog("SCASTD starting...\n");
 
 	while (1) {
 		if (exiting) {
@@ -220,46 +218,40 @@ main(int argc, char **argv)
 				}
 
 
-				memset(request, '\000', sizeof(request));
-				sprintf(request, "GET /admin.cgi?pass=%s&mode=viewxml\r\nUser-Agent: Mozilla/4.0 (compatable; MSIE 5.0; Windows 98; DigExt)\r\n\r\n", password);
-				sock_fd = 0;
-				sprintf(buf, "Connecting to server %s at port %d\n", IP, port);
-				writeToLog(buf);
-				memset(buffer, '\000', sizeof(buffer));
-				sock_fd = sock.DoSocketConnect(IP, port);
-				if (sock_fd) {
-					int ret = send(sock_fd, request, strlen(request), 0);
-					if (ret > 0) {
-						memset(buffer, '\000', sizeof(buffer));
-						char *p1 = buffer;
-						int bytes_read = 1;
-						while (bytes_read > 0) {
-							bytes_read = recv(sock_fd, p1, sizeof(buffer), 0);
-							p1 = p1 + bytes_read;
-						}
-						*p1 = '\000';
-					}
-					if (strstr(buffer, "<title>SHOUTcast Administrator</title>")) {
-						sprintf(buf, "Bad password (%s/%s)\n", serverURL, password);
-						writeToLog(buf);
-					}
-					else {
-						p1 = strchr(buffer, '<');
-						if (p1) {
-							doc = xmlParseMemory(p1, strlen(p1));
-							if (!doc) {
-								writeToLog("Bad parse!");
-							}
+                                sprintf(url, "http://%s:%d/admin.cgi?pass=%s&mode=viewxml", IP, port, password);
+                                sprintf(buf, "Connecting to server %s at port %d\n", IP, port);
+                                writeToLog(buf);
+                                memset(buffer, '\000', sizeof(buffer));
+                                ctx = xmlNanoHTTPOpen(url, &contentType);
+                                if (ctx) {
+                                        char *p1 = buffer;
+                                        int bytes_read = 0;
+                                        while ((bytes_read = xmlNanoHTTPRead(ctx, p1, sizeof(buffer) - (p1 - buffer))) > 0) {
+                                                p1 += bytes_read;
+                                        }
+                                        *p1 = '\000';
+                                        xmlNanoHTTPClose(ctx);
+                                        if (strstr(buffer, "<title>SHOUTcast Administrator</title>")) {
+                                                sprintf(buf, "Bad password (%s/%s)\n", serverURL, password);
+                                                writeToLog(buf);
+                                        }
+                                        else {
+                                                p1 = strchr(buffer, '<');
+                                                if (p1) {
+                                                        doc = xmlParseMemory(p1, strlen(p1));
+                                                        if (!doc) {
+                                                                writeToLog("Bad parse!");
+                                                        }
 
-							cur = xmlDocGetRootElement(doc);
-							if (cur == NULL) {
-								writeToLog("Empty Document!");
-								xmlFreeDoc(doc);
-								exit(1);
-							}
-							else {
-								cur = cur->xmlChildrenNode;
-								while (cur != NULL) {
+                                                        cur = xmlDocGetRootElement(doc);
+                                                        if (cur == NULL) {
+                                                                writeToLog("Empty Document!");
+                                                                xmlFreeDoc(doc);
+                                                                exit(1);
+                                                        }
+                                                        else {
+                                                                cur = cur->xmlChildrenNode;
+                                                                while (cur != NULL) {
 
 									if (!xmlStrcmp(cur->name, (const xmlChar *) "CURRENTLISTENERS")) {
 										sData.currentListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
