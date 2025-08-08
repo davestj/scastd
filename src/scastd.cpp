@@ -24,21 +24,29 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdlib.h>
 #include <string.h>
 #include <string>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <libxml/nanohttp.h>
 #include <libxml/tree.h>
 #include <libxml/parser.h>
+#include <curl/curl.h>
 #include <signal.h>
 #include "DB.h"
 #include "Config.h"
 
-#include "Socket.h"
 
 FILE	*filep_log = 0;
 char	logfile[2046] = "";
 int	paused = 0;
-int	exiting = 0;
+int     exiting = 0;
+
+struct CurlBuffer {
+    std::string data;
+};
+
+static size_t writeCallback(void *contents, size_t size, size_t nmemb, void *userp) {
+    size_t total = size * nmemb;
+    CurlBuffer *mem = static_cast<CurlBuffer *>(userp);
+    mem->data.append(static_cast<char *>(contents), total);
+    return total;
+}
 
 void parseWebdata(xmlNodePtr cur)
 {
@@ -118,32 +126,21 @@ typedef struct tagServerData {
 
 main(int argc, char **argv)
 {
-	CMySocket	sock;
-	int		sock_fd;
-	xmlDocPtr doc;
-	DB	db;
-	DB	db2;
+        xmlDocPtr doc;
+        DB      db;
+        DB      db2;
         Config  cfg;
 
-	char *contentType;
-	char	request[1024];
-	char	buf[1024];
-	char	buffer[100000];
-	int	ret = 0;
-	void *ctx;
-	char	*p1;
-	xmlNodePtr cur;
-	MYSQL_ROW	row;
-	serverData	sData;
-	char	query[2046] = "";
-	char	serverURL[255] = "";
-	char	IP[255] = "";
-	int	port = 0;
-	char	password[255] = "";
-	char	*p2;
-	char	*p3;
-	int	sleeptime = 0;
-	int	insert_flag = 0;
+        char    buf[1024];
+        char    *p1;
+        xmlNodePtr cur;
+        MYSQL_ROW       row;
+        serverData      sData;
+        char    query[2046] = "";
+        char    serverURL[255] = "";
+        char    password[255] = "";
+        int     sleeptime = 0;
+        int     insert_flag = 0;
         std::string configPath = "scastd.conf";
         if (argc > 1) {
                 configPath = argv[1];
@@ -155,7 +152,9 @@ main(int argc, char **argv)
         std::string dbUser = cfg.Get("username", "root");
         std::string dbPass = cfg.Get("password", "");
 
-	fprintf(stdout, "Detaching from console...\n");
+        curl_global_init(CURL_GLOBAL_DEFAULT);
+
+        fprintf(stdout, "Detaching from console...\n");
 
 	if (fork()) {
 		// Parent
@@ -197,69 +196,47 @@ main(int argc, char **argv)
 			sprintf(query, "select serverURL, password from scastd_memberinfo where gather_flag = 1");
 			db2.Query(query);
 			while (row = db2.Fetch()) {
-				memset(serverURL, '\000', sizeof(serverURL));
-				memset(password, '\000', sizeof(password));
-				memset(IP, '\000', sizeof(IP));
-				port = 0;
-				if (row[0]) {
-					strcpy(serverURL, row[0]);
-					p2 = strstr(serverURL, "http://");
-					if (p2) {
-						p2 = p2 + strlen("http://");
-						p3 = strchr(p2, ':');
-						if (p3) {
-							strncpy(IP, p2, p3-p2);
-							p3++;
-							port = atoi(p3);
-						}
-					}
-					
-				}
-				if (row[1]) {
-					strcpy(password, row[1]);
-				}
+                                memset(serverURL, '\000', sizeof(serverURL));
+                                memset(password, '\000', sizeof(password));
+                                if (row[0]) {
+                                        strcpy(serverURL, row[0]);
+                                }
+                                if (row[1]) {
+                                        strcpy(password, row[1]);
+                                }
+                                char url[512];
+                                snprintf(url, sizeof(url), "%s/admin.cgi?pass=%s&mode=viewxml", serverURL, password);
+                                sprintf(buf, "Connecting to server %s\n", url);
+                                writeToLog(buf);
+                                CurlBuffer chunk;
+                                CURL *curl = curl_easy_init();
+                                if (curl) {
+                                        curl_easy_setopt(curl, CURLOPT_URL, url);
+                                        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
+                                        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &chunk);
+                                        CURLcode res = curl_easy_perform(curl);
+                                        curl_easy_cleanup(curl);
+                                        if (res == CURLE_OK) {
+                                                if (chunk.data.find("<title>SHOUTcast Administrator</title>") != std::string::npos) {
+                                                        sprintf(buf, "Bad password (%s/%s)\n", serverURL, password);
+                                                        writeToLog(buf);
+                                                } else {
+                                                        p1 = strchr(chunk.data.c_str(), '<');
+                                                        if (p1) {
+                                                                doc = xmlParseMemory(p1, strlen(p1));
+                                                                if (!doc) {
+                                                                        writeToLog("Bad parse!");
+                                                                }
 
-
-				memset(request, '\000', sizeof(request));
-				sprintf(request, "GET /admin.cgi?pass=%s&mode=viewxml\r\nUser-Agent: Mozilla/4.0 (compatable; MSIE 5.0; Windows 98; DigExt)\r\n\r\n", password);
-				sock_fd = 0;
-				sprintf(buf, "Connecting to server %s at port %d\n", IP, port);
-				writeToLog(buf);
-				memset(buffer, '\000', sizeof(buffer));
-				sock_fd = sock.DoSocketConnect(IP, port);
-				if (sock_fd) {
-					int ret = send(sock_fd, request, strlen(request), 0);
-					if (ret > 0) {
-						memset(buffer, '\000', sizeof(buffer));
-						char *p1 = buffer;
-						int bytes_read = 1;
-						while (bytes_read > 0) {
-							bytes_read = recv(sock_fd, p1, sizeof(buffer), 0);
-							p1 = p1 + bytes_read;
-						}
-						*p1 = '\000';
-					}
-					if (strstr(buffer, "<title>SHOUTcast Administrator</title>")) {
-						sprintf(buf, "Bad password (%s/%s)\n", serverURL, password);
-						writeToLog(buf);
-					}
-					else {
-						p1 = strchr(buffer, '<');
-						if (p1) {
-							doc = xmlParseMemory(p1, strlen(p1));
-							if (!doc) {
-								writeToLog("Bad parse!");
-							}
-
-							cur = xmlDocGetRootElement(doc);
-							if (cur == NULL) {
-								writeToLog("Empty Document!");
-								xmlFreeDoc(doc);
-								exit(1);
-							}
-							else {
-								cur = cur->xmlChildrenNode;
-								while (cur != NULL) {
+                                                                cur = xmlDocGetRootElement(doc);
+                                                                if (cur == NULL) {
+                                                                        writeToLog("Empty Document!");
+                                                                        xmlFreeDoc(doc);
+                                                                        exit(1);
+                                                                }
+                                                                else {
+                                                                        cur = cur->xmlChildrenNode;
+                                                                        while (cur != NULL) {
 
 									if (!xmlStrcmp(cur->name, (const xmlChar *) "CURRENTLISTENERS")) {
 										sData.currentListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
@@ -312,20 +289,24 @@ main(int argc, char **argv)
 							sprintf(query, "insert into scastd_serverinfo (serverURL, currentlisteners, peaklisteners, maxlisteners, averagetime, streamhits, time) values('%s', %d, %d, %d, %d, %d, NULL)", serverURL, sData.currentListeners, sData.maxListeners, sData.peakListeners, sData.avgTime, sData.streamHits);
 							db.Query(query);
 						}
-						else {
-							sprintf(buf, "Bad data from %s\n", serverURL);
-							writeToLog(buf);
-						}
-					}
-				}
+                                                else {
+                                                        sprintf(buf, "Bad data from %s\n", serverURL);
+                                                        writeToLog(buf);
+                                                }
+                                        } else {
+                                                sprintf(buf, "HTTP request failed for %s: %s\n", url, curl_easy_strerror(res));
+                                                writeToLog(buf);
+                                        }
+                                }
 			}
 		}
 			
-		sprintf(buf, "Sleeping for %d seconds\n", sleeptime);
-		writeToLog(buf);
-		sleep(sleeptime);
-	}
-	}
+                sprintf(buf, "Sleeping for %d seconds\n", sleeptime);
+                writeToLog(buf);
+                sleep(sleeptime);
+        }
+        curl_global_cleanup();
+        }
 }
 
 

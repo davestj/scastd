@@ -5,7 +5,7 @@ OBJS=Socket.o DB.o Config.o
 
 EXEC=scastd
 CXXFLAGS=@CXXFLAGS@
-LIBS=@LIBS@
+LIBS=@LIBS@ -lcurl
 
 SUFFIXES=.cpp .o
 
