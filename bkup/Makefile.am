@@ -1,4 +1,4 @@
-OBJS=Socket.o DB.o
+OBJS=DB.o
 
 EXEC=scastd
 CFLAGS=-g -I /usr/local/include -I /usr/include/libxml2 -I /usr/include/mysql
