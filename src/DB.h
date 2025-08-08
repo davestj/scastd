@@ -37,7 +37,7 @@ public:
 	double	endTime;
 	char	tempQuery[2046];
 
-	int Connect();
+        int Connect(const char *username, const char *password);
 	void Disconnect();
 	int Query(char *);
 	void EndQuery();

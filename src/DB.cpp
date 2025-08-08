@@ -38,63 +38,59 @@ double  DBGetCurrentTime() {
         struct timeval  tv;
         gettimeofday(&tv, NULL);
         thetime = (double)tv.tv_sec + (double)((double)tv.tv_usec / (double)1000000);
-   
+
         return thetime;
 }
 
 DB::DB() {
-	pResult = 0;
-	sqlTimings = 0;
-	memset(tempQuery, '\000', sizeof(tempQuery));
+        pResult = 0;
+        sqlTimings = 0;
+        memset(tempQuery, '\000', sizeof(tempQuery));
 }
 DB::~DB() {
-	if (pResult) {
-		mysql_free_result(pResult);
-	}
+        if (pResult) {
+                mysql_free_result(pResult);
+        }
 }
-int DB::Connect() {
-	char	*username;
-	char	*password;
-	char	u[255] = "";
-	char	p[255] = "";
+int DB::Connect(const char *username, const char *password) {
+        char    u[255] = "";
+        char    p[255] = "";
         mysql_init(&mySQL);
 
 
         mysql_options(&mySQL,MYSQL_READ_DEFAULT_GROUP,"scastd");
 
-	username = getenv("SCASTD_USER");
-	if (username != 0) {
-		strcpy(u, username);
-	}
-	else {
-		strcpy(u, "root");
-	}
-	password = getenv("SCASTD_PASSWORD");
-	if (password != 0) {
-		strcpy(p, password);
-	}
-	else {
-		strcpy(p, "");
-	}
-	
+        if (username && *username) {
+                strcpy(u, username);
+        }
+        else {
+                strcpy(u, "root");
+        }
+        if (password && *password) {
+                strcpy(p, password);
+        }
+        else {
+                strcpy(p, "");
+        }
+
         if (!mysql_real_connect(&mySQL,"localhost",u,p,"scastd",0,NULL,0)) {
                 fprintf(stderr, "Failed to connect to database: Error: %s\n", mysql_error(&mySQL));
                 return(0);
         }
-	return 1;
+        return 1;
 }
 int DB::Query(char *query) {
-	// double	startTime = 0.0;
-	// double	endTime = 0.0;
+        // double       startTime = 0.0;
+        // double       endTime = 0.0;
 
-	numFetches = 0;
-	strcpy(tempQuery, query);
-	if (sqlTimings) {
-		startTime = DBGetCurrentTime();
-	}
-	if (pResult) {
-		mysql_free_result(pResult);
-	}
+        numFetches = 0;
+        strcpy(tempQuery, query);
+        if (sqlTimings) {
+                startTime = DBGetCurrentTime();
+        }
+        if (pResult) {
+                mysql_free_result(pResult);
+        }
         if (mysql_query(&mySQL, query) != 0) {
                 fprintf(stderr, "Misformed query (%s)\n", query);
                 fprintf(stderr, "Error: %s\n", mysql_error(&mySQL));
@@ -103,33 +99,33 @@ int DB::Query(char *query) {
 
         pResult = mysql_store_result(&mySQL);
         if (pResult) {
-		numFields = mysql_num_fields(pResult);
-		numRows = mysql_num_rows(pResult);
+                numFields = mysql_num_fields(pResult);
+                numRows = mysql_num_rows(pResult);
         }
-	if (sqlTimings) {
-		endTime = DBGetCurrentTime();
-	}
+        if (sqlTimings) {
+                endTime = DBGetCurrentTime();
+        }
 
-	if (sqlTimings) {
-		fprintf(stdout, "Query %f secs - SQL: %s\n", endTime - startTime, query);
-	}
-	return(1);
+        if (sqlTimings) {
+                fprintf(stdout, "Query %f secs - SQL: %s\n", endTime - startTime, query);
+        }
+        return(1);
 
 }
 MYSQL_ROW DB::Fetch() {
-	numFetches++;
-	return mysql_fetch_row(pResult);
+        numFetches++;
+        return mysql_fetch_row(pResult);
 }
 
 void DB::EndQuery() {
-	if (sqlTimings) {
-		endTime = DBGetCurrentTime();
-	}
-	if (sqlTimings) {
-		fprintf(stdout, "Total Time Query (%d fetches) %f secs - SQL: %s\n", numFetches, endTime - startTime, tempQuery);
-	}
+        if (sqlTimings) {
+                endTime = DBGetCurrentTime();
+        }
+        if (sqlTimings) {
+                fprintf(stdout, "Total Time Query (%d fetches) %f secs - SQL: %s\n", numFetches, endTime - startTime, tempQuery);
+        }
 }
 void DB::Disconnect() {
-	mysql_close(&mySQL);
-	return;
+        mysql_close(&mySQL);
+        return;
 }
