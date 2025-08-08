@@ -25,14 +25,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string.h>
 #include <string>
 #include <sys/types.h>
-#include <unistd.h>
+#include <sys/socket.h>
 #include <libxml/nanohttp.h>
 #include <libxml/tree.h>
 #include <libxml/parser.h>
 #include <signal.h>
-#include "DB.h"
+#include "db/IDatabase.h"
+#include "db/MySQLDatabase.h"
+#include "db/MariaDBDatabase.h"
+#include "db/PostgresDatabase.h"
 #include "Config.h"
 
+#include "Socket.h"
 
 FILE	*filep_log = 0;
 char	logfile[2046] = "";
@@ -117,29 +121,32 @@ typedef struct tagServerData {
 
 main(int argc, char **argv)
 {
-        xmlDocPtr doc;
-        DB      db;
-        DB      db2;
+	CMySocket	sock;
+	int		sock_fd;
+	xmlDocPtr doc;
+	IDatabase       *db = NULL;
+	IDatabase       *db2 = NULL;
         Config  cfg;
 
-        char *contentType;
-        char    url[1024];
-        char    buf[1024];
-        char    buffer[100000];
-        void *ctx;
-        char    *p1;
-        xmlNodePtr cur;
-        MYSQL_ROW       row;
-        serverData      sData;
-        char    query[2046] = "";
-        char    serverURL[255] = "";
-        char    IP[255] = "";
-        int     port = 0;
-        char    password[255] = "";
-        char    *p2;
-        char    *p3;
-        int     sleeptime = 0;
-        int     insert_flag = 0;
+	char *contentType;
+	char	request[1024];
+	char	buf[1024];
+	char	buffer[100000];
+	int	ret = 0;
+	void *ctx;
+	char	*p1;
+	xmlNodePtr cur;
+	IDatabase::Row       row;
+	serverData	sData;
+	char	query[2046] = "";
+	char	serverURL[255] = "";
+	char	IP[255] = "";
+	int	port = 0;
+	char	password[255] = "";
+	char	*p2;
+	char	*p3;
+	int	sleeptime = 0;
+	int	insert_flag = 0;
         std::string configPath = "scastd.conf";
         if (argc > 1) {
                 configPath = argv[1];
@@ -150,8 +157,22 @@ main(int argc, char **argv)
         }
         std::string dbUser = cfg.Get("username", "root");
         std::string dbPass = cfg.Get("password", "");
+        std::string dbType = cfg.Get("DatabaseType", "mysql");
+        if (dbType == "mysql") {
+                db = new MySQLDatabase();
+                db2 = new MySQLDatabase();
+        } else if (dbType == "mariadb") {
+                db = new MariaDBDatabase();
+                db2 = new MariaDBDatabase();
+        } else if (dbType == "postgres") {
+                db = new PostgresDatabase();
+                db2 = new PostgresDatabase();
+        } else {
+                fprintf(stderr, "Unknown DatabaseType %s\n", dbType.c_str());
+                exit(1);
+        }
 
-	fprintf(stdout, "Detaching from console...\n");
+        fprintf(stdout, "Detaching from console...\n");
 
 	if (fork()) {
 		// Parent
@@ -168,23 +189,21 @@ main(int argc, char **argv)
 		fprintf(stderr, "Cannot install handler for SIGUSR2\n");
 		exit(1);
 	}
-        db.Connect(dbUser.c_str(), dbPass.c_str());
-        db2.Connect(dbUser.c_str(), dbPass.c_str());
-	sprintf(query, "select sleeptime, logfile from scastd_runtime");
-	db.Query(query);
-	row = db.Fetch();
-	if (!row) {
-		fprintf(stderr, "We must have an entry in the scastd_runtime table..exiting.\n");
-		exit(-1);
-	}
-	sleeptime = atoi(row[0]);
-	strcpy(logfile, row[1]);
+        db->connect(dbUser.c_str(), dbPass.c_str());
+        db2->connect(dbUser.c_str(), dbPass.c_str());
+        sprintf(query, "select sleeptime, logfile from scastd_runtime");
+        db->query(query);
+        row = db->fetch();
+        if (row.empty()) {
+                fprintf(stderr, "We must have an entry in the scastd_runtime table..exiting.\n");
+                exit(-1);
+        }
+        sleeptime = atoi(row[0].c_str());
+        strcpy(logfile, row[1].c_str());
 	
-        openLog();
+	openLog();
 
-        xmlNanoHTTPInit();
-
-        writeToLog("SCASTD starting...\n");
+	writeToLog("SCASTD starting...\n");
 
 	while (1) {
 		if (exiting) {
@@ -192,66 +211,74 @@ main(int argc, char **argv)
 			exit(1);
 		}
 		if (!paused) {
-			sprintf(query, "select serverURL, password from scastd_memberinfo where gather_flag = 1");
-			db2.Query(query);
-			while (row = db2.Fetch()) {
-				memset(serverURL, '\000', sizeof(serverURL));
-				memset(password, '\000', sizeof(password));
-				memset(IP, '\000', sizeof(IP));
-				port = 0;
-				if (row[0]) {
-					strcpy(serverURL, row[0]);
-					p2 = strstr(serverURL, "http://");
-					if (p2) {
-						p2 = p2 + strlen("http://");
-						p3 = strchr(p2, ':');
-						if (p3) {
-							strncpy(IP, p2, p3-p2);
-							p3++;
-							port = atoi(p3);
+                        sprintf(query, "select serverURL, password from scastd_memberinfo where gather_flag = 1");
+                        db2->query(query);
+                        while (true) {
+                                row = db2->fetch();
+                                if (row.empty()) break;
+                                memset(serverURL, '\000', sizeof(serverURL));
+                                memset(password, '\000', sizeof(password));
+                                memset(IP, '\000', sizeof(IP));
+                                port = 0;
+                                if (!row[0].empty()) {
+                                        strcpy(serverURL, row[0].c_str());
+                                        p2 = strstr(serverURL, "http://");
+                                        if (p2) {
+                                                p2 = p2 + strlen("http://");
+                                                p3 = strchr(p2, ':');
+                                                if (p3) {
+                                                        strncpy(IP, p2, p3-p2);
+                                                        p3++;
+                                                        port = atoi(p3);
+                                                }
+                                        }
+
+                                }
+                                if (!row[1].empty()) {
+                                        strcpy(password, row[1].c_str());
+                                }
+
+
+				memset(request, '\000', sizeof(request));
+				sprintf(request, "GET /admin.cgi?pass=%s&mode=viewxml\r\nUser-Agent: Mozilla/4.0 (compatable; MSIE 5.0; Windows 98; DigExt)\r\n\r\n", password);
+				sock_fd = 0;
+				sprintf(buf, "Connecting to server %s at port %d\n", IP, port);
+				writeToLog(buf);
+				memset(buffer, '\000', sizeof(buffer));
+				sock_fd = sock.DoSocketConnect(IP, port);
+				if (sock_fd) {
+					int ret = send(sock_fd, request, strlen(request), 0);
+					if (ret > 0) {
+						memset(buffer, '\000', sizeof(buffer));
+						char *p1 = buffer;
+						int bytes_read = 1;
+						while (bytes_read > 0) {
+							bytes_read = recv(sock_fd, p1, sizeof(buffer), 0);
+							p1 = p1 + bytes_read;
 						}
+						*p1 = '\000';
 					}
-					
-				}
-				if (row[1]) {
-					strcpy(password, row[1]);
-				}
+					if (strstr(buffer, "<title>SHOUTcast Administrator</title>")) {
+						sprintf(buf, "Bad password (%s/%s)\n", serverURL, password);
+						writeToLog(buf);
+					}
+					else {
+						p1 = strchr(buffer, '<');
+						if (p1) {
+							doc = xmlParseMemory(p1, strlen(p1));
+							if (!doc) {
+								writeToLog("Bad parse!");
+							}
 
-
-                                sprintf(url, "http://%s:%d/admin.cgi?pass=%s&mode=viewxml", IP, port, password);
-                                sprintf(buf, "Connecting to server %s at port %d\n", IP, port);
-                                writeToLog(buf);
-                                memset(buffer, '\000', sizeof(buffer));
-                                ctx = xmlNanoHTTPOpen(url, &contentType);
-                                if (ctx) {
-                                        char *p1 = buffer;
-                                        int bytes_read = 0;
-                                        while ((bytes_read = xmlNanoHTTPRead(ctx, p1, sizeof(buffer) - (p1 - buffer))) > 0) {
-                                                p1 += bytes_read;
-                                        }
-                                        *p1 = '\000';
-                                        xmlNanoHTTPClose(ctx);
-                                        if (strstr(buffer, "<title>SHOUTcast Administrator</title>")) {
-                                                sprintf(buf, "Bad password (%s/%s)\n", serverURL, password);
-                                                writeToLog(buf);
-                                        }
-                                        else {
-                                                p1 = strchr(buffer, '<');
-                                                if (p1) {
-                                                        doc = xmlParseMemory(p1, strlen(p1));
-                                                        if (!doc) {
-                                                                writeToLog("Bad parse!");
-                                                        }
-
-                                                        cur = xmlDocGetRootElement(doc);
-                                                        if (cur == NULL) {
-                                                                writeToLog("Empty Document!");
-                                                                xmlFreeDoc(doc);
-                                                                exit(1);
-                                                        }
-                                                        else {
-                                                                cur = cur->xmlChildrenNode;
-                                                                while (cur != NULL) {
+							cur = xmlDocGetRootElement(doc);
+							if (cur == NULL) {
+								writeToLog("Empty Document!");
+								xmlFreeDoc(doc);
+								exit(1);
+							}
+							else {
+								cur = cur->xmlChildrenNode;
+								while (cur != NULL) {
 
 									if (!xmlStrcmp(cur->name, (const xmlChar *) "CURRENTLISTENERS")) {
 										sData.currentListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
@@ -283,26 +310,26 @@ main(int argc, char **argv)
 							}
 							trimRight(sData.songTitle);
 							sprintf(query, "select songTitle from scastd_songinfo where serverURL = '%s' order by time desc limit 1", serverURL);
-							db.Query(query);
-							insert_flag = 0;
-							row = db.Fetch();
-							if (row) {
-								if (!strcmp(sData.songTitle, row[0])) {
-									insert_flag = 0;
-								}
-								else {
-									insert_flag = 1;
-								}
-							}
-							else {
-								insert_flag = 1;
-							}
-							if (insert_flag) {
-								sprintf(query, "insert into scastd_songinfo values('%s', '%s', NULL)", serverURL, sData.songTitle);
-								db.Query(query);
-							}
-							sprintf(query, "insert into scastd_serverinfo (serverURL, currentlisteners, peaklisteners, maxlisteners, averagetime, streamhits, time) values('%s', %d, %d, %d, %d, %d, NULL)", serverURL, sData.currentListeners, sData.maxListeners, sData.peakListeners, sData.avgTime, sData.streamHits);
-							db.Query(query);
+                                                        db->query(query);
+                                                        insert_flag = 0;
+                                                        row = db->fetch();
+                                                        if (!row.empty()) {
+                                                                if (!strcmp(sData.songTitle, row[0].c_str())) {
+                                                                        insert_flag = 0;
+                                                                }
+                                                                else {
+                                                                        insert_flag = 1;
+                                                                }
+                                                        }
+                                                        else {
+                                                                insert_flag = 1;
+                                                        }
+                                                        if (insert_flag) {
+                                                                sprintf(query, "insert into scastd_songinfo values('%s', '%s', NULL)", serverURL, sData.songTitle);
+                                                                db->query(query);
+                                                        }
+                                                        sprintf(query, "insert into scastd_serverinfo (serverURL, currentlisteners, peaklisteners, maxlisteners, averagetime, streamhits, time) values('%s', %d, %d, %d, %d, %d, NULL)", serverURL, sData.currentListeners, sData.maxListeners, sData.peakListeners, sData.avgTime, sData.streamHits);
+                                                        db->query(query);
 						}
 						else {
 							sprintf(buf, "Bad data from %s\n", serverURL);
@@ -319,5 +346,3 @@ main(int argc, char **argv)
 	}
 	}
 }
-
-
