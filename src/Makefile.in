@@ -1,7 +1,7 @@
 PACKAGE=scastd
 VERSION=0.1
 AUTOMAKE=automake
-OBJS=Socket.o DB.o Config.o
+OBJS=Socket.o Config.o db/MySQLDatabase.o db/MariaDBDatabase.o db/PostgresDatabase.o
 
 EXEC=scastd
 CXXFLAGS=@CXXFLAGS@

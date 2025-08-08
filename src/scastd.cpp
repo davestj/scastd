@@ -30,7 +30,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <libxml/tree.h>
 #include <libxml/parser.h>
 #include <signal.h>
-#include "DB.h"
+#include "db/IDatabase.h"
+#include "db/MySQLDatabase.h"
+#include "db/MariaDBDatabase.h"
+#include "db/PostgresDatabase.h"
 #include "Config.h"
 
 #include "Socket.h"
@@ -121,8 +124,8 @@ main(int argc, char **argv)
 	CMySocket	sock;
 	int		sock_fd;
 	xmlDocPtr doc;
-	DB	db;
-	DB	db2;
+	IDatabase       *db = NULL;
+	IDatabase       *db2 = NULL;
         Config  cfg;
 
 	char *contentType;
@@ -133,7 +136,7 @@ main(int argc, char **argv)
 	void *ctx;
 	char	*p1;
 	xmlNodePtr cur;
-	MYSQL_ROW	row;
+	IDatabase::Row       row;
 	serverData	sData;
 	char	query[2046] = "";
 	char	serverURL[255] = "";
@@ -154,8 +157,22 @@ main(int argc, char **argv)
         }
         std::string dbUser = cfg.Get("username", "root");
         std::string dbPass = cfg.Get("password", "");
+        std::string dbType = cfg.Get("DatabaseType", "mysql");
+        if (dbType == "mysql") {
+                db = new MySQLDatabase();
+                db2 = new MySQLDatabase();
+        } else if (dbType == "mariadb") {
+                db = new MariaDBDatabase();
+                db2 = new MariaDBDatabase();
+        } else if (dbType == "postgres") {
+                db = new PostgresDatabase();
+                db2 = new PostgresDatabase();
+        } else {
+                fprintf(stderr, "Unknown DatabaseType %s\n", dbType.c_str());
+                exit(1);
+        }
 
-	fprintf(stdout, "Detaching from console...\n");
+        fprintf(stdout, "Detaching from console...\n");
 
 	if (fork()) {
 		// Parent
@@ -172,17 +189,17 @@ main(int argc, char **argv)
 		fprintf(stderr, "Cannot install handler for SIGUSR2\n");
 		exit(1);
 	}
-        db.Connect(dbUser.c_str(), dbPass.c_str());
-        db2.Connect(dbUser.c_str(), dbPass.c_str());
-	sprintf(query, "select sleeptime, logfile from scastd_runtime");
-	db.Query(query);
-	row = db.Fetch();
-	if (!row) {
-		fprintf(stderr, "We must have an entry in the scastd_runtime table..exiting.\n");
-		exit(-1);
-	}
-	sleeptime = atoi(row[0]);
-	strcpy(logfile, row[1]);
+        db->connect(dbUser.c_str(), dbPass.c_str());
+        db2->connect(dbUser.c_str(), dbPass.c_str());
+        sprintf(query, "select sleeptime, logfile from scastd_runtime");
+        db->query(query);
+        row = db->fetch();
+        if (row.empty()) {
+                fprintf(stderr, "We must have an entry in the scastd_runtime table..exiting.\n");
+                exit(-1);
+        }
+        sleeptime = atoi(row[0].c_str());
+        strcpy(logfile, row[1].c_str());
 	
 	openLog();
 
@@ -194,30 +211,32 @@ main(int argc, char **argv)
 			exit(1);
 		}
 		if (!paused) {
-			sprintf(query, "select serverURL, password from scastd_memberinfo where gather_flag = 1");
-			db2.Query(query);
-			while (row = db2.Fetch()) {
-				memset(serverURL, '\000', sizeof(serverURL));
-				memset(password, '\000', sizeof(password));
-				memset(IP, '\000', sizeof(IP));
-				port = 0;
-				if (row[0]) {
-					strcpy(serverURL, row[0]);
-					p2 = strstr(serverURL, "http://");
-					if (p2) {
-						p2 = p2 + strlen("http://");
-						p3 = strchr(p2, ':');
-						if (p3) {
-							strncpy(IP, p2, p3-p2);
-							p3++;
-							port = atoi(p3);
-						}
-					}
-					
-				}
-				if (row[1]) {
-					strcpy(password, row[1]);
-				}
+                        sprintf(query, "select serverURL, password from scastd_memberinfo where gather_flag = 1");
+                        db2->query(query);
+                        while (true) {
+                                row = db2->fetch();
+                                if (row.empty()) break;
+                                memset(serverURL, '\000', sizeof(serverURL));
+                                memset(password, '\000', sizeof(password));
+                                memset(IP, '\000', sizeof(IP));
+                                port = 0;
+                                if (!row[0].empty()) {
+                                        strcpy(serverURL, row[0].c_str());
+                                        p2 = strstr(serverURL, "http://");
+                                        if (p2) {
+                                                p2 = p2 + strlen("http://");
+                                                p3 = strchr(p2, ':');
+                                                if (p3) {
+                                                        strncpy(IP, p2, p3-p2);
+                                                        p3++;
+                                                        port = atoi(p3);
+                                                }
+                                        }
+
+                                }
+                                if (!row[1].empty()) {
+                                        strcpy(password, row[1].c_str());
+                                }
 
 
 				memset(request, '\000', sizeof(request));
@@ -291,26 +310,26 @@ main(int argc, char **argv)
 							}
 							trimRight(sData.songTitle);
 							sprintf(query, "select songTitle from scastd_songinfo where serverURL = '%s' order by time desc limit 1", serverURL);
-							db.Query(query);
-							insert_flag = 0;
-							row = db.Fetch();
-							if (row) {
-								if (!strcmp(sData.songTitle, row[0])) {
-									insert_flag = 0;
-								}
-								else {
-									insert_flag = 1;
-								}
-							}
-							else {
-								insert_flag = 1;
-							}
-							if (insert_flag) {
-								sprintf(query, "insert into scastd_songinfo values('%s', '%s', NULL)", serverURL, sData.songTitle);
-								db.Query(query);
-							}
-							sprintf(query, "insert into scastd_serverinfo (serverURL, currentlisteners, peaklisteners, maxlisteners, averagetime, streamhits, time) values('%s', %d, %d, %d, %d, %d, NULL)", serverURL, sData.currentListeners, sData.maxListeners, sData.peakListeners, sData.avgTime, sData.streamHits);
-							db.Query(query);
+                                                        db->query(query);
+                                                        insert_flag = 0;
+                                                        row = db->fetch();
+                                                        if (!row.empty()) {
+                                                                if (!strcmp(sData.songTitle, row[0].c_str())) {
+                                                                        insert_flag = 0;
+                                                                }
+                                                                else {
+                                                                        insert_flag = 1;
+                                                                }
+                                                        }
+                                                        else {
+                                                                insert_flag = 1;
+                                                        }
+                                                        if (insert_flag) {
+                                                                sprintf(query, "insert into scastd_songinfo values('%s', '%s', NULL)", serverURL, sData.songTitle);
+                                                                db->query(query);
+                                                        }
+                                                        sprintf(query, "insert into scastd_serverinfo (serverURL, currentlisteners, peaklisteners, maxlisteners, averagetime, streamhits, time) values('%s', %d, %d, %d, %d, %d, NULL)", serverURL, sData.currentListeners, sData.maxListeners, sData.peakListeners, sData.avgTime, sData.streamHits);
+                                                        db->query(query);
 						}
 						else {
 							sprintf(buf, "Bad data from %s\n", serverURL);
