@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <libxml/parser.h>
 #include <signal.h>
 #include "DB.h"
+#include "Config.h"
 
 #include "Socket.h"
 
@@ -122,6 +123,7 @@ main(int argc, char **argv)
 	xmlDocPtr doc;
 	DB	db;
 	DB	db2;
+        Config  cfg;
 
 	char *contentType;
 	char	request[1024];
@@ -142,6 +144,16 @@ main(int argc, char **argv)
 	char	*p3;
 	int	sleeptime = 0;
 	int	insert_flag = 0;
+        std::string configPath = "scastd.conf";
+        if (argc > 1) {
+                configPath = argv[1];
+        }
+        if (!cfg.Load(configPath)) {
+                fprintf(stderr, "Cannot load config file %s\n", configPath.c_str());
+                exit(1);
+        }
+        std::string dbUser = cfg.Get("username", "root");
+        std::string dbPass = cfg.Get("password", "");
 
 	fprintf(stdout, "Detaching from console...\n");
 
@@ -160,8 +172,8 @@ main(int argc, char **argv)
 		fprintf(stderr, "Cannot install handler for SIGUSR2\n");
 		exit(1);
 	}
-	db.Connect();
-	db2.Connect();
+        db.Connect(dbUser.c_str(), dbPass.c_str());
+        db2.Connect(dbUser.c_str(), dbPass.c_str());
 	sprintf(query, "select sleeptime, logfile from scastd_runtime");
 	db.Query(query);
 	row = db.Fetch();

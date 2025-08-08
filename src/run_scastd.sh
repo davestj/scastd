@@ -7,9 +7,6 @@ if [ $1 = "help" ]; then
 echo"Please enter a username and password for mysql i.e. ./install.sh root password"
 fi
 if [ $1 != "" ]; then
-export SCASTD_USER=$1
-export SCASTD_PASSWORD=$2
-
 echo "Creating and importing the default scastd database and schema"
 mysqladmin --user=$1 --password=$2 create scastd
 mysql --user=$1 --password=$2 scastd < scastd.sql
