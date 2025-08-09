@@ -48,16 +48,8 @@ fi
 
 echo "Generating configuration files for $package, please wait...."
 
-echo "  aclocal $ACLOCAL_FLAGS"
-aclocal $ACLOCAL_FLAGS
-#echo "  autoheader"
-#autoheader
-echo "  libtoolize --automake"
-libtoolize --automake
-echo "  automake --add-missing"
-automake --add-missing 
-echo "  autoconf"
-autoconf
+echo "  autoreconf -I m4 --install"
+autoreconf -I m4 --install
 
 cd $olddir
 $srcdir/configure "$@" && echo

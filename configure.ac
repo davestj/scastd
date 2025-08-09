@@ -2,6 +2,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_INIT([scastd],[1.0])
 AC_CONFIG_SRCDIR([src/scastd.cpp])
 AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_MACRO_DIRS([m4])
 
 AC_PROG_CXX
 AC_CANONICAL_HOST
