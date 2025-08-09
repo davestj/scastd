@@ -1,6 +1,8 @@
 #include "Config.h"
 #include <fstream>
 #include <sstream>
+#include <algorithm>
+#include <cctype>
 
 bool Config::Load(const std::string &path) {
     std::ifstream in(path.c_str());
@@ -42,6 +44,22 @@ int Config::Get(const std::string &key, int def) const {
             return std::stoi(it->second);
         } catch (...) {
             return def;
+        }
+    }
+    return def;
+}
+
+bool Config::Get(const std::string &key, bool def) const {
+    std::map<std::string, std::string>::const_iterator it = values.find(key);
+    if (it != values.end()) {
+        std::string val = it->second;
+        std::transform(val.begin(), val.end(), val.begin(),
+                       [](unsigned char c) { return std::tolower(c); });
+        if (val == "1" || val == "true" || val == "yes" || val == "on") {
+            return true;
+        }
+        if (val == "0" || val == "false" || val == "no" || val == "off") {
+            return false;
         }
     }
     return def;
