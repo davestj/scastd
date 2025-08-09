@@ -4,6 +4,7 @@
 #include <csignal>
 #include <string>
 #include <unistd.h>
+#include <cstdlib>
 
 namespace {
 HttpServer *g_server = nullptr;
@@ -27,8 +28,11 @@ HttpServer::~HttpServer() {
 
 bool HttpServer::start(int port) {
 #if defined(__APPLE__) || defined(__linux__)
-    if (daemon(0, 0) != 0) {
-        return false;
+    const char *no_daemon = std::getenv("SCASD_NO_DAEMON");
+    if (!no_daemon || std::strcmp(no_daemon, "1") != 0) {
+        if (daemon(0, 0) != 0) {
+            return false;
+        }
     }
 #endif
     g_server = this;
