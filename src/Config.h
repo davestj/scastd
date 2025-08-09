@@ -8,6 +8,7 @@ class Config {
 public:
     bool Load(const std::string &path);
     std::string Get(const std::string &key, const std::string &def = "") const;
+    int Get(const std::string &key, int def) const;
 private:
     std::map<std::string, std::string> values;
 };

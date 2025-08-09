@@ -13,9 +13,15 @@ MySQLDatabase::~MySQLDatabase() {
     mysql_close(&mySQL);
 }
 
-bool MySQLDatabase::connect(const std::string &username, const std::string &password) {
+bool MySQLDatabase::connect(const std::string &username,
+                            const std::string &password,
+                            const std::string &host,
+                            int port,
+                            const std::string &dbname,
+                            const std::string &sslmode) {
     mysql_options(&mySQL, MYSQL_READ_DEFAULT_GROUP, "scastd");
-    if (!mysql_real_connect(&mySQL, "localhost", username.c_str(), password.c_str(), "scastd", 0, NULL, 0)) {
+    (void)sslmode;
+    if (!mysql_real_connect(&mySQL, host.c_str(), username.c_str(), password.c_str(), dbname.c_str(), port, NULL, 0)) {
         std::cerr << "Failed to connect to database: " << mysql_error(&mySQL) << std::endl;
         return false;
     }
