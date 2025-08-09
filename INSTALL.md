@@ -1,3 +1,11 @@
+Dependencies
+============
+
+The following libraries are required to build scastd:
+
+* libmicrohttpd or Boost.Beast
+* libcurl
+
 Basic Installation
 ==================
 
