@@ -36,3 +36,15 @@ username root
 password secret
 ```
 
+
+Troubleshooting
+---------------
+If the build fails, common issues and fixes include:
+
+- `aclocal`: command not found – install the `automake` package.
+- `AM_PROG_LIBTOOL` missing – install `libtool`.
+- Missing `mariadb/mysql.h` or `mysql.h` – install `libmariadb-dev` and `libmariadb-dev-compat`.
+
+After installing the required packages, rerun `./autogen.sh`,
+`./configure CXXFLAGS='-std=c++17 -g -O2'`, and `make`.  Tests (if any)
+can be executed with `make check`.
