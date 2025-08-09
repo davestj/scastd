@@ -3,6 +3,7 @@
 #include <sstream>
 #include <algorithm>
 #include <cctype>
+#include <cstdlib>
 
 bool Config::Load(const std::string &path) {
     std::ifstream in(path.c_str());
@@ -26,6 +27,49 @@ bool Config::Load(const std::string &path) {
         }
         values[key] = value;
     }
+
+    auto read_secret = [](const std::string &p, std::string &out) -> bool {
+        std::ifstream f(p.c_str());
+        if (!f) {
+            return false;
+        }
+        if (!std::getline(f, out)) {
+            return false;
+        }
+        if (!out.empty() && out.back() == '\r') {
+            out.pop_back();
+        }
+        return true;
+    };
+
+    std::string secret;
+    std::map<std::string, std::string>::iterator it;
+    it = values.find("username_file");
+    if (it != values.end() && read_secret(it->second, secret)) {
+        values["username"] = secret;
+    }
+    it = values.find("password_file");
+    if (it != values.end() && read_secret(it->second, secret)) {
+        values["password"] = secret;
+    }
+
+    const char *env = std::getenv("SCASTD_USERNAME_FILE");
+    if (env && read_secret(env, secret)) {
+        values["username"] = secret;
+    }
+    env = std::getenv("SCASTD_PASSWORD_FILE");
+    if (env && read_secret(env, secret)) {
+        values["password"] = secret;
+    }
+    env = std::getenv("SCASTD_USERNAME");
+    if (env) {
+        values["username"] = env;
+    }
+    env = std::getenv("SCASTD_PASSWORD");
+    if (env) {
+        values["password"] = env;
+    }
+
     return true;
 }
 
