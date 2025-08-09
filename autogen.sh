@@ -11,7 +11,7 @@ test -z "$srcdir" && srcdir=.
 cd "$srcdir"
 
 echo "Generating configuration files for $package, please wait...."
-autoreconf --install --force --verbose
+autoreconf -I m4 --install --force --verbose
 
 cd "$olddir"
 
