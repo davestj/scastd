@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Config.h"
 
 #include "CurlWrapper.h"
+#include "HttpServer.h"
 
 FILE	*filep_log = 0;
 char	logfile[2046] = "";
@@ -120,7 +121,8 @@ typedef struct tagServerData {
 
 int main(int argc, char **argv)
 {
-	xmlDocPtr doc;
+        HttpServer httpServer;
+        xmlDocPtr doc;
 	IDatabase       *db = NULL;
 	IDatabase       *db2 = NULL;
         Config  cfg;
@@ -146,6 +148,9 @@ int main(int argc, char **argv)
         if (!cfg.Load(configPath)) {
                 fprintf(stderr, "Cannot load config file %s\n", configPath.c_str());
                 exit(1);
+        }
+        if (!httpServer.start()) {
+                fprintf(stderr, "Failed to start HTTP server\n");
         }
         std::string dbUser = cfg.Get("username", "root");
         std::string dbPass = cfg.Get("password", "");
@@ -329,6 +334,7 @@ int main(int argc, char **argv)
 		writeToLog(buf);
 		sleep(sleeptime);
 	}
-	}
-	return 0;
+        }
+        httpServer.stop();
+        return 0;
 }

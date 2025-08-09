@@ -15,6 +15,10 @@ Building
 This repository omits generated build system files such as `configure` and `Makefile.in`.
 Run `./autogen.sh` (or `autoreconf -i && ./configure`) to generate them before building:
 
+Install the required development packages, including
+`libmicrohttpd-dev` on Debian/Ubuntu or `libmicrohttpd` via Homebrew on
+macOS, then run:
+
 ```
 ./autogen.sh
 make
@@ -44,6 +48,7 @@ If the build fails, common issues and fixes include:
 - `aclocal`: command not found – install the `automake` package.
 - `AM_PROG_LIBTOOL` missing – install `libtool`.
 - Missing `mariadb/mysql.h` or `mysql.h` – install `libmariadb-dev` and `libmariadb-dev-compat`.
+- `microhttpd.h` missing – install `libmicrohttpd-dev`.
 
 After installing the required packages, rerun `./autogen.sh`,
 `./configure CXXFLAGS='-std=c++17 -g -O2'`, and `make`.  Tests (if any)
