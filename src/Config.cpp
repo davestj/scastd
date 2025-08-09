@@ -34,3 +34,15 @@ std::string Config::Get(const std::string &key, const std::string &def) const {
     }
     return def;
 }
+
+int Config::Get(const std::string &key, int def) const {
+    std::map<std::string, std::string>::const_iterator it = values.find(key);
+    if (it != values.end()) {
+        try {
+            return std::stoi(it->second);
+        } catch (...) {
+            return def;
+        }
+    }
+    return def;
+}

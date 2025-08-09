@@ -150,6 +150,10 @@ int main(int argc, char **argv)
         std::string dbUser = cfg.Get("username", "root");
         std::string dbPass = cfg.Get("password", "");
         std::string dbType = cfg.Get("DatabaseType", "mysql");
+        std::string dbHost = cfg.Get("host", "localhost");
+        int dbPort = cfg.Get("port", 0);
+        std::string dbName = cfg.Get("dbname", "scastd");
+        std::string dbSSLMode = cfg.Get("sslmode", "");
         if (dbType == "mysql") {
                 db = new MySQLDatabase();
                 db2 = new MySQLDatabase();
@@ -181,8 +185,8 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Cannot install handler for SIGUSR2\n");
 		exit(1);
 	}
-        db->connect(dbUser.c_str(), dbPass.c_str());
-        db2->connect(dbUser.c_str(), dbPass.c_str());
+        db->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
+        db2->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
         sprintf(query, "select sleeptime, logfile from scastd_runtime");
         db->query(query);
         row = db->fetch();

@@ -12,8 +12,20 @@ PostgresDatabase::~PostgresDatabase() {
     }
 }
 
-bool PostgresDatabase::connect(const std::string &username, const std::string &password) {
-    std::string conninfo = "user=" + username + " password=" + password + " dbname=scastd host=localhost";
+bool PostgresDatabase::connect(const std::string &username,
+                               const std::string &password,
+                               const std::string &host,
+                               int port,
+                               const std::string &dbname,
+                               const std::string &sslmode) {
+    std::string conninfo = "user=" + username + " password=" + password +
+                           " dbname=" + dbname + " host=" + host;
+    if (port > 0) {
+        conninfo += " port=" + std::to_string(port);
+    }
+    if (!sslmode.empty()) {
+        conninfo += " sslmode=" + sslmode;
+    }
     conn = PQconnectdb(conninfo.c_str());
     if (PQstatus(conn) != CONNECTION_OK) {
         std::cerr << "Failed to connect to database: " << PQerrorMessage(conn) << std::endl;

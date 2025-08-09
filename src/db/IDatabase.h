@@ -8,7 +8,12 @@ class IDatabase {
 public:
     using Row = std::vector<std::string>;
     virtual ~IDatabase() {}
-    virtual bool connect(const std::string &username, const std::string &password) = 0;
+    virtual bool connect(const std::string &username,
+                        const std::string &password,
+                        const std::string &host,
+                        int port,
+                        const std::string &dbname,
+                        const std::string &sslmode) = 0;
     virtual bool query(const std::string &query) = 0;
     virtual Row fetch() = 0;
     virtual void disconnect() = 0;
