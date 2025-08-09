@@ -10,6 +10,16 @@ Public License along with this program; if not, write to the Free Software Found
 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
+Overview
+--------
+scastd is a small daemon for collecting Icecast2 stream statistics and
+publishing them over HTTP.  It polls an Icecast2 server for current
+listener information, stores the results in a database, and exposes a
+lightweight web service built with `libmicrohttpd`.  The HTTP server
+listens on port **8333** and serves JSON or XML status responses at
+`/status.json` and `/status.xml`.  Database backends for MariaDB/MySQL
+and PostgreSQL are currently supported.
+
 Building
 --------
 This repository omits generated build system files such as `configure` and `Makefile.in`.
@@ -38,6 +48,16 @@ Example `scastd.conf`:
 # database credentials
 username root
 password secret
+```
+
+Usage
+-----
+Start the daemon with your configuration file and query the HTTP
+endpoint:
+
+```
+./src/scastd scastd.conf &
+curl http://localhost:8333/status.json
 ```
 
 
