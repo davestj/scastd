@@ -13,7 +13,7 @@ dnl Use a modern C++ compiler with Linux specific options
 CXXFLAGS="$CXXFLAGS -std=c++17 -Wall -D_GNU_SOURCE"
 
 dnl Checks for required libraries
-PKG_CHECK_MODULES([DEPS], [libxml-2.0 libcurl mysqlclient libpq])
+PKG_CHECK_MODULES([DEPS], [libxml-2.0 libcurl mysqlclient libpq libmicrohttpd])
 CXXFLAGS="$CXXFLAGS $DEPS_CFLAGS"
 LIBS="$LIBS $DEPS_LIBS"
 
