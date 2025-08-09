@@ -173,8 +173,10 @@ int main(int argc, char **argv)
                 db = new PostgresDatabase();
                 db2 = new PostgresDatabase();
         } else {
-                fprintf(stderr, "Unknown DatabaseType %s\n", dbType.c_str());
-                exit(1);
+                fprintf(stderr, "Unknown DatabaseType '%s'. Supported values are mysql, mariadb, postgres. Falling back to default 'mysql'.\n", dbType.c_str());
+                db = new MySQLDatabase();
+                db2 = new MySQLDatabase();
+                dbType = "mysql";
         }
 
         fprintf(stdout, "Detaching from console...\n");
