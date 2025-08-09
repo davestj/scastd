@@ -6,6 +6,44 @@ The following libraries are required to build scastd:
 * libmicrohttpd or Boost.Beast
 * libcurl
 
+Platform-specific build notes
+-----------------------------
+
+macOS (arm64)
+~~~~~~~~~~~~~
+Install tools and libraries using Homebrew:
+
+```
+brew install autoconf automake libtool pkg-config \
+             libmicrohttpd libcurl mariadb-connector-c postgresql
+```
+
+Then build and run the tests:
+
+```
+./autogen.sh
+./configure
+make && make check
+```
+
+Linux (x86_64)
+~~~~~~~~~~~~~~
+Install dependencies with APT:
+
+```
+sudo apt-get install build-essential autoconf automake libtool pkg-config \
+                     libmicrohttpd-dev libcurl4-openssl-dev libmariadb-dev \
+                     libpq-dev
+```
+
+Then build and run the tests:
+
+```
+./autogen.sh
+./configure
+make && make check
+```
+
 Basic Installation
 ==================
 
