@@ -25,6 +25,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string.h>
 #include <string>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <vector>
+#include <algorithm>
 #include <libxml/nanohttp.h>
 #include <libxml/tree.h>
 #include <libxml/parser.h>
@@ -40,6 +44,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 FILE	*filep_log = 0;
 char	logfile[2046] = "";
+std::string logDir = ".";
+size_t	logMaxSize = 1024 * 1024;
+int	logRetention = 5;
 int	paused = 0;
 int	exiting = 0;
 
@@ -53,23 +60,75 @@ void parseWebdata(xmlNodePtr cur)
 
 }
 void trimRight(char *buf) {
-	for (char *p1 = buf + strlen(buf)-1;p1 > buf; p1--) {
-		if (*p1 != ' ') {
-			break;
-		}
-		else {
-			*p1 = '\000';
-		}
-	}
+        for (char *p1 = buf + strlen(buf)-1;p1 > buf; p1--) {
+                if (*p1 != ' ') {
+                        break;
+                }
+                else {
+                        *p1 = '\000';
+                }
+        }
+}
+
+static void purgeOldLogs() {
+        DIR *dir = opendir(logDir.c_str());
+        if (!dir) return;
+        std::vector<std::string> files;
+        struct dirent *entry;
+        while ((entry = readdir(dir)) != NULL) {
+                std::string name = entry->d_name;
+                if (name.find("scastd-") == 0 && name.rfind(".log") == name.size() - 4) {
+                        files.push_back(name);
+                }
+        }
+        closedir(dir);
+        std::sort(files.begin(), files.end());
+        while ((int)files.size() > logRetention) {
+                std::string path = logDir + "/" + files.front();
+                remove(path.c_str());
+                files.erase(files.begin());
+        }
+}
+
+static void rotateLogsIfNeeded() {
+        struct stat st;
+        time_t now = time(0);
+        bool rotate = false;
+        if (stat(logfile, &st) == 0) {
+                if ((size_t)st.st_size >= logMaxSize) {
+                        rotate = true;
+                }
+                char fileDate[9];
+                char curDate[9];
+                strftime(fileDate, sizeof(fileDate), "%Y%m%d", gmtime(&st.st_mtime));
+                strftime(curDate, sizeof(curDate), "%Y%m%d", gmtime(&now));
+                if (strcmp(fileDate, curDate) != 0) {
+                        rotate = true;
+                }
+        }
+        if (rotate) {
+                if (filep_log) {
+                        fclose(filep_log);
+                        filep_log = 0;
+                }
+                char ts[32];
+                strftime(ts, sizeof(ts), "%Y%m%d-%H%M%S", gmtime(&now));
+                char rotated[4096];
+                snprintf(rotated, sizeof(rotated), "%s/scastd-%s.log", logDir.c_str(), ts);
+                rename(logfile, rotated);
+                purgeOldLogs();
+        }
 }
 
 void openLog() {
-	if (!filep_log) {
-		filep_log = fopen(logfile, "a");
-		if (!filep_log) {
-			fprintf(stderr, "Cannot open logfile %s\n", logfile);
-		}
-	}
+        rotateLogsIfNeeded();
+        if (!filep_log) {
+                mkdir(logDir.c_str(), 0755);
+                filep_log = fopen(logfile, "a");
+                if (!filep_log) {
+                        fprintf(stderr, "Cannot open logfile %s\n", logfile);
+                }
+        }
 }
 void writeToLog(char *message) {
 	time_t date = time(0);
@@ -163,6 +222,10 @@ int main(int argc, char **argv)
         int dbPort = cfg.Get("port", 0);
         std::string dbName = cfg.Get("dbname", "scastd");
         std::string dbSSLMode = cfg.Get("sslmode", "");
+        logDir = cfg.Get("log_dir", ".");
+        logMaxSize = (size_t)cfg.Get("log_max_size", 1024 * 1024);
+        logRetention = cfg.Get("log_retention", 5);
+        snprintf(logfile, sizeof(logfile), "%s/scastd.log", logDir.c_str());
         if (dbType == "mysql") {
                 db = new MySQLDatabase();
                 db2 = new MySQLDatabase();
@@ -198,7 +261,7 @@ int main(int argc, char **argv)
 	}
         db->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
         db2->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
-        sprintf(query, "select sleeptime, logfile from scastd_runtime");
+        sprintf(query, "select sleeptime from scastd_runtime");
         db->query(query);
         row = db->fetch();
         if (row.empty()) {
@@ -206,7 +269,6 @@ int main(int argc, char **argv)
                 exit(-1);
         }
         sleeptime = atoi(row[0].c_str());
-        strcpy(logfile, row[1].c_str());
 	
 	openLog();
 

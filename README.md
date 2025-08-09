@@ -48,6 +48,10 @@ Example `scastd.conf`:
 # database credentials
 username root
 password secret
+# log configuration
+log_dir ./logs
+log_max_size 1048576
+log_retention 5
 ```
 
 For security, make the configuration file readable only by your user:
