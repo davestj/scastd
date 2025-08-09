@@ -25,9 +25,9 @@ Building
 This repository omits generated build system files such as `configure` and `Makefile.in`.
 Run `./autogen.sh` (or `autoreconf -i && ./configure`) to generate them before building:
 
-Install the required development packages, including
-`libmicrohttpd-dev` on Debian/Ubuntu or `libmicrohttpd` via Homebrew on
-macOS, then run:
+Install the required development packages, including `libmicrohttpd-dev`
+and `libpq-dev` on Debian/Ubuntu or `libmicrohttpd` and `postgresql`
+via Homebrew on macOS, then run:
 
 ```
 ./autogen.sh

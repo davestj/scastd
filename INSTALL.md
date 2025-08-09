@@ -5,6 +5,7 @@ The following libraries are required to build scastd:
 
 * libmicrohttpd or Boost.Beast
 * libcurl
+* libpq (PostgreSQL client library)
 
 Platform-specific build notes
 -----------------------------
