@@ -33,3 +33,21 @@ support `ENGINE=MyISAM` directives present in some MySQL schemas. MariaDB follow
 but may need `ROW_FORMAT` adjustments for older MySQL dumps.
 
 Refer to your database documentation when porting existing schemas.
+
+### MySQL / MariaDB
+
+The provided dump at `src/scastd.sql` has been modernized for MySQL 8 and MariaDB 10.11:
+
+* Deprecated `timestamp(14)` and `int(11)` types were replaced with `TIMESTAMP` and `INT`.
+* All tables declare `ENGINE=InnoDB` with `CHARSET=utf8mb4` and `COLLATE=utf8mb4_unicode_ci`.
+* Every column specifies an explicit `DEFAULT` clause, and auto-incrementing keys use
+  `AUTO_INCREMENT`.
+
+### PostgreSQL
+
+An equivalent schema and seed data are available in `src/scastd_pg.sql`. Key differences from the
+MySQL dialect include:
+
+* `SERIAL` is used for auto-incrementing identifiers.
+* Character fields rely on PostgreSQL's `TEXT` type and inherit database encoding (typically UTF‑8).
+* Default values use `CURRENT_TIMESTAMP`, `CURRENT_DATE` and `CURRENT_TIME` expressions.
