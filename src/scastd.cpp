@@ -118,7 +118,7 @@ typedef struct tagServerData {
 	char	songTitle[1024];
 } serverData;
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	xmlDocPtr doc;
 	IDatabase       *db = NULL;
@@ -326,4 +326,5 @@ main(int argc, char **argv)
 		sleep(sleeptime);
 	}
 	}
+	return 0;
 }
