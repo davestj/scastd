@@ -1,0 +1,52 @@
+# Autotools generated files
+aclocal.m4
+autom4te.cache/
+compile
+config.guess
+config.log
+config.status
+config.sub
+configure
+depcomp
+install-sh
+libtool
+ltconfig
+ltmain.sh
+Makefile
+Makefile.in
+missing
+mkinstalldirs
+stamp-h1
+
+# Generated headers and sources
+config.h
+config.h.in
+
+# Build artifacts
+*.o
+*.lo
+*.la
+*.al
+.libs/
+*.so
+*.so.*
+*.a
+*.dylib
+*.dll
+*.exe
+*.obj
+*.lib
+*.log
+*.tmp
+*.cache
+*.status
+*~
+
+# Project-specific
+src/Makefile
+src/Makefile.in
+src/scastd
+src/scastd.log
+src/.deps/
+src/.libs/
+
