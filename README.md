@@ -50,6 +50,20 @@ username root
 password secret
 ```
 
+For security, make the configuration file readable only by your user:
+
+```
+chmod 600 scastd.conf
+```
+
+The `username` and `password` settings may be supplied via environment
+variables. `SCASTD_USERNAME` and `SCASTD_PASSWORD` override values in the
+configuration file. Alternatively, `SCASTD_USERNAME_FILE` or
+`SCASTD_PASSWORD_FILE` can point to files containing the corresponding
+credential. The configuration file also supports `username_file` and
+`password_file` keys. Any secrets file should also be protected with
+restrictive permissions, for example `chmod 600 password.txt`.
+
 Usage
 -----
 Start the daemon with your configuration file and query the HTTP
