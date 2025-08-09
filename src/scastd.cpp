@@ -25,7 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string.h>
 #include <string>
 #include <sys/types.h>
-#include <sys/socket.h>
 #include <libxml/nanohttp.h>
 #include <libxml/tree.h>
 #include <libxml/parser.h>
@@ -36,7 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "db/PostgresDatabase.h"
 #include "Config.h"
 
-#include "Socket.h"
+#include "CurlWrapper.h"
 
 FILE	*filep_log = 0;
 char	logfile[2046] = "";
@@ -121,20 +120,13 @@ typedef struct tagServerData {
 
 main(int argc, char **argv)
 {
-	CMySocket	sock;
-	int		sock_fd;
 	xmlDocPtr doc;
 	IDatabase       *db = NULL;
 	IDatabase       *db2 = NULL;
         Config  cfg;
 
-	char *contentType;
-	char	request[1024];
 	char	buf[1024];
-	char	buffer[100000];
-	int	ret = 0;
-	void *ctx;
-	char	*p1;
+        const char    *p1;
 	xmlNodePtr cur;
 	IDatabase::Row       row;
 	serverData	sData;
@@ -238,78 +230,63 @@ main(int argc, char **argv)
                                         strcpy(password, row[1].c_str());
                                 }
 
+                                sprintf(buf, "Connecting to server %s at port %d\n", IP, port);
+                                writeToLog(buf);
+                                std::string url = std::string("http://") + IP + ":" + std::to_string(port) + "/admin.cgi?pass=" + password + "&mode=viewxml";
+                                std::string response;
+                                if (fetchUrl(url, response)) {
+                                        if (response.find("<title>SHOUTcast Administrator</title>") != std::string::npos) {
+                                                sprintf(buf, "Bad password (%s/%s)\n", serverURL, password);
+                                                writeToLog(buf);
+                                        }
+                                        else {
+                                                p1 = strchr(response.c_str(), '<');
+                                                if (p1) {
+                                                        doc = xmlParseMemory(p1, strlen(p1));
+                                                        if (!doc) {
+                                                                writeToLog("Bad parse!");
+                                                        }
 
-				memset(request, '\000', sizeof(request));
-				sprintf(request, "GET /admin.cgi?pass=%s&mode=viewxml\r\nUser-Agent: Mozilla/4.0 (compatable; MSIE 5.0; Windows 98; DigExt)\r\n\r\n", password);
-				sock_fd = 0;
-				sprintf(buf, "Connecting to server %s at port %d\n", IP, port);
-				writeToLog(buf);
-				memset(buffer, '\000', sizeof(buffer));
-				sock_fd = sock.DoSocketConnect(IP, port);
-				if (sock_fd) {
-					int ret = send(sock_fd, request, strlen(request), 0);
-					if (ret > 0) {
-						memset(buffer, '\000', sizeof(buffer));
-						char *p1 = buffer;
-						int bytes_read = 1;
-						while (bytes_read > 0) {
-							bytes_read = recv(sock_fd, p1, sizeof(buffer), 0);
-							p1 = p1 + bytes_read;
-						}
-						*p1 = '\000';
-					}
-					if (strstr(buffer, "<title>SHOUTcast Administrator</title>")) {
-						sprintf(buf, "Bad password (%s/%s)\n", serverURL, password);
-						writeToLog(buf);
-					}
-					else {
-						p1 = strchr(buffer, '<');
-						if (p1) {
-							doc = xmlParseMemory(p1, strlen(p1));
-							if (!doc) {
-								writeToLog("Bad parse!");
-							}
+                                                        cur = xmlDocGetRootElement(doc);
+                                                        if (cur == NULL) {
+                                                                writeToLog("Empty Document!");
+                                                                xmlFreeDoc(doc);
+                                                                exit(1);
+                                                        }
+                                                        else {
+                                                                cur = cur->xmlChildrenNode;
+                                                                while (cur != NULL) {
 
-							cur = xmlDocGetRootElement(doc);
-							if (cur == NULL) {
-								writeToLog("Empty Document!");
-								xmlFreeDoc(doc);
-								exit(1);
-							}
-							else {
-								cur = cur->xmlChildrenNode;
-								while (cur != NULL) {
-
-									if (!xmlStrcmp(cur->name, (const xmlChar *) "CURRENTLISTENERS")) {
-										sData.currentListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-									}
-									if (!xmlStrcmp(cur->name, (const xmlChar *) "PEAKLISTENERS")) {
-										sData.peakListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-									}
-									if (!xmlStrcmp(cur->name, (const xmlChar *) "MAXLISTENERS")) {
-										sData.maxListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-									}
-									if (!xmlStrcmp(cur->name, (const xmlChar *) "REPORTEDLISTENERS")) {
-										sData.reportedListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-									}
-									if (!xmlStrcmp(cur->name, (const xmlChar *) "AVERAGETIME")) {
-										sData.avgTime = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-									}
-									if (!xmlStrcmp(cur->name, (const xmlChar *) "WEBHITS")) {
-										sData.webHits = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-									}
-									if (!xmlStrcmp(cur->name, (const xmlChar *) "STREAMHITS")) {
-										sData.streamHits = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-									}
-									if (!xmlStrcmp(cur->name, (const xmlChar *) "SONGTITLE")) {
-										memset(sData.songTitle, '\000', sizeof(sData.songTitle));
-										strcpy(sData.songTitle, (char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-									}
-									cur = cur->next;
-								}
-							}
-							trimRight(sData.songTitle);
-							sprintf(query, "select songTitle from scastd_songinfo where serverURL = '%s' order by time desc limit 1", serverURL);
+                                                                        if (!xmlStrcmp(cur->name, (const xmlChar *) "CURRENTLISTENERS")) {
+                                                                                sData.currentListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
+                                                                        }
+                                                                        if (!xmlStrcmp(cur->name, (const xmlChar *) "PEAKLISTENERS")) {
+                                                                                sData.peakListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
+                                                                        }
+                                                                        if (!xmlStrcmp(cur->name, (const xmlChar *) "MAXLISTENERS")) {
+                                                                                sData.maxListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
+                                                                        }
+                                                                        if (!xmlStrcmp(cur->name, (const xmlChar *) "REPORTEDLISTENERS")) {
+                                                                                sData.reportedListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
+                                                                        }
+                                                                        if (!xmlStrcmp(cur->name, (const xmlChar *) "AVERAGETIME")) {
+                                                                                sData.avgTime = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
+                                                                        }
+                                                                        if (!xmlStrcmp(cur->name, (const xmlChar *) "WEBHITS")) {
+                                                                                sData.webHits = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
+                                                                        }
+                                                                        if (!xmlStrcmp(cur->name, (const xmlChar *) "STREAMHITS")) {
+                                                                                sData.streamHits = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
+                                                                        }
+                                                                        if (!xmlStrcmp(cur->name, (const xmlChar *) "SONGTITLE")) {
+                                                                                memset(sData.songTitle, '\0', sizeof(sData.songTitle));
+                                                                                strcpy(sData.songTitle, (char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
+                                                                        }
+                                                                        cur = cur->next;
+                                                                }
+                                                        }
+                                                        trimRight(sData.songTitle);
+                                                        sprintf(query, "select songTitle from scastd_songinfo where serverURL = '%s' order by time desc limit 1", serverURL);
                                                         db->query(query);
                                                         insert_flag = 0;
                                                         row = db->fetch();
@@ -330,13 +307,17 @@ main(int argc, char **argv)
                                                         }
                                                         sprintf(query, "insert into scastd_serverinfo (serverURL, currentlisteners, peaklisteners, maxlisteners, averagetime, streamhits, time) values('%s', %d, %d, %d, %d, %d, NULL)", serverURL, sData.currentListeners, sData.maxListeners, sData.peakListeners, sData.avgTime, sData.streamHits);
                                                         db->query(query);
-						}
-						else {
-							sprintf(buf, "Bad data from %s\n", serverURL);
-							writeToLog(buf);
-						}
-					}
-				}
+                                                }
+                                                else {
+                                                        sprintf(buf, "Bad data from %s\n", serverURL);
+                                                        writeToLog(buf);
+                                                }
+                                        }
+                                } else {
+                                        sprintf(buf, "Failed to fetch data from %s\n", serverURL);
+                                        writeToLog(buf);
+                                }
+
 			}
 		}
 			
