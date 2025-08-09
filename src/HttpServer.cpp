@@ -25,7 +25,7 @@ HttpServer::~HttpServer() {
     stop();
 }
 
-bool HttpServer::start() {
+bool HttpServer::start(int port) {
 #if defined(__APPLE__) || defined(__linux__)
     if (daemon(0, 0) != 0) {
         return false;
@@ -36,7 +36,7 @@ bool HttpServer::start() {
     std::signal(SIGTERM, handle_signal);
 
     daemon_ = MHD_start_daemon(MHD_USE_INTERNAL_POLLING_THREAD,
-                               8333,
+                               port,
                                nullptr, nullptr,
                                &HttpServer::handleRequest, this,
                                MHD_OPTION_END);

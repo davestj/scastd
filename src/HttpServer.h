@@ -8,7 +8,7 @@ public:
     HttpServer();
     ~HttpServer();
 
-    bool start();
+    bool start(int port = 8333);
     void stop();
 
 private:

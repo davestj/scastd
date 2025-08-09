@@ -149,8 +149,12 @@ int main(int argc, char **argv)
                 fprintf(stderr, "Cannot load config file %s\n", configPath.c_str());
                 exit(1);
         }
-        if (!httpServer.start()) {
-                fprintf(stderr, "Failed to start HTTP server\n");
+        bool httpEnabled = cfg.Get("http_enabled", true);
+        int httpPort = cfg.Get("http_port", 8333);
+        if (httpEnabled) {
+                if (!httpServer.start(httpPort)) {
+                        fprintf(stderr, "Failed to start HTTP server on port %d\n", httpPort);
+                }
         }
         std::string dbUser = cfg.Get("username", "root");
         std::string dbPass = cfg.Get("password", "");
