@@ -24,16 +24,38 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <filesystem>
 #include <iostream>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
-Logger::Logger(const std::string &directory, bool consoleOut)
-    : logDir(directory), console(consoleOut) {
+Logger::Logger(const std::string &accessFile,
+               const std::string &errorFile,
+               const std::string &debugFile,
+               bool consoleOut)
+    : accessPath(accessFile),
+      errorPath(errorFile),
+      debugPath(debugFile),
+      console(consoleOut),
+      debugLevel(1),
+      syslogPort(0),
+      syslogProto(SyslogProto::UDP) {
+    openStreams();
+}
+
+void Logger::setLogFiles(const std::string &accessFile,
+                         const std::string &errorFile,
+                         const std::string &debugFile) {
+    std::lock_guard<std::mutex> lock(mtx);
+    accessPath = accessFile;
+    errorPath = errorFile;
+    debugPath = debugFile;
     openStreams();
 }
 
 void Logger::setLogDir(const std::string &directory) {
-    std::lock_guard<std::mutex> lock(mtx);
-    logDir = directory;
-    openStreams();
+    setLogFiles(directory + "/access.log",
+                directory + "/error.log",
+                directory + "/debug.log");
 }
 
 void Logger::setConsoleOutput(bool enable) {
@@ -41,31 +63,49 @@ void Logger::setConsoleOutput(bool enable) {
     console = enable;
 }
 
+void Logger::setDebugLevel(int level) {
+    std::lock_guard<std::mutex> lock(mtx);
+    if (level < 1) level = 1;
+    if (level > 4) level = 4;
+    debugLevel = level;
+}
+
+void Logger::setSyslog(const std::string &host, int port, SyslogProto proto) {
+    std::lock_guard<std::mutex> lock(mtx);
+    syslogHost = host;
+    syslogPort = port;
+    syslogProto = proto;
+}
+
 void Logger::logAccess(const std::string &message) {
-    write(accessStream, message, false);
+    write(accessStream, message, false, Level::Access);
 }
 
 void Logger::logError(const std::string &message) {
-    write(errorStream, message, true);
+    write(errorStream, message, true, Level::Error);
 }
 
-void Logger::logDebug(const std::string &message) {
-    write(debugStream, message, false);
+void Logger::logDebug(const std::string &message, int level) {
+    if (level <= debugLevel)
+        write(debugStream, message, false, Level::Debug);
 }
 
 void Logger::openStreams() {
-    if (logDir.empty())
-        logDir = ".";
-    std::filesystem::create_directories(logDir);
-    if (accessStream.is_open()) accessStream.close();
-    if (errorStream.is_open()) errorStream.close();
-    if (debugStream.is_open()) debugStream.close();
-    accessStream.open(logDir + "/access.log", std::ios::app);
-    errorStream.open(logDir + "/error.log", std::ios::app);
-    debugStream.open(logDir + "/debug.log", std::ios::app);
+    auto open = [](std::ofstream &stream, const std::string &path) {
+        if (stream.is_open()) stream.close();
+        std::filesystem::path p(path);
+        auto dir = p.parent_path();
+        if (!dir.empty())
+            std::filesystem::create_directories(dir);
+        stream.open(path, std::ios::app);
+    };
+
+    open(accessStream, accessPath);
+    open(errorStream, errorPath);
+    open(debugStream, debugPath);
 }
 
-void Logger::write(std::ofstream &stream, const std::string &message, bool err) {
+void Logger::write(std::ofstream &stream, const std::string &message, bool err, Level level) {
     std::lock_guard<std::mutex> lock(mtx);
     std::string msg = message;
     if (!msg.empty() && msg.back() != '\n')
@@ -78,4 +118,34 @@ void Logger::write(std::ofstream &stream, const std::string &message, bool err) 
         else
             std::cout << msg;
     }
+    sendToSyslog(msg, level);
+}
+
+void Logger::sendToSyslog(const std::string &message, Level /*level*/) {
+    if (syslogHost.empty() || syslogPort <= 0)
+        return;
+
+    int socktype = syslogProto == SyslogProto::UDP ? SOCK_DGRAM : SOCK_STREAM;
+    struct addrinfo hints{};
+    struct addrinfo *res = nullptr;
+    hints.ai_socktype = socktype;
+    hints.ai_family = AF_UNSPEC;
+    if (getaddrinfo(syslogHost.c_str(), std::to_string(syslogPort).c_str(), &hints, &res) != 0)
+        return;
+
+    int fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    if (fd < 0) {
+        freeaddrinfo(res);
+        return;
+    }
+
+    if (syslogProto == SyslogProto::TCP) {
+        if (connect(fd, res->ai_addr, res->ai_addrlen) == 0)
+            send(fd, message.c_str(), message.size(), 0);
+    } else {
+        sendto(fd, message.c_str(), message.size(), 0, res->ai_addr, res->ai_addrlen);
+    }
+
+    freeaddrinfo(res);
+    close(fd);
 }

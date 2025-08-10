@@ -30,26 +30,42 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 class Logger {
 public:
     enum class Level { Access, Error, Debug };
+    enum class SyslogProto { UDP, TCP };
 
-    explicit Logger(const std::string &directory = ".", bool console = false);
+    explicit Logger(const std::string &accessFile = "access.log",
+                    const std::string &errorFile = "error.log",
+                    const std::string &debugFile = "debug.log",
+                    bool console = false);
 
+    void setLogFiles(const std::string &accessFile,
+                     const std::string &errorFile,
+                     const std::string &debugFile);
     void setLogDir(const std::string &directory);
     void setConsoleOutput(bool enable);
+    void setDebugLevel(int level);
+    void setSyslog(const std::string &host, int port, SyslogProto proto);
 
     void logAccess(const std::string &message);
     void logError(const std::string &message);
-    void logDebug(const std::string &message);
+    void logDebug(const std::string &message, int level = 1);
 
 private:
-    std::string logDir;
+    std::string accessPath;
+    std::string errorPath;
+    std::string debugPath;
     bool console;
     std::ofstream accessStream;
     std::ofstream errorStream;
     std::ofstream debugStream;
     std::mutex mtx;
+    int debugLevel;
+    std::string syslogHost;
+    int syslogPort;
+    SyslogProto syslogProto;
 
-    void write(std::ofstream &stream, const std::string &message, bool err);
+    void write(std::ofstream &stream, const std::string &message, bool err, Level level);
     void openStreams();
+    void sendToSyslog(const std::string &message, Level level);
 };
 
 #endif // LOGGER_H

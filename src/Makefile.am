@@ -13,3 +13,5 @@ scastd_SOURCES = \
     db/MariaDBDatabase.cpp \
     db/PostgresDatabase.cpp \
     db/SQLiteDatabase.cpp
+
+scastd_LDADD = $(SYSLOG_LIBS)
