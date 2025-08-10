@@ -111,6 +111,9 @@ int dumpDatabase(const std::string &configPath, const std::string &dumpDir) {
                 logger.logError(msg);
                 return 1;
         }
+        std::string logDir = cfg.Get("log_dir", "./logs");
+        bool loggingEnabled = true;
+        logger.setLogDir(logDir);
         logger.setLogFiles(cfg.AccessLog(), cfg.ErrorLog(), cfg.DebugLog());
         logger.setConsoleOutput(cfg.Get("log_console", false));
         logger.setDebugLevel(cfg.DebugLevel());
@@ -119,7 +122,7 @@ int dumpDatabase(const std::string &configPath, const std::string &dumpDir) {
                         Logger::SyslogProto::TCP : Logger::SyslogProto::UDP;
                 logger.setSyslog(cfg.SyslogHost(), cfg.SyslogPort(), proto);
         }
-        logger.setEnabled(true);
+        logger.setEnabled(loggingEnabled);
 
         std::string dbUser = cfg.Get("username", "");
         std::string dbPass = cfg.Get("password", "");
@@ -335,6 +338,9 @@ int run(const std::string &configPath)
         std::string debugLog = cfg.DebugLog();
         bool consoleFlag = cfg.Get("log_console", false);
         int debugLevel = cfg.DebugLevel();
+        std::string logDir = cfg.Get("log_dir", "./logs");
+        bool loggingEnabled = true;
+        logger.setLogDir(logDir);
         logger.setLogFiles(accessLog, errorLog, debugLog);
         logger.setConsoleOutput(consoleFlag);
         logger.setDebugLevel(debugLevel);
@@ -343,7 +349,7 @@ int run(const std::string &configPath)
                         Logger::SyslogProto::TCP : Logger::SyslogProto::UDP;
                 logger.setSyslog(cfg.SyslogHost(), cfg.SyslogPort(), proto);
         }
-        logger.setEnabled(true);
+        logger.setEnabled(loggingEnabled);
         bool httpEnabled = cfg.Get("http_enabled", true);
         int httpPort = cfg.Get("http_port", 8333);
         std::string httpUser = cfg.Get("http_username", "");
