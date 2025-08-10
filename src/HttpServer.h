@@ -36,7 +36,10 @@ public:
     bool start(int port = 8333,
                const std::string &user = "",
                const std::string &pass = "",
-               int threads = 1);
+               int threads = 1,
+               bool ssl_enabled = false,
+               const std::string &cert = "",
+               const std::string &key = "");
     void stop();
 
 private:
@@ -54,6 +57,8 @@ private:
     std::chrono::steady_clock::time_point start_time_;
     std::string username_;
     std::string password_;
+    std::string cert_data_;
+    std::string key_data_;
 };
 
 } // namespace scastd
