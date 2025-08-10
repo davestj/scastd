@@ -117,7 +117,8 @@ TEST_CASE("HTTP server uptime requires auth") {
     curl_easy_cleanup(curl);
     server.stop();
 }
-
+#ifdef SCASD_ENABLE_HTTPS_TESTS
+// Optional test that exercises HTTPS support when certificates are provided.
 TEST_CASE("HTTPS server responds with status") {
     const char *certEnv = std::getenv("SSL_CERT");
     const char *keyEnv = std::getenv("SSL_KEY");
@@ -160,3 +161,4 @@ TEST_CASE("HTTPS server responds with status") {
     std::filesystem::remove(certPath);
     std::filesystem::remove(keyPath);
 }
+#endif
