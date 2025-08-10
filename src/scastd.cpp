@@ -55,7 +55,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 namespace scastd {
 
-Logger logger;
+Logger logger(false);
 int     paused = 0;
 int     exiting = 0;
 volatile sig_atomic_t reloadConfig = 0;
@@ -119,6 +119,7 @@ int dumpDatabase(const std::string &configPath, const std::string &dumpDir) {
                         Logger::SyslogProto::TCP : Logger::SyslogProto::UDP;
                 logger.setSyslog(cfg.SyslogHost(), cfg.SyslogPort(), proto);
         }
+        logger.setEnabled(true);
 
         std::string dbUser = cfg.Get("username", "");
         std::string dbPass = cfg.Get("password", "");
@@ -342,6 +343,7 @@ int run(const std::string &configPath)
                         Logger::SyslogProto::TCP : Logger::SyslogProto::UDP;
                 logger.setSyslog(cfg.SyslogHost(), cfg.SyslogPort(), proto);
         }
+        logger.setEnabled(true);
         bool httpEnabled = cfg.Get("http_enabled", true);
         int httpPort = cfg.Get("http_port", 8333);
         std::string httpUser = cfg.Get("http_username", "");

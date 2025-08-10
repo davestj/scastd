@@ -28,7 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/socket.h>
 #include <unistd.h>
 
-Logger::Logger(const std::string &accessFile,
+Logger::Logger(bool enabledInit,
+               const std::string &accessFile,
                const std::string &errorFile,
                const std::string &debugFile,
                bool consoleOut)
@@ -36,10 +37,12 @@ Logger::Logger(const std::string &accessFile,
       errorPath(errorFile),
       debugPath(debugFile),
       console(consoleOut),
+      enabled(enabledInit),
       debugLevel(1),
       syslogPort(0),
       syslogProto(SyslogProto::UDP) {
-    openStreams();
+    if (enabled)
+        openStreams();
 }
 
 void Logger::setLogFiles(const std::string &accessFile,
@@ -49,7 +52,8 @@ void Logger::setLogFiles(const std::string &accessFile,
     accessPath = accessFile;
     errorPath = errorFile;
     debugPath = debugFile;
-    openStreams();
+    if (enabled)
+        openStreams();
 }
 
 void Logger::setLogDir(const std::string &directory) {
@@ -75,6 +79,20 @@ void Logger::setSyslog(const std::string &host, int port, SyslogProto proto) {
     syslogHost = host;
     syslogPort = port;
     syslogProto = proto;
+}
+
+void Logger::setEnabled(bool enable) {
+    std::lock_guard<std::mutex> lock(mtx);
+    if (enabled == enable)
+        return;
+    enabled = enable;
+    if (enabled) {
+        openStreams();
+    } else {
+        if (accessStream.is_open()) accessStream.close();
+        if (errorStream.is_open()) errorStream.close();
+        if (debugStream.is_open()) debugStream.close();
+    }
 }
 
 void Logger::logAccess(const std::string &message) {
@@ -107,6 +125,8 @@ void Logger::openStreams() {
 
 void Logger::write(std::ofstream &stream, const std::string &message, bool err, Level level) {
     std::lock_guard<std::mutex> lock(mtx);
+    if (!enabled)
+        return;
     std::string msg = message;
     if (!msg.empty() && msg.back() != '\n')
         msg.push_back('\n');

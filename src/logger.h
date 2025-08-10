@@ -32,10 +32,13 @@ public:
     enum class Level { Access, Error, Debug };
     enum class SyslogProto { UDP, TCP };
 
-    explicit Logger(const std::string &accessFile = "access.log",
+    explicit Logger(bool enabled = false,
+                    const std::string &accessFile = "access.log",
                     const std::string &errorFile = "error.log",
                     const std::string &debugFile = "debug.log",
                     bool console = false);
+
+    void setEnabled(bool enable);
 
     void setLogFiles(const std::string &accessFile,
                      const std::string &errorFile,
@@ -54,6 +57,7 @@ private:
     std::string errorPath;
     std::string debugPath;
     bool console;
+    bool enabled;
     std::ofstream accessStream;
     std::ofstream errorStream;
     std::ofstream debugStream;
