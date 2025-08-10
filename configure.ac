@@ -45,6 +45,9 @@ PKG_CHECK_MODULES([OPENSSL], [openssl], [], [AC_MSG_ERROR([OpenSSL library not f
 CXXFLAGS="$CXXFLAGS $OPENSSL_CFLAGS"
 LIBS="$LIBS $OPENSSL_LIBS"
 
+AC_CHECK_LIB([syslog], [openlog], [SYSLOG_LIBS="-lsyslog"], [SYSLOG_LIBS=""])
+AC_SUBST([SYSLOG_LIBS])
+
 
 dnl Make substitutions
 AC_SUBST(CXXFLAGS)
