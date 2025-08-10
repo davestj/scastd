@@ -47,6 +47,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: Validate SSL certificate
+        run: |
+          if [ -z "$SSL_CERT" ] || [ ! -f "$SSL_CERT" ]; then
+            echo "SSL certificate file not found: $SSL_CERT" >&2
+            exit 1
+          fi
+          openssl x509 -checkend 0 -noout -in "$SSL_CERT"
+      - name: Test curl with insecure flag
+        run: |
+          curl --insecure -sS https://self-signed.badssl.com/ -o /dev/null
       - name: Install dependencies (Debian/Ubuntu)
         if: contains('debian-12 ubuntu-22.04 ubuntu-24.04', matrix.os)
         run: |
