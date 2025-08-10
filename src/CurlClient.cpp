@@ -23,6 +23,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "CurlClient.h"
 
 #include <curl/curl.h>
+#include "logger.h"
+
+namespace scastd { extern Logger logger; }
 
 namespace {
 size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
@@ -39,9 +42,11 @@ bool CurlClient::fetchUrl(const std::string &url, std::string &response,
                           long *httpCode) const {
     CURL *curl = curl_easy_init();
     if (!curl) {
+        scastd::logger.logError("Failed to initialize curl");
         return false;
     }
 
+    scastd::logger.logDebug(std::string("Fetching URL: ") + url);
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
@@ -56,8 +61,12 @@ bool CurlClient::fetchUrl(const std::string &url, std::string &response,
     CURLcode res = curl_easy_perform(curl);
     if (res == CURLE_OK && httpCode) {
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, httpCode);
+        scastd::logger.logDebug(std::string("HTTP status: ") + std::to_string(*httpCode));
+    } else if (res != CURLE_OK) {
+        scastd::logger.logError(std::string("curl_easy_perform failed: ") + curl_easy_strerror(res));
     }
     curl_easy_cleanup(curl);
+    scastd::logger.logDebug(std::string("Fetched ") + std::to_string(response.size()) + " bytes from " + url);
 
     return res == CURLE_OK;
 }

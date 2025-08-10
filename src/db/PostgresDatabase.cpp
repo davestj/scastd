@@ -23,6 +23,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "PostgresDatabase.h"
 #include <iostream>
 #include "i18n.h"
+#include "logger.h"
+
+namespace scastd { extern Logger logger; }
 
 PostgresDatabase::PostgresDatabase() : conn(nullptr), result(nullptr), currentRow(0) {}
 
@@ -51,9 +54,10 @@ bool PostgresDatabase::connect(const std::string &username,
     }
     conn = PQconnectdb(conninfo.c_str());
     if (PQstatus(conn) != CONNECTION_OK) {
-        std::cerr << _("Failed to connect to database: ") << PQerrorMessage(conn) << std::endl;
+        scastd::logger.logError(std::string(_("Failed to connect to database: ")) + PQerrorMessage(conn));
         return false;
     }
+    scastd::logger.logDebug(std::string("Postgres connected: ") + host + ":" + std::to_string(port) + "/" + dbname);
     return true;
 }
 
@@ -62,10 +66,11 @@ bool PostgresDatabase::query(const std::string &queryStr) {
         PQclear(result);
         result = nullptr;
     }
+    scastd::logger.logDebug(std::string("Postgres query: ") + queryStr);
     result = PQexec(conn, queryStr.c_str());
     ExecStatusType status = PQresultStatus(result);
     if (status != PGRES_TUPLES_OK && status != PGRES_COMMAND_OK) {
-        std::cerr << _("Query failed: ") << PQerrorMessage(conn) << std::endl;
+        scastd::logger.logError(std::string(_("Query failed: ")) + PQerrorMessage(conn));
         return false;
     }
     currentRow = 0;

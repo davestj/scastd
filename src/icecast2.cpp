@@ -24,8 +24,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <cstdlib>
+#include "logger.h"
 
 namespace scastd {
+
+extern Logger logger;
 
 Icecast2::Icecast2(const std::string &h,
                    int p,
@@ -41,20 +44,24 @@ bool Icecast2::fetchStats(std::vector<StreamInfo> &stats, std::string &error) co
     }
     url += host + ":" + std::to_string(port) + "/admin/stats.xml";
 
+    logger.logDebug(std::string("Fetching Icecast stats from ") + url);
     std::string response;
     long http_code = 0;
     if (!http.fetchUrl(url, response, 0, false, "scastd/1.0", &http_code)) {
         error = "Failed to fetch stats";
+        logger.logError(error);
         return false;
     }
     if (http_code != 200) {
         error = "HTTP response code " + std::to_string(http_code);
+        logger.logError(error);
         return false;
     }
 
     xmlDocPtr doc = xmlParseMemory(response.c_str(), response.size());
     if (!doc) {
         error = "Failed to parse XML";
+        logger.logError(error);
         return false;
     }
 
@@ -62,6 +69,7 @@ bool Icecast2::fetchStats(std::vector<StreamInfo> &stats, std::string &error) co
     if (!root || xmlStrcmp(root->name, BAD_CAST "icestats") != 0) {
         xmlFreeDoc(doc);
         error = "Unexpected XML format";
+        logger.logError(error);
         return false;
     }
 
@@ -96,10 +104,13 @@ bool Icecast2::fetchStats(std::vector<StreamInfo> &stats, std::string &error) co
                 xmlFree(content);
             }
             stats.push_back(info);
+            logger.logDebug(std::string("Stream ") + info.mount +
+                            " listeners=" + std::to_string(info.listeners));
         }
     }
 
     xmlFreeDoc(doc);
+    logger.logDebug("Fetched " + std::to_string(stats.size()) + " streams");
     return true;
 }
 

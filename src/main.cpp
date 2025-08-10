@@ -21,7 +21,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "scastd.h"
+#include "Config.h"
+#include "logger.h"
 #include <string>
+
+namespace scastd { extern Logger logger; }
 
 int main(int argc, char **argv) {
     std::string configPath = "scastd.conf";
@@ -37,6 +41,20 @@ int main(int argc, char **argv) {
         } else {
             configPath = arg;
         }
+    }
+
+    Config cfg;
+    if (cfg.Load(configPath)) {
+        scastd::logger.setLogFiles(cfg.AccessLog(), cfg.ErrorLog(), cfg.DebugLog());
+        scastd::logger.setConsoleOutput(cfg.Get("log_console", false));
+        scastd::logger.setDebugLevel(cfg.DebugLevel());
+        if (cfg.SyslogEnabled()) {
+            Logger::SyslogProto proto = cfg.SyslogProtocol() == "tcp" ?
+                                       Logger::SyslogProto::TCP : Logger::SyslogProto::UDP;
+            scastd::logger.setSyslog(cfg.SyslogHost(), cfg.SyslogPort(), proto);
+        }
+    } else {
+        scastd::logger.logError(std::string("Cannot load config file ") + configPath);
     }
 
     if (doDump) {

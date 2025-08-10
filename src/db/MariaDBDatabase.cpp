@@ -24,6 +24,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <iostream>
 #include <cstring>
 #include "i18n.h"
+#include "logger.h"
+
+namespace scastd { extern Logger logger; }
 
 MariaDBDatabase::MariaDBDatabase() : pResult(nullptr) {
     mysql_init(&mySQL);
@@ -45,9 +48,10 @@ bool MariaDBDatabase::connect(const std::string &username,
     mysql_options(&mySQL, MYSQL_READ_DEFAULT_GROUP, "scastd");
     (void)sslmode;
     if (!mysql_real_connect(&mySQL, host.c_str(), username.c_str(), password.c_str(), dbname.c_str(), port, NULL, 0)) {
-        std::cerr << _("Failed to connect to database: ") << mysql_error(&mySQL) << std::endl;
+        scastd::logger.logError(std::string(_("Failed to connect to database: ")) + mysql_error(&mySQL));
         return false;
     }
+    scastd::logger.logDebug(std::string("MariaDB connected to ") + host + ":" + std::to_string(port) + "/" + dbname);
     return true;
 }
 
@@ -56,8 +60,9 @@ bool MariaDBDatabase::query(const std::string &queryStr) {
         mysql_free_result(pResult);
         pResult = nullptr;
     }
+    scastd::logger.logDebug(std::string("MariaDB query: ") + queryStr);
     if (mysql_query(&mySQL, queryStr.c_str()) != 0) {
-        std::cerr << _("Misformed query (") << queryStr << _(")\nError: ") << mysql_error(&mySQL) << std::endl;
+        scastd::logger.logError(std::string(_("Misformed query (")) + queryStr + _(") Error: ") + mysql_error(&mySQL));
         return false;
     }
     pResult = mysql_store_result(&mySQL);
