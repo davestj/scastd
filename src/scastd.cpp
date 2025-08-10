@@ -49,7 +49,8 @@ std::string logDir = ".";
 size_t	logMaxSize = 1024 * 1024;
 int	logRetention = 5;
 int	paused = 0;
-int	exiting = 0;
+int     exiting = 0;
+volatile sig_atomic_t reloadConfig = 0;
 
 void parseWebdata(xmlNodePtr cur)
 {
@@ -180,6 +181,13 @@ void sigINT(int sig)
         exiting = 1;
 }
 
+void sigHUP(int sig)
+{
+	writeToLog("Caught SIGHUP - Reloading config\n");
+	reloadConfig = 1;
+}
+
+
 typedef struct tagServerData {
 	int	currentListeners;
 	int	peakListeners;
@@ -278,6 +286,10 @@ int main(int argc, char **argv)
                 fprintf(stderr, "Cannot install handler for SIGINT\n");
                 exit(1);
         }
+        if (signal(SIGHUP, sigHUP) == SIG_ERR) {
+                fprintf(stderr, "Cannot install handler for SIGHUP\n");
+                exit(1);
+        }
         db->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
         db2->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
         sprintf(query, "select sleeptime from scastd_runtime");
@@ -294,6 +306,64 @@ int main(int argc, char **argv)
 	writeToLog("SCASTD starting...\n");
 
 	while (1) {
+                if (reloadConfig) {
+                        reloadConfig = 0;
+                        Config newCfg;
+                        if (newCfg.Load(configPath)) {
+                                cfg = newCfg;
+                                std::string newLogDir = cfg.Get("log_dir", ".");
+                                size_t newLogMaxSize = (size_t)cfg.Get("log_max_size", 1024 * 1024);
+                                int newLogRetention = cfg.Get("log_retention", 5);
+                                if (newLogDir != logDir || newLogMaxSize != logMaxSize || newLogRetention != logRetention) {
+                                        logDir = newLogDir;
+                                        logMaxSize = newLogMaxSize;
+                                        logRetention = newLogRetention;
+                                        snprintf(logfile, sizeof(logfile), "%s/scastd.log", logDir.c_str());
+                                        closeLog();
+                                }
+                                std::string newDbType = cfg.Get("DatabaseType", dbType);
+                                std::string newDbUser = cfg.Get("username", dbUser);
+                                std::string newDbPass = cfg.Get("password", dbPass);
+                                std::string newDbHost = cfg.Get("host", dbHost);
+                                int newDbPort = cfg.Get("port", dbPort);
+                                std::string newDbName = cfg.Get("dbname", dbName);
+                                std::string newDbSSLMode = cfg.Get("sslmode", dbSSLMode);
+                                if (newDbType != dbType) {
+                                        if (db) { db->disconnect(); delete db; }
+                                        if (db2) { db2->disconnect(); delete db2; }
+                                        if (newDbType == "mysql") {
+                                                db = new MySQLDatabase();
+                                                db2 = new MySQLDatabase();
+                                        } else if (newDbType == "mariadb") {
+                                                db = new MariaDBDatabase();
+                                                db2 = new MariaDBDatabase();
+                                        } else if (newDbType == "postgres") {
+                                                db = new PostgresDatabase();
+                                                db2 = new PostgresDatabase();
+                                        } else {
+                                                writeToLog("Unknown DatabaseType. Falling back to mysql\n");
+                                                db = new MySQLDatabase();
+                                                db2 = new MySQLDatabase();
+                                                newDbType = "mysql";
+                                        }
+                                        dbType = newDbType;
+                                } else {
+                                        if (db) db->disconnect();
+                                        if (db2) db2->disconnect();
+                                }
+                                dbUser = newDbUser;
+                                dbPass = newDbPass;
+                                dbHost = newDbHost;
+                                dbPort = newDbPort;
+                                dbName = newDbName;
+                                dbSSLMode = newDbSSLMode;
+                                db->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
+                                db2->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
+                                writeToLog("Configuration reloaded\n");
+                        } else {
+                                writeToLog("Failed to reload config\n");
+                        }
+                }
 		if (exiting) {
 			writeToLog("Exiting...\n");
 			break;
