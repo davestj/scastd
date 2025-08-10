@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "CurlWrapper.h"
 #include "HttpServer.h"
+#include "UrlParser.h"
 
 FILE	*filep_log = 0;
 char	logfile[2046] = "";
@@ -196,8 +197,6 @@ int main(int argc, char **argv)
 	char	IP[255] = "";
 	int	port = 0;
 	char	password[255] = "";
-	char	*p2;
-	char	*p3;
 	int	sleeptime = 0;
 	int	insert_flag = 0;
         std::string configPath = "scastd.conf";
@@ -291,15 +290,10 @@ int main(int argc, char **argv)
                                 port = 0;
                                 if (!row[0].empty()) {
                                         strcpy(serverURL, row[0].c_str());
-                                        p2 = strstr(serverURL, "http://");
-                                        if (p2) {
-                                                p2 = p2 + strlen("http://");
-                                                p3 = strchr(p2, ':');
-                                                if (p3) {
-                                                        strncpy(IP, p2, p3-p2);
-                                                        p3++;
-                                                        port = atoi(p3);
-                                                }
+                                        std::string ipStr;
+                                        if (parseHostPort(row[0], ipStr, port)) {
+                                                strncpy(IP, ipStr.c_str(), sizeof(IP) - 1);
+                                                IP[sizeof(IP) - 1] = '\0';
                                         }
 
                                 }

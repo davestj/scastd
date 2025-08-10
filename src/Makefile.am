@@ -4,6 +4,7 @@ scastd_SOURCES = \
     Config.cpp \
     CurlWrapper.cpp \
     HttpServer.cpp \
+    UrlParser.cpp \
     icecast2.cpp \
     db/MySQLDatabase.cpp \
     db/MariaDBDatabase.cpp \
