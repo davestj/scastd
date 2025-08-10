@@ -22,9 +22,12 @@ Version: ${VERSION}
 Section: net
 Priority: optional
 Architecture: $(dpkg --print-architecture)
-Depends: libcurl4, libmicrohttpd12, libmariadb3, libpq5
+Depends: libcurl4, libmicrohttpd12, libmariadb3, libpq5, certbot
 Maintainer: unknown
 Description: Scast Daemon
 CTRL
+
+cp packaging/debian/postinst "$BUILD_DIR/DEBIAN/postinst"
+chmod 755 "$BUILD_DIR/DEBIAN/postinst"
 
 dpkg-deb --build "$BUILD_DIR" "scastd_${VERSION}_$(dpkg --print-architecture).deb"

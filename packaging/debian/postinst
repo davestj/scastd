@@ -1,0 +1,20 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "configure" ]; then
+    if [ -x /usr/share/scastd/setup_certbot.sh ]; then
+        if [ -n "$SCASD_CERT_EMAIL" ] && [ -n "$SCASD_CERT_DOMAINS" ]; then
+            DOMAINS=""
+            for d in $(echo "$SCASD_CERT_DOMAINS" | tr ',' ' '); do
+                DOMAINS="$DOMAINS -d $d"
+            done
+            /usr/share/scastd/setup_certbot.sh -e "$SCASD_CERT_EMAIL" $DOMAINS || true
+        else
+            echo "Run /usr/share/scastd/setup_certbot.sh -e <email> -d <domain> [...] to obtain certificates."
+        fi
+    fi
+    systemctl enable --now certbot.timer >/dev/null 2>&1 || true
+fi
+
+#DEBHELPER#
+
