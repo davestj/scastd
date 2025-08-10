@@ -53,6 +53,6 @@ dnl Make substitutions
 AC_SUBST(CXXFLAGS)
 AC_SUBST(LIBS)
 
-AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile scripts/Makefile])
 AC_OUTPUT
 

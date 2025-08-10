@@ -102,6 +102,22 @@ Install the provided `scastd.service` to run the daemon under systemd:
    sudo systemctl enable --now scastd.service
    ```
 
+Certificate management
+~~~~~~~~~~~~~~~~~~~~~~
+The script `setup_certbot.sh` is installed to `/usr/share/scastd/` and
+can be used to obtain Let's Encrypt certificates.  When installing the
+Debian package, set the `SCASD_CERT_EMAIL` and `SCASD_CERT_DOMAINS`
+environment variables to automatically invoke the script.  Otherwise you
+may run it manually:
+
+```
+sudo /usr/share/scastd/setup_certbot.sh -e admin@example.com -d example.com [-d www.example.com]
+```
+
+The script installs Certbot and enables automated renewal via
+`systemctl enable --now certbot.timer` on Linux or `brew services start
+certbot` on macOS.
+
 Basic Installation
 ==================
 
