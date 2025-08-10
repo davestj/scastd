@@ -10,4 +10,5 @@ scastd_SOURCES = \
     icecast2.cpp \
     db/MySQLDatabase.cpp \
     db/MariaDBDatabase.cpp \
-    db/PostgresDatabase.cpp
+    db/PostgresDatabase.cpp \
+    db/SQLiteDatabase.cpp

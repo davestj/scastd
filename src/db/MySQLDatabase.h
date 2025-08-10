@@ -2,7 +2,7 @@
 #define MYSQLDATABASE_H
 
 #include "IDatabase.h"
-#include <mysql.h>
+#include <mariadb/mysql.h>
 
 class MySQLDatabase : public IDatabase {
 public:
