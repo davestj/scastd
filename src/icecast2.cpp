@@ -5,6 +5,8 @@
 #include <libxml/tree.h>
 #include <cstdlib>
 
+namespace scastd {
+
 namespace {
 size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
     size_t totalSize = size * nmemb;
@@ -104,4 +106,6 @@ bool Icecast2::fetchStats(std::vector<StreamInfo> &stats, std::string &error) co
     xmlFreeDoc(doc);
     return true;
 }
+
+} // namespace scastd
 

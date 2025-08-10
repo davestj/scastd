@@ -3,6 +3,8 @@
 #include <atomic>
 #include <microhttpd.h>
 
+namespace scastd {
+
 class HttpServer {
 public:
     HttpServer();
@@ -24,4 +26,6 @@ private:
     std::atomic<bool> running_;
     struct MHD_Daemon *daemon_;
 };
+
+} // namespace scastd
 

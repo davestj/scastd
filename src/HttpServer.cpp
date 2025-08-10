@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <cstdlib>
 
+namespace scastd {
+
 namespace {
 HttpServer *g_server = nullptr;
 
@@ -18,7 +20,7 @@ void handle_signal(int) {
 
 static const char kJsonResponse[] = "{\"status\":\"ok\"}";
 static const char kXmlResponse[] = "<status>ok</status>";
-}
+} // namespace
 
 HttpServer::HttpServer() : running_(false), daemon_(nullptr) {}
 
@@ -100,4 +102,6 @@ MHD_Result HttpServer::handleRequest(void *cls,
     MHD_destroy_response(response);
     return static_cast<MHD_Result>(ret);
 }
+
+} // namespace scastd
 

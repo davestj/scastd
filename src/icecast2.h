@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+namespace scastd {
+
 // Fetch Icecast server statistics via HTTP and expose basic fields.
 class Icecast2 {
 public:
@@ -29,5 +31,7 @@ private:
     std::string username;
     std::string password;
 };
+
+} // namespace scastd
 
 #endif // ICECAST2_H

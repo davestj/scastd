@@ -181,7 +181,7 @@ typedef struct tagServerData {
 
 int main(int argc, char **argv)
 {
-        HttpServer httpServer;
+        scastd::HttpServer httpServer;
         xmlDocPtr doc;
 	IDatabase       *db = NULL;
 	IDatabase       *db2 = NULL;
