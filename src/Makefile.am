@@ -2,7 +2,7 @@ bin_PROGRAMS = scastd
 scastd_SOURCES = \
     scastd.cpp \
     Config.cpp \
-    CurlWrapper.cpp \
+    CurlClient.cpp \
     HttpServer.cpp \
     UrlParser.cpp \
     icecast2.cpp \
