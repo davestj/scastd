@@ -78,6 +78,10 @@ endpoint:
 curl http://localhost:8333/status.json
 ```
 
+Send `SIGHUP` to the running process to reload `scastd.conf`. Updated
+settings such as the log directory or database credentials take effect
+without restarting.
+
 
 Troubleshooting
 ---------------
