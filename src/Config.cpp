@@ -163,6 +163,14 @@ int Config::DebugLevel() const {
     return Get("debug_level", 0);
 }
 
+size_t Config::LogMaxSize() const {
+    return static_cast<size_t>(Get("log_max_size", 0));
+}
+
+int Config::LogRetention() const {
+    return Get("log_retention", 0);
+}
+
 bool Config::SyslogEnabled() const {
     return Get("syslog_enabled", false);
 }

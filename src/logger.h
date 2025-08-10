@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string>
 #include <fstream>
 #include <mutex>
+#include <cstddef>
 
 class Logger {
 public:
@@ -47,6 +48,7 @@ public:
     void setConsoleOutput(bool enable);
     void setDebugLevel(int level);
     void setSyslog(const std::string &host, int port, SyslogProto proto);
+    void setRotation(size_t maxBytes, int retentionCount);
 
     void logAccess(const std::string &message);
     void logError(const std::string &message);
@@ -66,10 +68,14 @@ private:
     std::string syslogHost;
     int syslogPort;
     SyslogProto syslogProto;
+    size_t maxSize;
+    int retention;
 
-    void write(std::ofstream &stream, const std::string &message, bool err, Level level);
+    void write(std::ofstream &stream, const std::string &path,
+               const std::string &message, bool err, Level level);
     void openStreams();
     void sendToSyslog(const std::string &message, Level level);
+    void rotateIfNeeded(std::ofstream &stream, const std::string &path);
 };
 
 #endif // LOGGER_H

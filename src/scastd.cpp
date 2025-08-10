@@ -117,6 +117,7 @@ int dumpDatabase(const std::string &configPath, const std::string &dumpDir) {
         logger.setLogFiles(cfg.AccessLog(), cfg.ErrorLog(), cfg.DebugLog());
         logger.setConsoleOutput(cfg.Get("log_console", false));
         logger.setDebugLevel(cfg.DebugLevel());
+        logger.setRotation(cfg.LogMaxSize(), cfg.LogRetention());
         if (cfg.SyslogEnabled()) {
                 Logger::SyslogProto proto = cfg.SyslogProtocol() == "tcp" ?
                         Logger::SyslogProto::TCP : Logger::SyslogProto::UDP;
@@ -344,6 +345,7 @@ int run(const std::string &configPath)
         logger.setLogFiles(accessLog, errorLog, debugLog);
         logger.setConsoleOutput(consoleFlag);
         logger.setDebugLevel(debugLevel);
+        logger.setRotation(cfg.LogMaxSize(), cfg.LogRetention());
         if (cfg.SyslogEnabled()) {
                 Logger::SyslogProto proto = cfg.SyslogProtocol() == "tcp" ?
                         Logger::SyslogProto::TCP : Logger::SyslogProto::UDP;

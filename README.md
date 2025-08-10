@@ -66,8 +66,10 @@ syslog_protocol udp
 The log settings allow fine-grained control over where messages are
 written. `access_log`, `error_log`, and `debug_log` may be absolute
 paths or names relative to `log_dir` and default to `access.log`,
-`error.log`, and `debug.log` respectively. `debug_level` sets the
-verbosity for the debug log from 1 (least verbose) to 4 (most verbose).
+`error.log`, and `debug.log` respectively. `log_max_size` controls the
+maximum size in bytes before a log file is rotated, while
+`log_retention` specifies how many rotated logs are retained. `debug_level`
+sets the verbosity for the debug log from 1 (least verbose) to 4 (most verbose).
 When `syslog_enabled` is `true`, log messages are also forwarded to a
 remote syslog server defined by `syslog_host`, `syslog_port` (default
 `514`), and `syslog_protocol` (`udp` or `tcp`).

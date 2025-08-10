@@ -40,7 +40,9 @@ Logger::Logger(bool enabledInit,
       enabled(enabledInit),
       debugLevel(1),
       syslogPort(0),
-      syslogProto(SyslogProto::UDP) {
+      syslogProto(SyslogProto::UDP),
+      maxSize(0),
+      retention(0) {
     if (enabled)
         openStreams();
 }
@@ -81,6 +83,12 @@ void Logger::setSyslog(const std::string &host, int port, SyslogProto proto) {
     syslogProto = proto;
 }
 
+void Logger::setRotation(size_t maxBytes, int retentionCount) {
+    std::lock_guard<std::mutex> lock(mtx);
+    maxSize = maxBytes;
+    retention = retentionCount;
+}
+
 void Logger::setEnabled(bool enable) {
     std::lock_guard<std::mutex> lock(mtx);
     if (enabled == enable)
@@ -96,16 +104,16 @@ void Logger::setEnabled(bool enable) {
 }
 
 void Logger::logAccess(const std::string &message) {
-    write(accessStream, message, false, Level::Access);
+    write(accessStream, accessPath, message, false, Level::Access);
 }
 
 void Logger::logError(const std::string &message) {
-    write(errorStream, message, true, Level::Error);
+    write(errorStream, errorPath, message, true, Level::Error);
 }
 
 void Logger::logDebug(const std::string &message, int level) {
     if (level <= debugLevel)
-        write(debugStream, message, false, Level::Debug);
+        write(debugStream, debugPath, message, false, Level::Debug);
 }
 
 void Logger::openStreams() {
@@ -123,10 +131,12 @@ void Logger::openStreams() {
     open(debugStream, debugPath);
 }
 
-void Logger::write(std::ofstream &stream, const std::string &message, bool err, Level level) {
+void Logger::write(std::ofstream &stream, const std::string &path,
+                   const std::string &message, bool err, Level level) {
     std::lock_guard<std::mutex> lock(mtx);
     if (!enabled)
         return;
+    rotateIfNeeded(stream, path);
     std::string msg = message;
     if (!msg.empty() && msg.back() != '\n')
         msg.push_back('\n');
@@ -139,6 +149,25 @@ void Logger::write(std::ofstream &stream, const std::string &message, bool err, 
             std::cout << msg;
     }
     sendToSyslog(msg, level);
+}
+
+void Logger::rotateIfNeeded(std::ofstream &stream, const std::string &path) {
+    if (maxSize == 0 || retention <= 0)
+        return;
+    std::streampos pos = stream.tellp();
+    if (pos < static_cast<std::streampos>(maxSize))
+        return;
+    stream.close();
+    for (int i = retention; i >= 1; --i) {
+        std::string from = path + (i == 1 ? "" : "." + std::to_string(i - 1));
+        std::string to = path + "." + std::to_string(i);
+        if (std::filesystem::exists(from)) {
+            if (i == retention)
+                std::filesystem::remove(to);
+            std::filesystem::rename(from, to);
+        }
+    }
+    stream.open(path, std::ios::trunc);
 }
 
 void Logger::sendToSyslog(const std::string &message, Level /*level*/) {
