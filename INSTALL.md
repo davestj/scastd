@@ -3,9 +3,11 @@ Dependencies
 
 The following libraries are required to build scastd:
 
-* libmicrohttpd or Boost.Beast
+* libxml2
 * libcurl
+* MySQL client library (libmysqlclient or MariaDB equivalent)
 * libpq (PostgreSQL client library)
+* libmicrohttpd
 
 Platform-specific build notes
 -----------------------------
@@ -37,7 +39,7 @@ Install Apple's command line tools and Homebrew, then fetch build dependencies.
 
    ```
    brew install autoconf automake libtool pkg-config \
-                libmicrohttpd libcurl mariadb-connector-c postgresql
+                libmicrohttpd libcurl libxml2 mariadb-connector-c postgresql
    ```
 
 Then build and run the tests:
@@ -55,7 +57,7 @@ Install dependencies with APT:
 ```
 sudo apt-get install build-essential autoconf automake libtool pkg-config \
                      libmicrohttpd-dev libcurl4-openssl-dev libmariadb-dev \
-                     libpq-dev
+                     libpq-dev libxml2-dev
 ```
 
 Then build and run the tests:

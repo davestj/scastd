@@ -13,9 +13,29 @@ dnl Use a modern C++ compiler with Linux specific options
 CXXFLAGS="$CXXFLAGS -std=c++17 -Wall -D_GNU_SOURCE"
 
 dnl Checks for required libraries
-PKG_CHECK_MODULES([DEPS], [libxml-2.0 libcurl mysqlclient libpq libmicrohttpd])
-CXXFLAGS="$CXXFLAGS $DEPS_CFLAGS"
-LIBS="$LIBS $DEPS_LIBS"
+PKG_CHECK_MODULES([LIBXML2], [libxml-2.0], [], [AC_MSG_ERROR([libxml2 library not found; install libxml2-dev.])])
+CXXFLAGS="$CXXFLAGS $LIBXML2_CFLAGS"
+LIBS="$LIBS $LIBXML2_LIBS"
+
+PKG_CHECK_MODULES([LIBCURL], [libcurl], [], [AC_MSG_ERROR([libcurl library not found; install libcurl development files.])])
+CXXFLAGS="$CXXFLAGS $LIBCURL_CFLAGS"
+LIBS="$LIBS $LIBCURL_LIBS"
+
+PKG_CHECK_MODULES([MYSQLCLIENT], [mysqlclient],
+  [CXXFLAGS="$CXXFLAGS $MYSQLCLIENT_CFLAGS"
+   LIBS="$LIBS $MYSQLCLIENT_LIBS"],
+  [PKG_CHECK_MODULES([MYSQLCLIENT], [libmariadb],
+     [CXXFLAGS="$CXXFLAGS $MYSQLCLIENT_CFLAGS"
+      LIBS="$LIBS $MYSQLCLIENT_LIBS"],
+     [AC_MSG_ERROR([MySQL client library not found; install libmysqlclient-dev or libmariadb-dev.])])])
+
+PKG_CHECK_MODULES([LIBPQ], [libpq], [], [AC_MSG_ERROR([PostgreSQL client library (libpq) not found; install libpq-dev.])])
+CXXFLAGS="$CXXFLAGS $LIBPQ_CFLAGS"
+LIBS="$LIBS $LIBPQ_LIBS"
+
+PKG_CHECK_MODULES([LIBMICROHTTPD], [libmicrohttpd], [], [AC_MSG_ERROR([libmicrohttpd library not found; install libmicrohttpd-dev.])])
+CXXFLAGS="$CXXFLAGS $LIBMICROHTTPD_CFLAGS"
+LIBS="$LIBS $LIBMICROHTTPD_LIBS"
 
 dnl Make substitutions
 AC_SUBST(CXXFLAGS)
