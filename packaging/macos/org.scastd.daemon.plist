@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>org.scastd.daemon</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/scastd</string>
+    <string>-c</string>
+    <string>/usr/local/etc/scastd.conf</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/usr/local/var/log/scastd.log</string>
+  <key>StandardErrorPath</key>
+  <string>/usr/local/var/log/scastd.err</string>
+</dict>
+</plist>
