@@ -1,5 +1,6 @@
 bin_PROGRAMS = scastd
 scastd_SOURCES = \
+    main.cpp \
     scastd.cpp \
     Config.cpp \
     CurlClient.cpp \
