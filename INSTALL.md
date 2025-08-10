@@ -68,6 +68,29 @@ Then build and run the tests:
 make && make check
 ```
 
+Systemd service
+~~~~~~~~~~~~~~~~
+Install the provided `scastd.service` to run the daemon under systemd:
+
+1. Copy the file into `/etc/systemd/system/`:
+
+   ```
+   sudo cp scastd.service /etc/systemd/system/
+   ```
+
+2. Create a dedicated user for the service if needed:
+
+   ```
+   sudo useradd --system --no-create-home --shell /usr/sbin/nologin scastd
+   ```
+
+3. Reload systemd and enable the service:
+
+   ```
+   sudo systemctl daemon-reload
+   sudo systemctl enable --now scastd.service
+   ```
+
 Basic Installation
 ==================
 
