@@ -5,6 +5,7 @@ scastd_SOURCES = \
     CurlClient.cpp \
     HttpServer.cpp \
     UrlParser.cpp \
+    i18n.cpp \
     icecast2.cpp \
     db/MySQLDatabase.cpp \
     db/MariaDBDatabase.cpp \

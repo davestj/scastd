@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 #include "HttpServer.h"
+#include "i18n.h"
 
 #include <cstring>
 #include <csignal>
@@ -107,9 +108,9 @@ MHD_Result HttpServer::handleRequest(void *cls,
         page = kXmlResponse;
         content_type = "application/xml";
     } else {
-        static const char not_found[] = "Not Found";
+        const char *not_found = _("Not Found");
         struct MHD_Response *response = MHD_create_response_from_buffer(
-            sizeof(not_found) - 1, (void *)not_found, MHD_RESPMEM_PERSISTENT);
+            std::strlen(not_found), (void *)not_found, MHD_RESPMEM_PERSISTENT);
         MHD_add_response_header(response, "Content-Type", "text/plain");
         int ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
         MHD_destroy_response(response);
