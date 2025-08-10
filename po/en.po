@@ -1,0 +1,184 @@
+# English translations for PACKAGE package.
+# Copyright (C) 2025 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-08-10 04:12+0000\n"
+"PO-Revision-Date: 2025-08-10 04:12+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ASCII\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/HttpServer.cpp:111
+msgid "Not Found"
+msgstr "Not Found"
+
+#: src/scastd.cpp:60
+#, c-format
+msgid "Webdata: %s\n"
+msgstr "Webdata: %s\n"
+
+#: src/scastd.cpp:132
+#, c-format
+msgid "Cannot open logfile %s\n"
+msgstr "Cannot open logfile %s\n"
+
+#: src/scastd.cpp:157
+msgid "Caught SIGUSR1 - Resuming\n"
+msgstr "Caught SIGUSR1 - Resuming\n"
+
+#: src/scastd.cpp:161
+msgid "Caught SIGUSR1 - Pausing\n"
+msgstr "Caught SIGUSR1 - Pausing\n"
+
+#: src/scastd.cpp:168
+msgid "Caught SIGUSR2 - Exiting\n"
+msgstr "Caught SIGUSR2 - Exiting\n"
+
+#: src/scastd.cpp:175
+msgid "Caught SIGTERM - Exiting\n"
+msgstr "Caught SIGTERM - Exiting\n"
+
+#: src/scastd.cpp:181
+msgid "Caught SIGINT - Exiting\n"
+msgstr "Caught SIGINT - Exiting\n"
+
+#: src/scastd.cpp:187
+msgid "Caught SIGHUP - Reloading config\n"
+msgstr "Caught SIGHUP - Reloading config\n"
+
+#: src/scastd.cpp:229
+#, c-format
+msgid "Cannot load config file %s\n"
+msgstr "Cannot load config file %s\n"
+
+#: src/scastd.cpp:236
+#, c-format
+msgid "Failed to start HTTP server on port %d\n"
+msgstr "Failed to start HTTP server on port %d\n"
+
+#: src/scastd.cpp:260
+#, c-format
+msgid ""
+"Unknown DatabaseType '%s'. Supported values are mysql, mariadb, postgres. "
+"Falling back to default 'mysql'.\n"
+msgstr ""
+"Unknown DatabaseType '%s'. Supported values are mysql, mariadb, postgres. "
+"Falling back to default 'mysql'.\n"
+
+#: src/scastd.cpp:266
+#, c-format
+msgid "Detaching from console...\n"
+msgstr "Detaching from console...\n"
+
+#: src/scastd.cpp:276
+#, c-format
+msgid "Cannot install handler for SIGUSR1\n"
+msgstr "Cannot install handler for SIGUSR1\n"
+
+#: src/scastd.cpp:280
+#, c-format
+msgid "Cannot install handler for SIGUSR2\n"
+msgstr "Cannot install handler for SIGUSR2\n"
+
+#: src/scastd.cpp:284
+#, c-format
+msgid "Cannot install handler for SIGTERM\n"
+msgstr "Cannot install handler for SIGTERM\n"
+
+#: src/scastd.cpp:288
+#, c-format
+msgid "Cannot install handler for SIGINT\n"
+msgstr "Cannot install handler for SIGINT\n"
+
+#: src/scastd.cpp:292
+#, c-format
+msgid "Cannot install handler for SIGHUP\n"
+msgstr "Cannot install handler for SIGHUP\n"
+
+#: src/scastd.cpp:301
+#, c-format
+msgid "We must have an entry in the scastd_runtime table..exiting.\n"
+msgstr "We must have an entry in the scastd_runtime table..exiting.\n"
+
+#: src/scastd.cpp:308
+msgid "SCASTD starting...\n"
+msgstr "SCASTD starting...\n"
+
+#: src/scastd.cpp:346
+msgid "Unknown DatabaseType. Falling back to mysql\n"
+msgstr "Unknown DatabaseType. Falling back to mysql\n"
+
+#: src/scastd.cpp:364
+msgid "Configuration reloaded\n"
+msgstr "Configuration reloaded\n"
+
+#: src/scastd.cpp:366
+msgid "Failed to reload config\n"
+msgstr "Failed to reload config\n"
+
+#: src/scastd.cpp:370
+msgid "Exiting...\n"
+msgstr "Exiting...\n"
+
+#: src/scastd.cpp:397
+#, c-format
+msgid "Connecting to server %s at port %d\n"
+msgstr "Connecting to server %s at port %d\n"
+
+#: src/scastd.cpp:404
+#, c-format
+msgid "Bad password (%s/%s)\n"
+msgstr "Bad password (%s/%s)\n"
+
+#: src/scastd.cpp:412
+msgid "Bad parse!"
+msgstr "Bad parse!"
+
+#: src/scastd.cpp:417
+msgid "Empty Document!"
+msgstr "Empty Document!"
+
+#: src/scastd.cpp:478
+#, c-format
+msgid "Bad data from %s\n"
+msgstr "Bad data from %s\n"
+
+#: src/scastd.cpp:483
+#, c-format
+msgid "Failed to fetch data from %s\n"
+msgstr "Failed to fetch data from %s\n"
+
+#: src/scastd.cpp:491
+#, c-format
+msgid "Sleeping for %d seconds\n"
+msgstr "Sleeping for %d seconds\n"
+
+#: src/db/MariaDBDatabase.cpp:48 src/db/MySQLDatabase.cpp:48
+#: src/db/PostgresDatabase.cpp:54
+msgid "Failed to connect to database: "
+msgstr "Failed to connect to database: "
+
+#: src/db/MariaDBDatabase.cpp:60 src/db/MySQLDatabase.cpp:60
+msgid "Misformed query ("
+msgstr "Misformed query ("
+
+#: src/db/MariaDBDatabase.cpp:60 src/db/MySQLDatabase.cpp:60
+msgid ""
+")\n"
+"Error: "
+msgstr ""
+")\n"
+"Error: "
+
+#: src/db/PostgresDatabase.cpp:68
+msgid "Query failed: "
+msgstr "Query failed: "

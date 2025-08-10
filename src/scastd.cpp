@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "CurlClient.h"
 #include "HttpServer.h"
 #include "UrlParser.h"
+#include "i18n.h"
 
 FILE	*filep_log = 0;
 char	logfile[2046] = "";
@@ -56,8 +57,8 @@ void parseWebdata(xmlNodePtr cur)
 {
 	
     while (cur != NULL) {
-	fprintf(stdout, "Webdata: %s\n", cur->name);
-	cur = cur->next;
+        fprintf(stdout, _("Webdata: %s\n"), cur->name);
+        cur = cur->next;
     }
 
 }
@@ -128,7 +129,7 @@ void openLog() {
                 mkdir(logDir.c_str(), 0755);
                 filep_log = fopen(logfile, "a");
                 if (!filep_log) {
-                        fprintf(stderr, "Cannot open logfile %s\n", logfile);
+                        fprintf(stderr, _("Cannot open logfile %s\n"), logfile);
                 }
         }
 }
@@ -153,37 +154,37 @@ void closeLog() {
 void sigUSR1(int sig)
 {
 	if (paused) {
-		writeToLog("Caught SIGUSR1 - Resuming\n");
+                writeToLog(_("Caught SIGUSR1 - Resuming\n"));
 		paused = 0;
 	}
 	else {
-		writeToLog("Caught SIGUSR1 - Pausing\n");
+                writeToLog(_("Caught SIGUSR1 - Pausing\n"));
 		paused = 1;
 	}
 	
 }
 void sigUSR2(int sig)
 {
-        writeToLog("Caught SIGUSR2 - Exiting\n");
+        writeToLog(_("Caught SIGUSR2 - Exiting\n"));
         exiting = 1;
 
 }
 
 void sigTERM(int sig)
 {
-        writeToLog("Caught SIGTERM - Exiting\n");
+        writeToLog(_("Caught SIGTERM - Exiting\n"));
         exiting = 1;
 }
 
 void sigINT(int sig)
 {
-        writeToLog("Caught SIGINT - Exiting\n");
+        writeToLog(_("Caught SIGINT - Exiting\n"));
         exiting = 1;
 }
 
 void sigHUP(int sig)
 {
-	writeToLog("Caught SIGHUP - Reloading config\n");
+        writeToLog(_("Caught SIGHUP - Reloading config\n"));
 	reloadConfig = 1;
 }
 
@@ -201,6 +202,7 @@ typedef struct tagServerData {
 
 int main(int argc, char **argv)
 {
+        init_i18n();
         scastd::HttpServer httpServer;
         xmlDocPtr doc;
 	IDatabase       *db = NULL;
@@ -224,14 +226,14 @@ int main(int argc, char **argv)
                 configPath = argv[1];
         }
         if (!cfg.Load(configPath)) {
-                fprintf(stderr, "Cannot load config file %s\n", configPath.c_str());
+                fprintf(stderr, _("Cannot load config file %s\n"), configPath.c_str());
                 exit(1);
         }
         bool httpEnabled = cfg.Get("http_enabled", true);
         int httpPort = cfg.Get("http_port", 8333);
         if (httpEnabled) {
                 if (!httpServer.start(httpPort)) {
-                        fprintf(stderr, "Failed to start HTTP server on port %d\n", httpPort);
+                        fprintf(stderr, _("Failed to start HTTP server on port %d\n"), httpPort);
                 }
         }
         std::string dbUser = cfg.Get("username", "root");
@@ -255,13 +257,13 @@ int main(int argc, char **argv)
                 db = new PostgresDatabase();
                 db2 = new PostgresDatabase();
         } else {
-                fprintf(stderr, "Unknown DatabaseType '%s'. Supported values are mysql, mariadb, postgres. Falling back to default 'mysql'.\n", dbType.c_str());
+                fprintf(stderr, _("Unknown DatabaseType '%s'. Supported values are mysql, mariadb, postgres. Falling back to default 'mysql'.\n"), dbType.c_str());
                 db = new MySQLDatabase();
                 db2 = new MySQLDatabase();
                 dbType = "mysql";
         }
 
-        fprintf(stdout, "Detaching from console...\n");
+        fprintf(stdout, _("Detaching from console...\n"));
 
 	if (fork()) {
 		// Parent
@@ -270,24 +272,24 @@ int main(int argc, char **argv)
 	else {
 		// Da child
 	
-	if (signal(SIGUSR1, sigUSR1) == SIG_ERR) {
-		fprintf(stderr, "Cannot install handler for SIGUSR1\n");
-		exit(1);
-	}
+        if (signal(SIGUSR1, sigUSR1) == SIG_ERR) {
+                fprintf(stderr, _("Cannot install handler for SIGUSR1\n"));
+                exit(1);
+        }
         if (signal(SIGUSR2, sigUSR2) == SIG_ERR) {
-                fprintf(stderr, "Cannot install handler for SIGUSR2\n");
+                fprintf(stderr, _("Cannot install handler for SIGUSR2\n"));
                 exit(1);
         }
         if (signal(SIGTERM, sigTERM) == SIG_ERR) {
-                fprintf(stderr, "Cannot install handler for SIGTERM\n");
+                fprintf(stderr, _("Cannot install handler for SIGTERM\n"));
                 exit(1);
         }
         if (signal(SIGINT, sigINT) == SIG_ERR) {
-                fprintf(stderr, "Cannot install handler for SIGINT\n");
+                fprintf(stderr, _("Cannot install handler for SIGINT\n"));
                 exit(1);
         }
         if (signal(SIGHUP, sigHUP) == SIG_ERR) {
-                fprintf(stderr, "Cannot install handler for SIGHUP\n");
+                fprintf(stderr, _("Cannot install handler for SIGHUP\n"));
                 exit(1);
         }
         db->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
@@ -296,14 +298,14 @@ int main(int argc, char **argv)
         db->query(query);
         row = db->fetch();
         if (row.empty()) {
-                fprintf(stderr, "We must have an entry in the scastd_runtime table..exiting.\n");
+                fprintf(stderr, _("We must have an entry in the scastd_runtime table..exiting.\n"));
                 exit(-1);
         }
         sleeptime = atoi(row[0].c_str());
 	
 	openLog();
 
-	writeToLog("SCASTD starting...\n");
+        writeToLog(_("SCASTD starting...\n"));
 
 	while (1) {
                 if (reloadConfig) {
@@ -341,7 +343,7 @@ int main(int argc, char **argv)
                                                 db = new PostgresDatabase();
                                                 db2 = new PostgresDatabase();
                                         } else {
-                                                writeToLog("Unknown DatabaseType. Falling back to mysql\n");
+                                                writeToLog(_("Unknown DatabaseType. Falling back to mysql\n"));
                                                 db = new MySQLDatabase();
                                                 db2 = new MySQLDatabase();
                                                 newDbType = "mysql";
@@ -359,13 +361,13 @@ int main(int argc, char **argv)
                                 dbSSLMode = newDbSSLMode;
                                 db->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
                                 db2->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
-                                writeToLog("Configuration reloaded\n");
+                                writeToLog(_("Configuration reloaded\n"));
                         } else {
-                                writeToLog("Failed to reload config\n");
+                                writeToLog(_("Failed to reload config\n"));
                         }
                 }
 		if (exiting) {
-			writeToLog("Exiting...\n");
+                        writeToLog(_("Exiting...\n"));
 			break;
 		}
 		if (!paused) {
@@ -392,14 +394,14 @@ int main(int argc, char **argv)
                                         strcpy(password, row[1].c_str());
                                 }
 
-                                sprintf(buf, "Connecting to server %s at port %d\n", IP, port);
+                                sprintf(buf, _("Connecting to server %s at port %d\n"), IP, port);
                                 writeToLog(buf);
                                 std::string url = std::string("http://") + IP + ":" + std::to_string(port) + "/admin.cgi?pass=" + password + "&mode=viewxml";
                                 std::string response;
                                 CurlClient curl;
                                 if (curl.fetchUrl(url, response)) {
                                         if (response.find("<title>SHOUTcast Administrator</title>") != std::string::npos) {
-                                                sprintf(buf, "Bad password (%s/%s)\n", serverURL, password);
+                                                sprintf(buf, _("Bad password (%s/%s)\n"), serverURL, password);
                                                 writeToLog(buf);
                                         }
                                         else {
@@ -407,12 +409,12 @@ int main(int argc, char **argv)
                                                 if (p1) {
                                                         doc = xmlParseMemory(p1, strlen(p1));
                                                         if (!doc) {
-                                                                writeToLog("Bad parse!");
+                                                                writeToLog(_("Bad parse!"));
                                                         }
 
                                                         cur = xmlDocGetRootElement(doc);
                                                         if (cur == NULL) {
-                                                                writeToLog("Empty Document!");
+                                                                writeToLog(_("Empty Document!"));
                                                                 xmlFreeDoc(doc);
                                                                 exiting = 1;
                                                                 break;
@@ -473,12 +475,12 @@ int main(int argc, char **argv)
                                                         db->query(query);
                                                 }
                                                 else {
-                                                        sprintf(buf, "Bad data from %s\n", serverURL);
+                                                        sprintf(buf, _("Bad data from %s\n"), serverURL);
                                                         writeToLog(buf);
                                                 }
                                         }
                                 } else {
-                                        sprintf(buf, "Failed to fetch data from %s\n", serverURL);
+                                        sprintf(buf, _("Failed to fetch data from %s\n"), serverURL);
                                         writeToLog(buf);
                                 }
 
@@ -486,8 +488,8 @@ int main(int argc, char **argv)
 		}
 		if (exiting) break;
 			
-		sprintf(buf, "Sleeping for %d seconds\n", sleeptime);
-		writeToLog(buf);
+                sprintf(buf, _("Sleeping for %d seconds\n"), sleeptime);
+                writeToLog(buf);
 		sleep(sleeptime);
 	}
         httpServer.stop();

@@ -1,6 +1,29 @@
+/*
+/////////////////////////////////////////////////
+// Scast Daemon
+// Authors: oddsock, dstjohn
+/////////////////////////////////////////////////
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+*/
+
 #include "MySQLDatabase.h"
 #include <iostream>
 #include <cstring>
+#include "i18n.h"
 
 MySQLDatabase::MySQLDatabase() : pResult(nullptr) {
     mysql_init(&mySQL);
@@ -22,7 +45,7 @@ bool MySQLDatabase::connect(const std::string &username,
     mysql_options(&mySQL, MYSQL_READ_DEFAULT_GROUP, "scastd");
     (void)sslmode;
     if (!mysql_real_connect(&mySQL, host.c_str(), username.c_str(), password.c_str(), dbname.c_str(), port, NULL, 0)) {
-        std::cerr << "Failed to connect to database: " << mysql_error(&mySQL) << std::endl;
+        std::cerr << _("Failed to connect to database: ") << mysql_error(&mySQL) << std::endl;
         return false;
     }
     return true;
@@ -34,7 +57,7 @@ bool MySQLDatabase::query(const std::string &queryStr) {
         pResult = nullptr;
     }
     if (mysql_query(&mySQL, queryStr.c_str()) != 0) {
-        std::cerr << "Misformed query (" << queryStr << ")\nError: " << mysql_error(&mySQL) << std::endl;
+        std::cerr << _("Misformed query (") << queryStr << _(")\nError: ") << mysql_error(&mySQL) << std::endl;
         return false;
     }
     pResult = mysql_store_result(&mySQL);
