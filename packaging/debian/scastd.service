@@ -1,0 +1,11 @@
+[Unit]
+Description=Scast Daemon
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/scastd -c /etc/scastd.conf
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
