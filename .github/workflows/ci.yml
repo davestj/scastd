@@ -46,3 +46,19 @@ jobs:
       - name: Run cppcheck
         run: cppcheck --enable=all --std=c++17 --suppress=missingIncludeSystem src tests
 
+  release:
+    needs: [test, lint]
+    runs-on: ubuntu-24.04
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    steps:
+      - name: Create GitHub release
+        if: success()
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: Release ${{ github.run_number }}
+          draft: false
+          prerelease: false
+
