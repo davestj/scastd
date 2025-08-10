@@ -22,7 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <microhttpd.h>
+#include <string>
 
 namespace scastd {
 
@@ -31,7 +33,7 @@ public:
     HttpServer();
     ~HttpServer();
 
-    bool start(int port = 8333);
+    bool start(int port = 8333, const std::string &user = "", const std::string &pass = "");
     void stop();
 
 private:
@@ -46,6 +48,9 @@ private:
 
     std::atomic<bool> running_;
     struct MHD_Daemon *daemon_;
+    std::chrono::steady_clock::time_point start_time_;
+    std::string username_;
+    std::string password_;
 };
 
 } // namespace scastd

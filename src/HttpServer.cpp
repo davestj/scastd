@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string>
 #include <unistd.h>
 #include <cstdlib>
+#include <chrono>
 
 namespace scastd {
 
@@ -51,7 +52,7 @@ HttpServer::~HttpServer() {
     stop();
 }
 
-bool HttpServer::start(int port) {
+bool HttpServer::start(int port, const std::string &user, const std::string &pass) {
 #if defined(__APPLE__) || defined(__linux__)
     const char *no_daemon = std::getenv("SCASD_NO_DAEMON");
     if (!no_daemon || std::strcmp(no_daemon, "1") != 0) {
@@ -60,6 +61,10 @@ bool HttpServer::start(int port) {
         }
     }
 #endif
+    username_ = user;
+    password_ = pass;
+    start_time_ = std::chrono::steady_clock::now();
+
     g_server = this;
     std::signal(SIGINT, handle_signal);
     std::signal(SIGTERM, handle_signal);
@@ -89,7 +94,7 @@ MHD_Result HttpServer::handleRequest(void *cls,
                                      const char *upload_data,
                                      size_t *upload_data_size,
                                      void **con_cls) {
-    (void)cls;
+    HttpServer *server = static_cast<HttpServer *>(cls);
     (void)version;
     (void)upload_data;
     (void)upload_data_size;
@@ -97,6 +102,25 @@ MHD_Result HttpServer::handleRequest(void *cls,
 
     if (std::strcmp(method, "GET") != 0) {
         return MHD_NO;
+    }
+
+    if (!server->username_.empty()) {
+        char *pass = nullptr;
+        char *user = MHD_basic_auth_get_username_password(connection, &pass);
+        bool ok = user && pass &&
+                   server->username_ == user && server->password_ == pass;
+        if (user) {
+            MHD_free(user);
+        }
+        if (pass) {
+            MHD_free(pass);
+        }
+        if (!ok) {
+            struct MHD_Response *response = MHD_create_response_from_buffer(0, (void *)"", MHD_RESPMEM_PERSISTENT);
+            int ret = MHD_queue_basic_auth_fail_response(connection, "scastd", response);
+            MHD_destroy_response(response);
+            return static_cast<MHD_Result>(ret);
+        }
     }
 
     const char *page = nullptr;
@@ -112,6 +136,16 @@ MHD_Result HttpServer::handleRequest(void *cls,
     } else if (std::strcmp(url, "/status.xml") == 0) {
         page = kXmlResponse;
         content_type = "application/xml";
+    } else if (std::strcmp(url, "/uptime") == 0) {
+        auto uptime = std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::steady_clock::now() - server->start_time_).count();
+        std::string uptime_str = "{\"uptime\":" + std::to_string(uptime) + "}";
+        struct MHD_Response *response = MHD_create_response_from_buffer(
+            uptime_str.size(), (void *)uptime_str.c_str(), MHD_RESPMEM_MUST_COPY);
+        MHD_add_response_header(response, "Content-Type", "application/json");
+        int ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
+        MHD_destroy_response(response);
+        return static_cast<MHD_Result>(ret);
     }
 
     if (!page) {
