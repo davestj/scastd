@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "HttpServer.h"
 #include "i18n.h"
 #include "logger.h"
+#include "StatusLogger.h"
 
 #include <cstring>
 #include <csignal>
@@ -38,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 namespace scastd {
 
 extern Logger logger;
+extern StatusLogger statusLogger;
 
 namespace {
 HttpServer *g_server = nullptr;
@@ -177,6 +179,8 @@ MHD_Result HttpServer::handleRequest(void *cls,
         std::string line = std::string(datebuf) + " " + timebuf + " " + ipbuf +
                            " " + method + " " + url + " " + std::to_string(status);
         logger.logAccess(line);
+        statusLogger.log("api", std::to_string(status),
+                         std::string(method) + " " + url + " " + ipbuf);
     };
 
     if (std::strcmp(method, "GET") != 0) {
