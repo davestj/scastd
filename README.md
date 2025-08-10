@@ -53,7 +53,24 @@ password secret
 log_dir ./logs
 log_max_size 1048576
 log_retention 5
+access_log access.log
+error_log error.log
+debug_log debug.log
+debug_level 1
+syslog_enabled false
+syslog_host localhost
+syslog_port 514
+syslog_protocol udp
 ```
+
+The log settings allow fine-grained control over where messages are
+written. `access_log`, `error_log`, and `debug_log` may be absolute
+paths or names relative to `log_dir` and default to `access.log`,
+`error.log`, and `debug.log` respectively. `debug_level` sets the
+verbosity for the debug log from 1 (least verbose) to 4 (most verbose).
+When `syslog_enabled` is `true`, log messages are also forwarded to a
+remote syslog server defined by `syslog_host`, `syslog_port` (default
+`514`), and `syslog_protocol` (`udp` or `tcp`).
 
 For security, make the configuration file readable only by your user:
 
