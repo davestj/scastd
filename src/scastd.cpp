@@ -25,10 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string.h>
 #include <string>
 #include <sys/types.h>
-#include <sys/stat.h>
-#include <dirent.h>
-#include <vector>
-#include <algorithm>
 #include <libxml/nanohttp.h>
 #include <libxml/tree.h>
 #include <libxml/parser.h>
@@ -44,11 +40,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "UrlParser.h"
 #include "i18n.h"
 
-FILE	*filep_log = 0;
-char	logfile[2046] = "";
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/rotating_file_sink.h>
+
+std::shared_ptr<spdlog::logger> logger;
 std::string logDir = ".";
-size_t	logMaxSize = 1024 * 1024;
-int	logRetention = 5;
+size_t  logMaxSize = 1024 * 1024;
+int     logRetention = 5;
 int	paused = 0;
 int     exiting = 0;
 volatile sig_atomic_t reloadConfig = 0;
@@ -73,82 +71,25 @@ void trimRight(char *buf) {
         }
 }
 
-static void purgeOldLogs() {
-        DIR *dir = opendir(logDir.c_str());
-        if (!dir) return;
-        std::vector<std::string> files;
-        struct dirent *entry;
-        while ((entry = readdir(dir)) != NULL) {
-                std::string name = entry->d_name;
-                if (name.find("scastd-") == 0 && name.rfind(".log") == name.size() - 4) {
-                        files.push_back(name);
-                }
-        }
-        closedir(dir);
-        std::sort(files.begin(), files.end());
-        while ((int)files.size() > logRetention) {
-                std::string path = logDir + "/" + files.front();
-                remove(path.c_str());
-                files.erase(files.begin());
-        }
+static void setupLogger() {
+        spdlog::shutdown();
+        auto path = logDir + "/scastd.log";
+        logger = spdlog::rotating_logger_mt("scastd", path, logMaxSize, logRetention);
+        logger->set_pattern("%Y-%m-%d %T-%v");
+        logger->flush_on(spdlog::level::info);
 }
 
-static void rotateLogsIfNeeded() {
-        struct stat st;
-        time_t now = time(0);
-        bool rotate = false;
-        if (stat(logfile, &st) == 0) {
-                if ((size_t)st.st_size >= logMaxSize) {
-                        rotate = true;
-                }
-                char fileDate[9];
-                char curDate[9];
-                strftime(fileDate, sizeof(fileDate), "%Y%m%d", gmtime(&st.st_mtime));
-                strftime(curDate, sizeof(curDate), "%Y%m%d", gmtime(&now));
-                if (strcmp(fileDate, curDate) != 0) {
-                        rotate = true;
-                }
-        }
-        if (rotate) {
-                if (filep_log) {
-                        fclose(filep_log);
-                        filep_log = 0;
-                }
-                char ts[32];
-                strftime(ts, sizeof(ts), "%Y%m%d-%H%M%S", gmtime(&now));
-                char rotated[4096];
-                snprintf(rotated, sizeof(rotated), "%s/scastd-%s.log", logDir.c_str(), ts);
-                rename(logfile, rotated);
-                purgeOldLogs();
-        }
-}
-
-void openLog() {
-        rotateLogsIfNeeded();
-        if (!filep_log) {
-                mkdir(logDir.c_str(), 0755);
-                filep_log = fopen(logfile, "a");
-                if (!filep_log) {
-                        fprintf(stderr, _("Cannot open logfile %s\n"), logfile);
-                }
-        }
-}
 void writeToLog(char *message) {
-	time_t date = time(0);
-
-	char	str[255] = "";
-	strftime(str, sizeof(str), "%Y-%m-%d %T", gmtime(&date));
-      
-	openLog();
-	if (filep_log) {
-		fprintf(filep_log, "%s-%s", str, message);
-		fflush(filep_log);
-	}
+        if (!logger) return;
+        std::string msg = message ? message : "";
+        if (!msg.empty() && msg.back() == '\n') {
+                msg.pop_back();
+        }
+        logger->info("{}", msg);
 }
 void closeLog() {
-	if (filep_log) {
-		fclose(filep_log);
-	}
+        spdlog::shutdown();
+        logger.reset();
 }
 
 void sigUSR1(int sig)
@@ -246,7 +187,7 @@ int main(int argc, char **argv)
         logDir = cfg.Get("log_dir", ".");
         logMaxSize = (size_t)cfg.Get("log_max_size", 1024 * 1024);
         logRetention = cfg.Get("log_retention", 5);
-        snprintf(logfile, sizeof(logfile), "%s/scastd.log", logDir.c_str());
+        setupLogger();
         if (dbType == "mysql") {
                 db = new MySQLDatabase();
                 db2 = new MySQLDatabase();
@@ -303,7 +244,6 @@ int main(int argc, char **argv)
         }
         sleeptime = atoi(row[0].c_str());
 	
-	openLog();
 
         writeToLog(_("SCASTD starting...\n"));
 
@@ -320,8 +260,7 @@ int main(int argc, char **argv)
                                         logDir = newLogDir;
                                         logMaxSize = newLogMaxSize;
                                         logRetention = newLogRetention;
-                                        snprintf(logfile, sizeof(logfile), "%s/scastd.log", logDir.c_str());
-                                        closeLog();
+                                        setupLogger();
                                 }
                                 std::string newDbType = cfg.Get("DatabaseType", dbType);
                                 std::string newDbUser = cfg.Get("username", dbUser);
