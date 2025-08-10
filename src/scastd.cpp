@@ -163,9 +163,21 @@ void sigUSR1(int sig)
 }
 void sigUSR2(int sig)
 {
-	writeToLog("Caught SIGUSR2 - Exiting\n");
-	exiting = 1;
-	
+        writeToLog("Caught SIGUSR2 - Exiting\n");
+        exiting = 1;
+
+}
+
+void sigTERM(int sig)
+{
+        writeToLog("Caught SIGTERM - Exiting\n");
+        exiting = 1;
+}
+
+void sigINT(int sig)
+{
+        writeToLog("Caught SIGINT - Exiting\n");
+        exiting = 1;
 }
 
 typedef struct tagServerData {
@@ -254,10 +266,18 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Cannot install handler for SIGUSR1\n");
 		exit(1);
 	}
-	if (signal(SIGUSR2, sigUSR2) == SIG_ERR) {
-		fprintf(stderr, "Cannot install handler for SIGUSR2\n");
-		exit(1);
-	}
+        if (signal(SIGUSR2, sigUSR2) == SIG_ERR) {
+                fprintf(stderr, "Cannot install handler for SIGUSR2\n");
+                exit(1);
+        }
+        if (signal(SIGTERM, sigTERM) == SIG_ERR) {
+                fprintf(stderr, "Cannot install handler for SIGTERM\n");
+                exit(1);
+        }
+        if (signal(SIGINT, sigINT) == SIG_ERR) {
+                fprintf(stderr, "Cannot install handler for SIGINT\n");
+                exit(1);
+        }
         db->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
         db2->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
         sprintf(query, "select sleeptime from scastd_runtime");
@@ -276,12 +296,13 @@ int main(int argc, char **argv)
 	while (1) {
 		if (exiting) {
 			writeToLog("Exiting...\n");
-			exit(1);
+			break;
 		}
 		if (!paused) {
                         sprintf(query, "select serverURL, password from scastd_memberinfo where gather_flag = 1");
                         db2->query(query);
                         while (true) {
+				if (exiting) break;
                                 row = db2->fetch();
                                 if (row.empty()) break;
                                 memset(serverURL, '\000', sizeof(serverURL));
@@ -322,7 +343,8 @@ int main(int argc, char **argv)
                                                         if (cur == NULL) {
                                                                 writeToLog("Empty Document!");
                                                                 xmlFreeDoc(doc);
-                                                                exit(1);
+                                                                exiting = 1;
+                                                                break;
                                                         }
                                                         else {
                                                                 cur = cur->xmlChildrenNode;
@@ -391,12 +413,22 @@ int main(int argc, char **argv)
 
 			}
 		}
+		if (exiting) break;
 			
 		sprintf(buf, "Sleeping for %d seconds\n", sleeptime);
 		writeToLog(buf);
 		sleep(sleeptime);
 	}
-        }
         httpServer.stop();
+        if (db) {
+                db->disconnect();
+                delete db;
+        }
+        if (db2) {
+                db2->disconnect();
+                delete db2;
+        }
+        closeLog();
         return 0;
+}
 }
