@@ -15,7 +15,7 @@ static size_t write_cb(void *contents, size_t size, size_t nmemb, void *userp) {
 
 TEST_CASE("HTTP server responds with status") {
     setenv("SCASD_NO_DAEMON", "1", 1);
-    HttpServer server;
+    scastd::HttpServer server;
     REQUIRE(server.start(18080));
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
