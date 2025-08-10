@@ -52,6 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/stat.h>
 #include <fstream>
 #include <sstream>
+#include <ctime>
 
 namespace scastd {
 
@@ -105,7 +106,7 @@ static void setupLogger() {
         logger->flush_on(spdlog::level::info);
 }
 
-void writeToLog(char *message) {
+void writeToLog(const char *message) {
         if (!logger) return;
         std::lock_guard<std::mutex> lock(logMutex);
         std::string msg = message ? message : "";
@@ -117,6 +118,78 @@ void writeToLog(char *message) {
 void closeLog() {
         spdlog::shutdown();
         logger.reset();
+}
+
+static std::string shellEscape(const std::string &in) {
+        std::string out = "'";
+        for (char c : in) {
+                if (c == '\'') out += "'\\''";
+                else out += c;
+        }
+        out += "'";
+        return out;
+}
+
+int dumpDatabase(const std::string &configPath, const std::string &dumpDir) {
+        init_i18n();
+        Config cfg;
+        if (!cfg.Load(configPath)) {
+                fprintf(stderr, _("Cannot load config file %s\n"), configPath.c_str());
+                return 1;
+        }
+        logDir = cfg.Get("log_dir", ".");
+        logMaxSize = (size_t)cfg.Get("log_max_size", 1024 * 1024);
+        logRetention = cfg.Get("log_retention", 5);
+        setupLogger();
+
+        std::string dbUser = cfg.Get("username", "");
+        std::string dbPass = cfg.Get("password", "");
+        std::string dbType = cfg.Get("DatabaseType", "");
+        std::string dbHost = cfg.Get("host", "");
+        int dbPort = cfg.Get("port", 0);
+        std::string dbName = cfg.Get("dbname", "");
+        std::string sqlitePath = cfg.Get("sqlite_path", "/etc/scastd/scastd.db");
+        bool useSqlite = dbType == "sqlite" || dbUser.empty() || dbHost.empty() || dbName.empty();
+        if (useSqlite) {
+                dbType = "sqlite";
+                dbName = sqlitePath;
+        }
+
+        mkdir(dumpDir.c_str(), 0755);
+        std::time_t now = std::time(nullptr);
+        std::tm tm{};
+        localtime_r(&now, &tm);
+        char ts[32];
+        std::strftime(ts, sizeof(ts), "%Y%m%d-%H%M%S", &tm);
+        std::string dumpFile = dumpDir + "/scastd-" + ts + ".sql";
+
+        std::string cmd;
+        if (dbType == "mysql" || dbType == "mariadb") {
+                cmd = "MYSQL_PWD=" + shellEscape(dbPass) + " mysqldump";
+                if (!dbHost.empty()) cmd += " -h " + shellEscape(dbHost);
+                if (dbPort > 0) cmd += " -P " + std::to_string(dbPort);
+                if (!dbUser.empty()) cmd += " -u " + shellEscape(dbUser);
+                cmd += " " + shellEscape(dbName) + " > " + shellEscape(dumpFile);
+        } else if (dbType == "postgres") {
+                cmd = "PGPASSWORD=" + shellEscape(dbPass) + " pg_dump";
+                if (!dbHost.empty()) cmd += " -h " + shellEscape(dbHost);
+                if (dbPort > 0) cmd += " -p " + std::to_string(dbPort);
+                if (!dbUser.empty()) cmd += " -U " + shellEscape(dbUser);
+                cmd += " " + shellEscape(dbName) + " > " + shellEscape(dumpFile);
+        } else {
+                cmd = "sqlite3 " + shellEscape(dbName) + " .dump > " + shellEscape(dumpFile);
+        }
+
+        int rc = system(cmd.c_str());
+        if (rc == 0) {
+                std::string msg = std::string("Database dump successful: ") + dumpFile;
+                writeToLog(msg.c_str());
+        } else {
+                std::string msg = std::string("Database dump failed: ") + dumpFile;
+                writeToLog(msg.c_str());
+        }
+        closeLog();
+        return rc == 0 ? 0 : 1;
 }
 
 static void processServer(const std::string &serverURL,

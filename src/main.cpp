@@ -25,9 +25,24 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 int main(int argc, char **argv) {
     std::string configPath = "scastd.conf";
-    if (argc > 1) {
-        configPath = argv[1];
+    std::string dumpDir = "/tmp";
+    bool doDump = false;
+
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--dump") {
+            doDump = true;
+        } else if (arg == "--dump-dir" && i + 1 < argc) {
+            dumpDir = argv[++i];
+        } else {
+            configPath = arg;
+        }
     }
+
+    if (doDump) {
+        return scastd::dumpDatabase(configPath, dumpDir);
+    }
+
     return scastd::run(configPath);
 }
 
