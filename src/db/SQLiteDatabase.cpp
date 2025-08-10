@@ -23,6 +23,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "SQLiteDatabase.h"
 #include <iostream>
 #include "i18n.h"
+#include "logger.h"
+
+namespace scastd { extern Logger logger; }
 
 SQLiteDatabase::SQLiteDatabase() : db(nullptr), stmt(nullptr) {}
 
@@ -38,9 +41,10 @@ bool SQLiteDatabase::connect(const std::string &username,
                              const std::string &sslmode) {
     (void)username; (void)password; (void)host; (void)port; (void)sslmode;
     if (sqlite3_open(dbname.c_str(), &db) != SQLITE_OK) {
-        std::cerr << _("Failed to open SQLite database: ") << sqlite3_errmsg(db) << std::endl;
+        scastd::logger.logError(std::string(_("Failed to open SQLite database: ")) + sqlite3_errmsg(db));
         return false;
     }
+    scastd::logger.logDebug(std::string("SQLite opened: ") + dbname);
     return true;
 }
 
@@ -50,6 +54,7 @@ bool SQLiteDatabase::query(const std::string &queryStr) {
         stmt = nullptr;
     }
     const char *tail = nullptr;
+    scastd::logger.logDebug(std::string("SQLite query: ") + queryStr);
     if (sqlite3_prepare_v2(db, queryStr.c_str(), -1, &stmt, &tail) == SQLITE_OK && tail && *tail == '\0') {
         return true;
     }
@@ -59,7 +64,7 @@ bool SQLiteDatabase::query(const std::string &queryStr) {
     }
     char *err = nullptr;
     if (sqlite3_exec(db, queryStr.c_str(), nullptr, nullptr, &err) != SQLITE_OK) {
-        std::cerr << _("Failed to execute query: ") << (err ? err : "") << std::endl;
+        scastd::logger.logError(std::string(_("Failed to execute query: ")) + (err ? err : ""));
         if (err) sqlite3_free(err);
         return false;
     }

@@ -56,7 +56,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 namespace scastd {
 
 Logger logger;
-std::string logDir = ".";
 int     paused = 0;
 int     exiting = 0;
 volatile sig_atomic_t reloadConfig = 0;
@@ -76,12 +75,12 @@ typedef struct tagServerData {
 
 void parseWebdata(xmlNodePtr cur)
 {
-	
     while (cur != NULL) {
-        fprintf(stdout, _("Webdata: %s\n"), cur->name);
+        char buf[256];
+        sprintf(buf, _("Webdata: %s"), cur->name);
+        logger.logDebug(buf);
         cur = cur->next;
     }
-
 }
 void trimRight(char *buf) {
         for (char *p1 = buf + strlen(buf)-1;p1 > buf; p1--) {
@@ -92,10 +91,6 @@ void trimRight(char *buf) {
                         *p1 = '\000';
                 }
         }
-}
-
-static void setupLogger() {
-        logger.setLogDir(logDir);
 }
 
 static std::string shellEscape(const std::string &in) {
@@ -112,12 +107,18 @@ int dumpDatabase(const std::string &configPath, const std::string &dumpDir) {
         init_i18n();
         Config cfg;
         if (!cfg.Load(configPath)) {
-                fprintf(stderr, _("Cannot load config file %s\n"), configPath.c_str());
+                std::string msg = std::string(_("Cannot load config file ")) + configPath;
+                logger.logError(msg);
                 return 1;
         }
-        logDir = cfg.Get("log_dir", ".");
+        logger.setLogFiles(cfg.AccessLog(), cfg.ErrorLog(), cfg.DebugLog());
         logger.setConsoleOutput(cfg.Get("log_console", false));
-        setupLogger();
+        logger.setDebugLevel(cfg.DebugLevel());
+        if (cfg.SyslogEnabled()) {
+                Logger::SyslogProto proto = cfg.SyslogProtocol() == "tcp" ?
+                        Logger::SyslogProto::TCP : Logger::SyslogProto::UDP;
+                logger.setSyslog(cfg.SyslogHost(), cfg.SyslogPort(), proto);
+        }
 
         std::string dbUser = cfg.Get("username", "");
         std::string dbPass = cfg.Get("password", "");
@@ -315,27 +316,32 @@ int run(const std::string &configPath)
 {
         init_i18n();
         scastd::HttpServer httpServer;
-        xmlDocPtr doc;
 	IDatabase       *db = NULL;
 	IDatabase       *db2 = NULL;
         Config  cfg;
 
 	char	buf[1024];
-        const char    *p1;
-	xmlNodePtr cur;
 	IDatabase::Row       row;
-	serverData	sData;
 	char	query[2046] = "";
-	char	serverURL[255] = "";
-	char	IP[255] = "";
-	int	port = 0;
-	char	password[255] = "";
 	int	sleeptime = 0;
-	int	insert_flag = 0;
-	if (!cfg.Load(configPath)) {
-		fprintf(stderr, _("Cannot load config file %s\n"), configPath.c_str());
-		return 1;
-	}
+        if (!cfg.Load(configPath)) {
+                std::string msg = std::string(_("Cannot load config file ")) + configPath;
+                logger.logError(msg);
+                return 1;
+        }
+        std::string accessLog = cfg.AccessLog();
+        std::string errorLog = cfg.ErrorLog();
+        std::string debugLog = cfg.DebugLog();
+        bool consoleFlag = cfg.Get("log_console", false);
+        int debugLevel = cfg.DebugLevel();
+        logger.setLogFiles(accessLog, errorLog, debugLog);
+        logger.setConsoleOutput(consoleFlag);
+        logger.setDebugLevel(debugLevel);
+        if (cfg.SyslogEnabled()) {
+                Logger::SyslogProto proto = cfg.SyslogProtocol() == "tcp" ?
+                        Logger::SyslogProto::TCP : Logger::SyslogProto::UDP;
+                logger.setSyslog(cfg.SyslogHost(), cfg.SyslogPort(), proto);
+        }
         bool httpEnabled = cfg.Get("http_enabled", true);
         int httpPort = cfg.Get("http_port", 8333);
         std::string httpUser = cfg.Get("http_username", "");
@@ -347,8 +353,10 @@ int run(const std::string &configPath)
                 if (!httpServer.start(httpPort, httpUser, httpPass,
                                        std::thread::hardware_concurrency(),
                                        sslEnabled, sslCert, sslKey)) {
-                        fprintf(stderr, _("Failed to start HTTP%s server on port %d\n"),
+                        char lbuf[256];
+                        sprintf(lbuf, _("Failed to start HTTP%s server on port %d"),
                                 sslEnabled ? "S" : "", httpPort);
+                        logger.logError(lbuf);
                 }
         }
         std::string dbUser = cfg.Get("username", "");
@@ -369,9 +377,6 @@ int run(const std::string &configPath)
                 dbPort = 0;
                 dbSSLMode.clear();
         }
-        logDir = cfg.Get("log_dir", ".");
-        logger.setConsoleOutput(cfg.Get("log_console", false));
-        setupLogger();
         if (dbType == "mysql") {
                 db = new MySQLDatabase();
                 db2 = new MySQLDatabase();
@@ -385,7 +390,9 @@ int run(const std::string &configPath)
                 db = new SQLiteDatabase();
                 db2 = new SQLiteDatabase();
         } else {
-                fprintf(stderr, _("Unknown DatabaseType '%s'. Falling back to sqlite.\n"), dbType.c_str());
+                char lbuf[256];
+                sprintf(lbuf, _("Unknown DatabaseType '%s'. Falling back to sqlite."), dbType.c_str());
+                logger.logError(lbuf);
                 db = new SQLiteDatabase();
                 db2 = new SQLiteDatabase();
                 dbType = "sqlite";
@@ -407,7 +414,7 @@ int run(const std::string &configPath)
                 }
         }
 
-        fprintf(stdout, _("Detaching from console...\n"));
+        logger.logDebug(_("Detaching from console..."));
 
 	if (fork()) {
 		// Parent
@@ -417,23 +424,23 @@ int run(const std::string &configPath)
 		// Da child
 	
         if (signal(SIGUSR1, sigUSR1) == SIG_ERR) {
-                fprintf(stderr, _("Cannot install handler for SIGUSR1\n"));
+                logger.logError(_("Cannot install handler for SIGUSR1"));
                 exit(1);
         }
         if (signal(SIGUSR2, sigUSR2) == SIG_ERR) {
-                fprintf(stderr, _("Cannot install handler for SIGUSR2\n"));
+                logger.logError(_("Cannot install handler for SIGUSR2"));
                 exit(1);
         }
         if (signal(SIGTERM, sigTERM) == SIG_ERR) {
-                fprintf(stderr, _("Cannot install handler for SIGTERM\n"));
+                logger.logError(_("Cannot install handler for SIGTERM"));
                 exit(1);
         }
         if (signal(SIGINT, sigINT) == SIG_ERR) {
-                fprintf(stderr, _("Cannot install handler for SIGINT\n"));
+                logger.logError(_("Cannot install handler for SIGINT"));
                 exit(1);
         }
         if (signal(SIGHUP, sigHUP) == SIG_ERR) {
-                fprintf(stderr, _("Cannot install handler for SIGHUP\n"));
+                logger.logError(_("Cannot install handler for SIGHUP"));
                 exit(1);
         }
         db->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
@@ -449,7 +456,7 @@ int run(const std::string &configPath)
         db->query(query);
         row = db->fetch();
         if (row.empty()) {
-                fprintf(stderr, _("We must have an entry in the scastd_runtime table..exiting.\n"));
+                logger.logError(_("We must have an entry in the scastd_runtime table..exiting."));
                 exit(-1);
         }
         sleeptime = atoi(row[0].c_str());
@@ -463,11 +470,31 @@ int run(const std::string &configPath)
                         Config newCfg;
                         if (newCfg.Load(configPath)) {
                                 cfg = newCfg;
-                                std::string newLogDir = cfg.Get("log_dir", ".");
-                                logger.setConsoleOutput(cfg.Get("log_console", false));
-                                if (newLogDir != logDir) {
-                                        logDir = newLogDir;
-                                        setupLogger();
+                                std::string newAccess = cfg.AccessLog();
+                                std::string newError = cfg.ErrorLog();
+                                std::string newDebug = cfg.DebugLog();
+                                bool newConsole = cfg.Get("log_console", false);
+                                int newDebugLevel = cfg.DebugLevel();
+                                if (newAccess != accessLog || newError != errorLog || newDebug != debugLog) {
+                                        accessLog = newAccess;
+                                        errorLog = newError;
+                                        debugLog = newDebug;
+                                        logger.setLogFiles(accessLog, errorLog, debugLog);
+                                }
+                                if (newConsole != consoleFlag) {
+                                        consoleFlag = newConsole;
+                                        logger.setConsoleOutput(consoleFlag);
+                                }
+                                if (newDebugLevel != debugLevel) {
+                                        debugLevel = newDebugLevel;
+                                        logger.setDebugLevel(debugLevel);
+                                }
+                                if (cfg.SyslogEnabled()) {
+                                        Logger::SyslogProto proto = cfg.SyslogProtocol() == "tcp" ?
+                                                Logger::SyslogProto::TCP : Logger::SyslogProto::UDP;
+                                        logger.setSyslog(cfg.SyslogHost(), cfg.SyslogPort(), proto);
+                                } else {
+                                        logger.setSyslog("", 0, Logger::SyslogProto::UDP);
                                 }
                                 std::string newDbType = cfg.Get("DatabaseType", dbType);
                                 std::string newDbUser = cfg.Get("username", dbUser);

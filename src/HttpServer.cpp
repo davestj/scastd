@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "HttpServer.h"
 #include "i18n.h"
+#include "logger.h"
 
 #include <cstring>
 #include <csignal>
@@ -32,6 +33,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <fstream>
 
 namespace scastd {
+
+extern Logger logger;
 
 namespace {
 HttpServer *g_server = nullptr;
@@ -72,6 +75,8 @@ bool HttpServer::start(int port,
     username_ = user;
     password_ = pass;
     start_time_ = std::chrono::steady_clock::now();
+    logger.logDebug(std::string("Starting HTTP") + (ssl_enabled ? "S" : "") +
+                    " server on port " + std::to_string(port));
 
     g_server = this;
     std::signal(SIGINT, handle_signal);
@@ -82,6 +87,7 @@ bool HttpServer::start(int port,
         std::ifstream cert_in(cert.c_str(), std::ios::in | std::ios::binary);
         std::ifstream key_in(key.c_str(), std::ios::in | std::ios::binary);
         if (!cert_in || !key_in) {
+            logger.logError("Failed to read SSL certificate or key");
             return false;
         }
         cert_data_.assign((std::istreambuf_iterator<char>(cert_in)),
@@ -112,11 +118,17 @@ bool HttpServer::start(int port,
                                    MHD_OPTION_END);
     }
     running_ = daemon_ != nullptr;
+    if (running_) {
+        logger.logDebug("HTTP server started");
+    } else {
+        logger.logError("Failed to start HTTP server");
+    }
     return running_;
 }
 
 void HttpServer::stop() {
     if (running_) {
+        logger.logDebug("Stopping HTTP server");
         MHD_stop_daemon(daemon_);
         daemon_ = nullptr;
         running_ = false;
@@ -137,6 +149,7 @@ MHD_Result HttpServer::handleRequest(void *cls,
     (void)upload_data_size;
     (void)con_cls;
 
+    logger.logDebug(std::string("HTTP request: ") + method + " " + url);
     if (std::strcmp(method, "GET") != 0) {
         return MHD_NO;
     }
