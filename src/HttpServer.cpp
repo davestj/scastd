@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <unistd.h>
 #include <cstdlib>
 #include <chrono>
+#include <openssl/ssl.h>
+#include <fstream>
 
 namespace scastd {
 
@@ -52,7 +54,13 @@ HttpServer::~HttpServer() {
     stop();
 }
 
-bool HttpServer::start(int port, const std::string &user, const std::string &pass, int threads) {
+bool HttpServer::start(int port,
+                       const std::string &user,
+                       const std::string &pass,
+                       int threads,
+                       bool ssl_enabled,
+                       const std::string &cert,
+                       const std::string &key) {
 #if defined(__APPLE__) || defined(__linux__)
     const char *no_daemon = std::getenv("SCASD_NO_DAEMON");
     if (!no_daemon || std::strcmp(no_daemon, "1") != 0) {
@@ -69,12 +77,40 @@ bool HttpServer::start(int port, const std::string &user, const std::string &pas
     std::signal(SIGINT, handle_signal);
     std::signal(SIGTERM, handle_signal);
 
-    daemon_ = MHD_start_daemon(MHD_USE_INTERNAL_POLLING_THREAD,
-                               port,
-                               nullptr, nullptr,
-                               &HttpServer::handleRequest, this,
-                               MHD_OPTION_THREAD_POOL_SIZE, threads,
-                               MHD_OPTION_END);
+    unsigned int flags = MHD_USE_INTERNAL_POLLING_THREAD;
+    if (ssl_enabled) {
+        std::ifstream cert_in(cert.c_str(), std::ios::in | std::ios::binary);
+        std::ifstream key_in(key.c_str(), std::ios::in | std::ios::binary);
+        if (!cert_in || !key_in) {
+            return false;
+        }
+        cert_data_.assign((std::istreambuf_iterator<char>(cert_in)),
+                          std::istreambuf_iterator<char>());
+        key_data_.assign((std::istreambuf_iterator<char>(key_in)),
+                         std::istreambuf_iterator<char>());
+
+        OPENSSL_init_ssl(0, nullptr);
+#ifdef MHD_USE_TLS
+        flags |= MHD_USE_TLS;
+#else
+        flags |= MHD_USE_SSL;
+#endif
+        daemon_ = MHD_start_daemon(flags,
+                                   port,
+                                   nullptr, nullptr,
+                                   &HttpServer::handleRequest, this,
+                                   MHD_OPTION_THREAD_POOL_SIZE, threads,
+                                   MHD_OPTION_HTTPS_MEM_CERT, cert_data_.c_str(),
+                                   MHD_OPTION_HTTPS_MEM_KEY, key_data_.c_str(),
+                                   MHD_OPTION_END);
+    } else {
+        daemon_ = MHD_start_daemon(flags,
+                                   port,
+                                   nullptr, nullptr,
+                                   &HttpServer::handleRequest, this,
+                                   MHD_OPTION_THREAD_POOL_SIZE, threads,
+                                   MHD_OPTION_END);
+    }
     running_ = daemon_ != nullptr;
     return running_;
 }

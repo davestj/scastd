@@ -69,6 +69,29 @@ credential. The configuration file also supports `username_file` and
 `password_file` keys. Any secrets file should also be protected with
 restrictive permissions, for example `chmod 600 password.txt`.
 
+### HTTPS
+
+The built-in status server can optionally serve HTTPS. Enable TLS and
+point the daemon to your certificate and private key:
+
+```
+ssl_enabled true
+ssl_cert /etc/scastd/server.crt
+ssl_key /etc/scastd/server.key
+```
+
+For local testing a self-signed certificate may be generated:
+
+```
+scripts/gen_self_signed_cert.sh /tmp/certs
+```
+
+This creates `scastd.crt` and `scastd.key` with subject alternative
+names for `127.0.0.1` and `0.0.0.0`. Self-signed certificates are
+convenient for development but **must not** be used in production.
+Always secure the private key and obtain a certificate from a trusted
+authority for real deployments.
+
 Usage
 -----
 Start the daemon with your configuration file and query the HTTP

@@ -41,6 +41,10 @@ PKG_CHECK_MODULES([SQLITE3], [sqlite3], [], [AC_MSG_ERROR([sqlite3 library not f
 CXXFLAGS="$CXXFLAGS $SQLITE3_CFLAGS"
 LIBS="$LIBS $SQLITE3_LIBS"
 
+PKG_CHECK_MODULES([OPENSSL], [openssl], [], [AC_MSG_ERROR([OpenSSL library not found; install libssl-dev.])])
+CXXFLAGS="$CXXFLAGS $OPENSSL_CFLAGS"
+LIBS="$LIBS $OPENSSL_LIBS"
+
 PKG_CHECK_MODULES([SPDLOG], [spdlog], [], [AC_MSG_ERROR([spdlog library not found; install libspdlog-dev.])])
 CXXFLAGS="$CXXFLAGS $SPDLOG_CFLAGS"
 LIBS="$LIBS $SPDLOG_LIBS"

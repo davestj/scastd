@@ -37,7 +37,7 @@ static size_t write_cb(void *contents, size_t size, size_t nmemb, void *userp) {
 TEST_CASE("HTTP server responds with status") {
     setenv("SCASD_NO_DAEMON", "1", 1);
     scastd::HttpServer server;
-    REQUIRE(server.start(18080));
+    REQUIRE(server.start(18080, "", "", 1, false, "", ""));
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     CURL *curl = curl_easy_init();
@@ -82,7 +82,7 @@ TEST_CASE("HTTP server responds with status") {
 TEST_CASE("HTTP server uptime requires auth") {
     setenv("SCASD_NO_DAEMON", "1", 1);
     scastd::HttpServer server;
-    REQUIRE(server.start(18081, "user", "pass"));
+    REQUIRE(server.start(18081, "user", "pass", 1, false, "", ""));
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     CURL *curl = curl_easy_init();

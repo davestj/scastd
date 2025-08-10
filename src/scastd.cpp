@@ -364,10 +364,15 @@ int run(const std::string &configPath)
         int httpPort = cfg.Get("http_port", 8333);
         std::string httpUser = cfg.Get("http_username", "");
         std::string httpPass = cfg.Get("http_password", "");
+        bool sslEnabled = cfg.Get("ssl_enabled", false);
+        std::string sslCert = cfg.Get("ssl_cert", "");
+        std::string sslKey = cfg.Get("ssl_key", "");
         if (httpEnabled) {
                 if (!httpServer.start(httpPort, httpUser, httpPass,
-                                     std::thread::hardware_concurrency())) {
-                        fprintf(stderr, _("Failed to start HTTP server on port %d\n"), httpPort);
+                                       std::thread::hardware_concurrency(),
+                                       sslEnabled, sslCert, sslKey)) {
+                        fprintf(stderr, _("Failed to start HTTP%s server on port %d\n"),
+                                sslEnabled ? "S" : "", httpPort);
                 }
         }
         std::string dbUser = cfg.Get("username", "");
