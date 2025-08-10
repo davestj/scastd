@@ -1,3 +1,8 @@
+# AGENTS Instructions
+
+All `*.cpp` and `*.h` files must start with the following GPL license header:
+
+```
 /*
 /////////////////////////////////////////////////
 // Scast Daemon
@@ -19,34 +24,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-#pragma once
+```
 
-#include <atomic>
-#include <microhttpd.h>
-
-namespace scastd {
-
-class HttpServer {
-public:
-    HttpServer();
-    ~HttpServer();
-
-    bool start(int port = 8333);
-    void stop();
-
-private:
-    static MHD_Result handleRequest(void *cls,
-                                    struct MHD_Connection *connection,
-                                    const char *url,
-                                    const char *method,
-                                    const char *version,
-                                    const char *upload_data,
-                                    size_t *upload_data_size,
-                                    void **con_cls);
-
-    std::atomic<bool> running_;
-    struct MHD_Daemon *daemon_;
-};
-
-} // namespace scastd
-
+New source files must include this header to comply with project licensing.
