@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <string>
 #include <map>
+#include <cstddef>
 
 class Config {
 public:
@@ -40,6 +41,8 @@ public:
     std::string ErrorLog() const;
     std::string DebugLog() const;
     int DebugLevel() const;
+    size_t LogMaxSize() const;
+    int LogRetention() const;
     bool SyslogEnabled() const;
     std::string SyslogHost() const;
     int SyslogPort() const;

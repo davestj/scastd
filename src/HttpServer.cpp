@@ -29,8 +29,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <unistd.h>
 #include <cstdlib>
 #include <chrono>
+#include <ctime>
 #include <openssl/ssl.h>
 #include <fstream>
+#include <netdb.h>
+#include <netinet/in.h>
 
 namespace scastd {
 
@@ -120,6 +123,8 @@ bool HttpServer::start(int port,
     running_ = daemon_ != nullptr;
     if (running_) {
         logger.logDebug("HTTP server started");
+        logger.logAccess("#Version: 1.0");
+        logger.logAccess("#Fields: date time c-ip cs-method cs-uri-stem sc-status");
     } else {
         logger.logError("Failed to start HTTP server");
     }
@@ -148,9 +153,34 @@ MHD_Result HttpServer::handleRequest(void *cls,
     (void)upload_data;
     (void)upload_data_size;
     (void)con_cls;
-
     logger.logDebug(std::string("HTTP request: ") + method + " " + url);
+
+    const union MHD_ConnectionInfo *ci = MHD_get_connection_info(connection, MHD_CONNECTION_INFO_CLIENT_ADDRESS);
+    char ipbuf[NI_MAXHOST] = "-";
+    if (ci && ci->client_addr) {
+        socklen_t addrlen = 0;
+        if (ci->client_addr->sa_family == AF_INET)
+            addrlen = sizeof(struct sockaddr_in);
+        else if (ci->client_addr->sa_family == AF_INET6)
+            addrlen = sizeof(struct sockaddr_in6);
+        getnameinfo(ci->client_addr, addrlen, ipbuf, sizeof(ipbuf), nullptr, 0, NI_NUMERICHOST);
+    }
+    auto logRequest = [&](int status) {
+        auto now = std::chrono::system_clock::now();
+        std::time_t t = std::chrono::system_clock::to_time_t(now);
+        std::tm tm{};
+        gmtime_r(&t, &tm);
+        char datebuf[16];
+        char timebuf[16];
+        std::strftime(datebuf, sizeof(datebuf), "%Y-%m-%d", &tm);
+        std::strftime(timebuf, sizeof(timebuf), "%H:%M:%S", &tm);
+        std::string line = std::string(datebuf) + " " + timebuf + " " + ipbuf +
+                           " " + method + " " + url + " " + std::to_string(status);
+        logger.logAccess(line);
+    };
+
     if (std::strcmp(method, "GET") != 0) {
+        logRequest(MHD_HTTP_METHOD_NOT_ALLOWED);
         return MHD_NO;
     }
 
@@ -169,6 +199,7 @@ MHD_Result HttpServer::handleRequest(void *cls,
             struct MHD_Response *response = MHD_create_response_from_buffer(0, (void *)"", MHD_RESPMEM_PERSISTENT);
             int ret = MHD_queue_basic_auth_fail_response(connection, "scastd", response);
             MHD_destroy_response(response);
+            logRequest(MHD_HTTP_UNAUTHORIZED);
             return static_cast<MHD_Result>(ret);
         }
     }
@@ -205,6 +236,7 @@ MHD_Result HttpServer::handleRequest(void *cls,
         MHD_add_response_header(response, "Content-Type", "text/plain");
         int ret = MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, response);
         MHD_destroy_response(response);
+        logRequest(MHD_HTTP_NOT_FOUND);
         return static_cast<MHD_Result>(ret);
     }
 
@@ -213,6 +245,7 @@ MHD_Result HttpServer::handleRequest(void *cls,
     MHD_add_response_header(response, "Content-Type", content_type);
     int ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
     MHD_destroy_response(response);
+    logRequest(MHD_HTTP_OK);
     return static_cast<MHD_Result>(ret);
 }
 
