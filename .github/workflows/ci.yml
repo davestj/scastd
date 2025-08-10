@@ -6,9 +6,32 @@ on:
   pull_request:
     branches: [ "master" ]
 
+env:
+  DB_USER: ${{ secrets.DB_USER }}
+  DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+  SQLITE_DB_PATH: ${{ secrets.SQLITE_DB_PATH }}
+  SSL_CERT: ${{ secrets.SSL_CERT }}
+  SSL_KEY: ${{ secrets.SSL_KEY }}
+
 jobs:
+  check-secrets:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify required secrets
+        run: |
+          missing=()
+          for s in DB_USER DB_PASSWORD SQLITE_DB_PATH SSL_CERT SSL_KEY; do
+            if [ -z "${!s}" ]; then
+              missing+=("$s")
+            fi
+          done
+          if [ ${#missing[@]} -ne 0 ]; then
+            echo "Missing required secrets: ${missing[*]}" >&2
+            exit 1
+          fi
   test:
     name: Build and test
+    needs: check-secrets
     strategy:
       matrix:
         runs-on:
@@ -38,6 +61,7 @@ jobs:
         run: make check
 
   lint:
+    needs: check-secrets
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
