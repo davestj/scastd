@@ -23,15 +23,34 @@ and PostgreSQL are currently supported.
 
 Building
 --------
-This repository omits generated build system files such as `configure` and `Makefile.in`.
-Run `./autogen.sh` (or `autoreconf -i && ./configure`) to generate them before building:
+This repository omits generated build system files such as `configure` and
+`Makefile.in`. Run `./autogen.sh` (or `autoreconf -i`) to generate them before
+building. Platform specific examples are shown below.
 
-Install the required development packages, including `libmicrohttpd-dev`
-and `libpq-dev` on Debian/Ubuntu or `libmicrohttpd` and `postgresql`
-via Homebrew on macOS, then run:
+### Debian/Ubuntu
+
+Install the required development packages and build the project:
 
 ```
+sudo apt-get update && sudo apt-get install -y build-essential autoconf automake \
+  libtool pkg-config libxml2-dev libcurl4-openssl-dev libmysqlclient-dev \
+  libpq-dev libmicrohttpd-dev
 ./autogen.sh
+./configure
+make
+```
+
+### macOS arm64
+
+Use Homebrew to install dependencies and set `PKG_CONFIG_PATH` so `pkg-config`
+can locate the libraries:
+
+```
+brew update
+brew install autoconf automake libtool pkg-config libxml2 curl mysql-client libpq libmicrohttpd
+export PKG_CONFIG_PATH=/opt/homebrew/opt/libpq/lib/pkgconfig:/opt/homebrew/opt/mysql-client/lib/pkgconfig:/opt/homebrew/opt/libxml2/lib/pkgconfig:$PKG_CONFIG_PATH
+./autogen.sh
+./configure
 make
 ```
 
@@ -131,6 +150,25 @@ HTTP endpoints are namespaced by API version (e.g., `/v1/status.json`).
 Breaking changes will result in a new major version such as `/v2`. Older
 versions may continue to be served for a transition period, but
 unversioned paths are deprecated and may be removed in a future release.
+
+Continuous Integration and Releases
+-----------------------------------
+The project is built and tested by GitHub Actions on the following
+platforms:
+
+- macOS 14 (arm64)
+- Debian 12
+- Ubuntu 22.04
+- Ubuntu 24.04
+
+Each job bootstraps the build with `./autogen.sh`, configures, compiles
+and executes the test suite via `make check`.  After all tests and lint
+jobs succeed, a release job tags the commit on `master` as
+`v<run_number>` and publishes a GitHub release.
+
+Required secrets and environment variables are detailed in
+[docs/CISecrets.md](docs/CISecrets.md).  The complete CI workflow is
+described in [docs/CI.md](docs/CI.md).
 
 
 Troubleshooting

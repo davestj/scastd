@@ -9,6 +9,16 @@ AC_PROG_CXX
 AC_CANONICAL_HOST
 AM_PROG_LIBTOOL
 
+case $host_os in
+  darwin*)
+    AC_MSG_NOTICE([macOS detected - using Homebrew paths])
+    CPPFLAGS="$CPPFLAGS -I/opt/homebrew/include"
+    LDFLAGS="$LDFLAGS -L/opt/homebrew/lib"
+    PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:/opt/homebrew/share/pkgconfig:${PKG_CONFIG_PATH}"
+    export PKG_CONFIG_PATH
+    ;;
+esac
+
 dnl Use a modern C++ compiler with Linux specific options
 CXXFLAGS="$CXXFLAGS -std=c++17 -Wall -D_GNU_SOURCE"
 
@@ -52,6 +62,8 @@ AC_SUBST([SYSLOG_LIBS])
 dnl Make substitutions
 AC_SUBST(CXXFLAGS)
 AC_SUBST(LIBS)
+AC_SUBST(CPPFLAGS)
+AC_SUBST(LDFLAGS)
 
 AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile scripts/Makefile])
 AC_OUTPUT
