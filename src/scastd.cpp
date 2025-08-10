@@ -43,6 +43,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>
+#include <thread>
+#include <mutex>
+#include <vector>
+#include <utility>
 
 namespace scastd {
 
@@ -53,6 +57,9 @@ int     logRetention = 5;
 int	paused = 0;
 int     exiting = 0;
 volatile sig_atomic_t reloadConfig = 0;
+
+std::mutex logMutex;
+std::mutex dbMutex;
 
 void parseWebdata(xmlNodePtr cur)
 {
@@ -84,6 +91,7 @@ static void setupLogger() {
 
 void writeToLog(char *message) {
         if (!logger) return;
+        std::lock_guard<std::mutex> lock(logMutex);
         std::string msg = message ? message : "";
         if (!msg.empty() && msg.back() == '\n') {
                 msg.pop_back();
@@ -93,6 +101,111 @@ void writeToLog(char *message) {
 void closeLog() {
         spdlog::shutdown();
         logger.reset();
+}
+
+static void processServer(const std::string &serverURL,
+                          const std::string &password,
+                          IDatabase *db) {
+        char IP[255] = "";
+        int port = 0;
+        std::string ipStr;
+        if (parseHostPort(serverURL, ipStr, port)) {
+                strncpy(IP, ipStr.c_str(), sizeof(IP) - 1);
+                IP[sizeof(IP) - 1] = '\0';
+        }
+        char buf[1024];
+        sprintf(buf, _("Connecting to server %s at port %d\n"), IP, port);
+        writeToLog(buf);
+
+        std::string urlV1 = std::string("http://") + IP + ":" + std::to_string(port) +
+                            "/admin.cgi?pass=" + password + "&mode=viewxml";
+        std::string urlV2 = std::string("http://") + IP + ":" + std::to_string(port) +
+                            "/admin.cgi?mode=viewxml&sid=1&pass=" + password;
+        std::string response;
+        CurlClient curl;
+        bool fetched = curl.fetchUrl(urlV1, response);
+        if (!fetched || response.find("<CURRENTLISTENERS>") == std::string::npos) {
+                fetched = curl.fetchUrl(urlV2, response);
+        }
+        if (!fetched) {
+                sprintf(buf, _("Failed to fetch data from %s\n"), serverURL.c_str());
+                writeToLog(buf);
+                return;
+        }
+        if (response.find("<title>SHOUTcast Administrator</title>") != std::string::npos) {
+                sprintf(buf, _("Bad password (%s/%s)\n"), serverURL.c_str(), password.c_str());
+                writeToLog(buf);
+                return;
+        }
+
+        const char *p1 = strchr(response.c_str(), '<');
+        if (!p1) {
+                writeToLog(_("Bad parse!"));
+                return;
+        }
+        xmlDocPtr doc = xmlParseMemory(p1, strlen(p1));
+        if (!doc) {
+                writeToLog(_("Bad parse!"));
+                return;
+        }
+        xmlNodePtr cur = xmlDocGetRootElement(doc);
+        if (cur == NULL) {
+                writeToLog(_("Empty Document!"));
+                xmlFreeDoc(doc);
+                return;
+        }
+        serverData sData{};
+        cur = cur->xmlChildrenNode;
+        while (cur != NULL) {
+                if (!xmlStrcmp(cur->name, (const xmlChar *) "CURRENTLISTENERS")) {
+                        sData.currentListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
+                }
+                if (!xmlStrcmp(cur->name, (const xmlChar *) "PEAKLISTENERS")) {
+                        sData.peakListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
+                }
+                if (!xmlStrcmp(cur->name, (const xmlChar *) "MAXLISTENERS")) {
+                        sData.maxListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
+                }
+                if (!xmlStrcmp(cur->name, (const xmlChar *) "REPORTEDLISTENERS")) {
+                        sData.reportedListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
+                }
+                if (!xmlStrcmp(cur->name, (const xmlChar *) "AVERAGETIME")) {
+                        sData.avgTime = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
+                }
+                if (!xmlStrcmp(cur->name, (const xmlChar *) "WEBHITS")) {
+                        sData.webHits = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
+                }
+                if (!xmlStrcmp(cur->name, (const xmlChar *) "STREAMHITS")) {
+                        sData.streamHits = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
+                }
+                if (!xmlStrcmp(cur->name, (const xmlChar *) "SONGTITLE")) {
+                        memset(sData.songTitle, '\0', sizeof(sData.songTitle));
+                        strcpy(sData.songTitle, (char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
+                }
+                cur = cur->next;
+        }
+        xmlFreeDoc(doc);
+        trimRight(sData.songTitle);
+
+        char query[2046];
+        std::lock_guard<std::mutex> lock(dbMutex);
+        sprintf(query, "select songTitle from scastd_songinfo where serverURL = '%s' order by time desc limit 1", serverURL.c_str());
+        db->query(query);
+        IDatabase::Row row = db->fetch();
+        int insert_flag = 1;
+        if (!row.empty() && !strcmp(sData.songTitle, row[0].c_str())) {
+                insert_flag = 0;
+        }
+        if (insert_flag) {
+                sprintf(query, "insert into scastd_songinfo values('%s', '%s', NULL)", serverURL.c_str(), sData.songTitle);
+                db->query(query);
+        }
+        sprintf(query,
+                "insert into scastd_serverinfo (serverURL, currentlisteners, peaklisteners, maxlisteners, averagetime, streamhits, time) "
+                "values('%s', %d, %d, %d, %d, %d, NULL)",
+                serverURL.c_str(), sData.currentListeners, sData.peakListeners,
+                sData.maxListeners, sData.avgTime, sData.streamHits);
+        db->query(query);
 }
 
 void sigUSR1(int sig)
@@ -174,7 +287,8 @@ int run(const std::string &configPath)
         std::string httpUser = cfg.Get("http_username", "");
         std::string httpPass = cfg.Get("http_password", "");
         if (httpEnabled) {
-                if (!httpServer.start(httpPort, httpUser, httpPass)) {
+                if (!httpServer.start(httpPort, httpUser, httpPass,
+                                     std::thread::hardware_concurrency())) {
                         fprintf(stderr, _("Failed to start HTTP server on port %d\n"), httpPort);
                 }
         }
@@ -313,123 +427,22 @@ int run(const std::string &configPath)
 		if (!paused) {
                         sprintf(query, "select serverURL, password from scastd_memberinfo where gather_flag = 1");
                         db2->query(query);
+                        std::vector<std::pair<std::string, std::string>> servers;
                         while (true) {
-				if (exiting) break;
+                                if (exiting) break;
                                 row = db2->fetch();
                                 if (row.empty()) break;
-                                memset(serverURL, '\000', sizeof(serverURL));
-                                memset(password, '\000', sizeof(password));
-                                memset(IP, '\000', sizeof(IP));
-                                port = 0;
-                                if (!row[0].empty()) {
-                                        strcpy(serverURL, row[0].c_str());
-                                        std::string ipStr;
-                                        if (parseHostPort(row[0], ipStr, port)) {
-                                                strncpy(IP, ipStr.c_str(), sizeof(IP) - 1);
-                                                IP[sizeof(IP) - 1] = '\0';
-                                        }
-
-                                }
-                                if (!row[1].empty()) {
-                                        strcpy(password, row[1].c_str());
-                                }
-
-                                sprintf(buf, _("Connecting to server %s at port %d\n"), IP, port);
-                                writeToLog(buf);
-std::string urlV1 = std::string("http://") + IP + ":" + std::to_string(port) + "/admin.cgi?pass=" + password + "&mode=viewxml";
-std::string urlV2 = std::string("http://") + IP + ":" + std::to_string(port) + "/admin.cgi?mode=viewxml&sid=1&pass=" + password;
-std::string response;
-CurlClient curl;
-bool fetched = curl.fetchUrl(urlV1, response);
-if (!fetched || response.find("<CURRENTLISTENERS>") == std::string::npos) {
-fetched = curl.fetchUrl(urlV2, response);
-}
-if (fetched) {
-if (response.find("<title>SHOUTcast Administrator</title>") != std::string::npos) {
-sprintf(buf, _("Bad password (%s/%s)\n"), serverURL, password);
-writeToLog(buf);
-}
-else {
-p1 = strchr(response.c_str(), '<');
-if (p1) {
-doc = xmlParseMemory(p1, strlen(p1));
-if (!doc) {
-writeToLog(_("Bad parse!"));
-}
-
-cur = xmlDocGetRootElement(doc);
-if (cur == NULL) {
-writeToLog(_("Empty Document!"));
-xmlFreeDoc(doc);
-exiting = 1;
-break;
-}
-else {
-                                                                cur = cur->xmlChildrenNode;
-                                                                while (cur != NULL) {
-
-                                                                        if (!xmlStrcmp(cur->name, (const xmlChar *) "CURRENTLISTENERS")) {
-                                                                                sData.currentListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-                                                                        }
-                                                                        if (!xmlStrcmp(cur->name, (const xmlChar *) "PEAKLISTENERS")) {
-                                                                                sData.peakListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-                                                                        }
-                                                                        if (!xmlStrcmp(cur->name, (const xmlChar *) "MAXLISTENERS")) {
-                                                                                sData.maxListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-                                                                        }
-                                                                        if (!xmlStrcmp(cur->name, (const xmlChar *) "REPORTEDLISTENERS")) {
-                                                                                sData.reportedListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-                                                                        }
-                                                                        if (!xmlStrcmp(cur->name, (const xmlChar *) "AVERAGETIME")) {
-                                                                                sData.avgTime = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-                                                                        }
-                                                                        if (!xmlStrcmp(cur->name, (const xmlChar *) "WEBHITS")) {
-                                                                                sData.webHits = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-                                                                        }
-                                                                        if (!xmlStrcmp(cur->name, (const xmlChar *) "STREAMHITS")) {
-                                                                                sData.streamHits = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-                                                                        }
-                                                                        if (!xmlStrcmp(cur->name, (const xmlChar *) "SONGTITLE")) {
-                                                                                memset(sData.songTitle, '\0', sizeof(sData.songTitle));
-                                                                                strcpy(sData.songTitle, (char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-                                                                        }
-                                                                        cur = cur->next;
-                                                                }
-                                                        }
-                                                        trimRight(sData.songTitle);
-                                                        sprintf(query, "select songTitle from scastd_songinfo where serverURL = '%s' order by time desc limit 1", serverURL);
-                                                        db->query(query);
-                                                        insert_flag = 0;
-                                                        row = db->fetch();
-                                                        if (!row.empty()) {
-                                                                if (!strcmp(sData.songTitle, row[0].c_str())) {
-                                                                        insert_flag = 0;
-                                                                }
-                                                                else {
-                                                                        insert_flag = 1;
-                                                                }
-                                                        }
-                                                        else {
-                                                                insert_flag = 1;
-                                                        }
-                                                        if (insert_flag) {
-                                                                sprintf(query, "insert into scastd_songinfo values('%s', '%s', NULL)", serverURL, sData.songTitle);
-                                                                db->query(query);
-                                                        }
-                                                        sprintf(query, "insert into scastd_serverinfo (serverURL, currentlisteners, peaklisteners, maxlisteners, averagetime, streamhits, time) values('%s', %d, %d, %d, %d, %d, NULL)", serverURL, sData.currentListeners, sData.maxListeners, sData.peakListeners, sData.avgTime, sData.streamHits);
-                                                        db->query(query);
-                                                }
-                                                else {
-                                                        sprintf(buf, _("Bad data from %s\n"), serverURL);
-                                                        writeToLog(buf);
-                                                }
-                                        }
-                                } else {
-                                        sprintf(buf, _("Failed to fetch data from %s\n"), serverURL);
-                                        writeToLog(buf);
-                                }
-
-			}
+                                servers.emplace_back(row[0], row.size() > 1 ? row[1] : "");
+                        }
+                        std::vector<std::thread> workers;
+                        for (const auto &srv : servers) {
+                                workers.emplace_back([&, srv] {
+                                        processServer(srv.first, srv.second, db);
+                                });
+                        }
+                        for (auto &t : workers) {
+                                if (t.joinable()) t.join();
+                        }
 		}
 		if (exiting) break;
 			
