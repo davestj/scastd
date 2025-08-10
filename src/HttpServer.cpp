@@ -52,7 +52,7 @@ HttpServer::~HttpServer() {
     stop();
 }
 
-bool HttpServer::start(int port, const std::string &user, const std::string &pass) {
+bool HttpServer::start(int port, const std::string &user, const std::string &pass, int threads) {
 #if defined(__APPLE__) || defined(__linux__)
     const char *no_daemon = std::getenv("SCASD_NO_DAEMON");
     if (!no_daemon || std::strcmp(no_daemon, "1") != 0) {
@@ -73,6 +73,7 @@ bool HttpServer::start(int port, const std::string &user, const std::string &pas
                                port,
                                nullptr, nullptr,
                                &HttpServer::handleRequest, this,
+                               MHD_OPTION_THREAD_POOL_SIZE, threads,
                                MHD_OPTION_END);
     running_ = daemon_ != nullptr;
     return running_;
