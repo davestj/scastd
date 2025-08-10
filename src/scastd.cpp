@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "db/MySQLDatabase.h"
 #include "db/MariaDBDatabase.h"
 #include "db/PostgresDatabase.h"
+#include "db/SQLiteDatabase.h"
 #include "Config.h"
 
 #include "CurlClient.h"
@@ -47,6 +48,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <mutex>
 #include <vector>
 #include <utility>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <fstream>
+#include <sstream>
 
 namespace scastd {
 
@@ -60,6 +65,17 @@ volatile sig_atomic_t reloadConfig = 0;
 
 std::mutex logMutex;
 std::mutex dbMutex;
+
+typedef struct tagServerData {
+        int     currentListeners;
+        int     peakListeners;
+        int     maxListeners;
+        int     reportedListeners;
+        int     avgTime;
+        int     webHits;
+        int     streamHits;
+        char    songTitle[1024];
+} serverData;
 
 void parseWebdata(xmlNodePtr cur)
 {
@@ -246,17 +262,6 @@ void sigHUP(int sig)
 }
 
 
-typedef struct tagServerData {
-	int	currentListeners;
-	int	peakListeners;
-	int	maxListeners;
-	int	reportedListeners;
-	int	avgTime;
-	int	webHits;
-	int	streamHits;
-	char	songTitle[1024];
-} serverData;
-
 int run(const std::string &configPath)
 {
         init_i18n();
@@ -292,13 +297,24 @@ int run(const std::string &configPath)
                         fprintf(stderr, _("Failed to start HTTP server on port %d\n"), httpPort);
                 }
         }
-        std::string dbUser = cfg.Get("username", "root");
+        std::string dbUser = cfg.Get("username", "");
         std::string dbPass = cfg.Get("password", "");
-        std::string dbType = cfg.Get("DatabaseType", "mysql");
-        std::string dbHost = cfg.Get("host", "localhost");
+        std::string dbType = cfg.Get("DatabaseType", "");
+        std::string dbHost = cfg.Get("host", "");
         int dbPort = cfg.Get("port", 0);
-        std::string dbName = cfg.Get("dbname", "scastd");
+        std::string dbName = cfg.Get("dbname", "");
         std::string dbSSLMode = cfg.Get("sslmode", "");
+        std::string sqlitePath = cfg.Get("sqlite_path", "/etc/scastd/scastd.db");
+        bool useSqlite = dbType == "sqlite" || dbUser.empty() || dbHost.empty() || dbName.empty();
+        if (useSqlite) {
+                dbType = "sqlite";
+                dbName = sqlitePath;
+                dbUser.clear();
+                dbPass.clear();
+                dbHost.clear();
+                dbPort = 0;
+                dbSSLMode.clear();
+        }
         logDir = cfg.Get("log_dir", ".");
         logMaxSize = (size_t)cfg.Get("log_max_size", 1024 * 1024);
         logRetention = cfg.Get("log_retention", 5);
@@ -312,11 +328,30 @@ int run(const std::string &configPath)
         } else if (dbType == "postgres") {
                 db = new PostgresDatabase();
                 db2 = new PostgresDatabase();
+        } else if (dbType == "sqlite") {
+                db = new SQLiteDatabase();
+                db2 = new SQLiteDatabase();
         } else {
-                fprintf(stderr, _("Unknown DatabaseType '%s'. Supported values are mysql, mariadb, postgres. Falling back to default 'mysql'.\n"), dbType.c_str());
-                db = new MySQLDatabase();
-                db2 = new MySQLDatabase();
-                dbType = "mysql";
+                fprintf(stderr, _("Unknown DatabaseType '%s'. Falling back to sqlite.\n"), dbType.c_str());
+                db = new SQLiteDatabase();
+                db2 = new SQLiteDatabase();
+                dbType = "sqlite";
+                dbName = sqlitePath;
+                dbUser.clear();
+                dbPass.clear();
+                dbHost.clear();
+                dbPort = 0;
+                dbSSLMode.clear();
+        }
+        bool needInit = false;
+        if (dbType == "sqlite") {
+                std::string dir = dbName.substr(0, dbName.find_last_of('/'));
+                if (!dir.empty()) {
+                        mkdir(dir.c_str(), 0755);
+                }
+                if (access(dbName.c_str(), F_OK) != 0) {
+                        needInit = true;
+                }
         }
 
         fprintf(stdout, _("Detaching from console...\n"));
@@ -350,6 +385,13 @@ int run(const std::string &configPath)
         }
         db->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
         db2->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
+        if (dbType == "sqlite" && needInit) {
+                std::ifstream sqlFile("src/sqlite.sql");
+                if (sqlFile) {
+                        std::stringstream buffer; buffer << sqlFile.rdbuf();
+                        db->query(buffer.str());
+                }
+        }
         sprintf(query, "select sleeptime from scastd_runtime");
         db->query(query);
         row = db->fetch();
@@ -384,6 +426,23 @@ int run(const std::string &configPath)
                                 int newDbPort = cfg.Get("port", dbPort);
                                 std::string newDbName = cfg.Get("dbname", dbName);
                                 std::string newDbSSLMode = cfg.Get("sslmode", dbSSLMode);
+                                std::string newSqlitePath = cfg.Get("sqlite_path", dbName);
+                                bool newUseSqlite = newDbType == "sqlite" || newDbUser.empty() || newDbHost.empty() || newDbName.empty();
+                                if (newUseSqlite) {
+                                        newDbType = "sqlite";
+                                        newDbName = newSqlitePath;
+                                        newDbUser.clear();
+                                        newDbPass.clear();
+                                        newDbHost.clear();
+                                        newDbPort = 0;
+                                        newDbSSLMode.clear();
+                                }
+                                bool newNeedInit = false;
+                                if (newDbType == "sqlite") {
+                                        if (access(newDbName.c_str(), F_OK) != 0) {
+                                                newNeedInit = true;
+                                        }
+                                }
                                 if (newDbType != dbType) {
                                         if (db) { db->disconnect(); delete db; }
                                         if (db2) { db2->disconnect(); delete db2; }
@@ -396,11 +455,23 @@ int run(const std::string &configPath)
                                         } else if (newDbType == "postgres") {
                                                 db = new PostgresDatabase();
                                                 db2 = new PostgresDatabase();
+                                        } else if (newDbType == "sqlite") {
+                                                db = new SQLiteDatabase();
+                                                db2 = new SQLiteDatabase();
                                         } else {
-                                                writeToLog(_("Unknown DatabaseType. Falling back to mysql\n"));
-                                                db = new MySQLDatabase();
-                                                db2 = new MySQLDatabase();
-                                                newDbType = "mysql";
+                                                writeToLog(_("Unknown DatabaseType. Falling back to sqlite\n"));
+                                                db = new SQLiteDatabase();
+                                                db2 = new SQLiteDatabase();
+                                                newDbType = "sqlite";
+                                                newDbName = newSqlitePath;
+                                                newDbUser.clear();
+                                                newDbPass.clear();
+                                                newDbHost.clear();
+                                                newDbPort = 0;
+                                                newDbSSLMode.clear();
+                                                if (access(newDbName.c_str(), F_OK) != 0) {
+                                                        newNeedInit = true;
+                                                }
                                         }
                                         dbType = newDbType;
                                 } else {
@@ -415,6 +486,13 @@ int run(const std::string &configPath)
                                 dbSSLMode = newDbSSLMode;
                                 db->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
                                 db2->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
+                                if (newNeedInit && dbType == "sqlite") {
+                                        std::ifstream sqlFile("src/sqlite.sql");
+                                        if (sqlFile) {
+                                                std::stringstream buffer; buffer << sqlFile.rdbuf();
+                                                db->query(buffer.str());
+                                        }
+                                }
                                 writeToLog(_("Configuration reloaded\n"));
                         } else {
                                 writeToLog(_("Failed to reload config\n"));

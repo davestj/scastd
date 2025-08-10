@@ -37,6 +37,10 @@ PKG_CHECK_MODULES([LIBMICROHTTPD], [libmicrohttpd], [], [AC_MSG_ERROR([libmicroh
 CXXFLAGS="$CXXFLAGS $LIBMICROHTTPD_CFLAGS"
 LIBS="$LIBS $LIBMICROHTTPD_LIBS"
 
+PKG_CHECK_MODULES([SQLITE3], [sqlite3], [], [AC_MSG_ERROR([sqlite3 library not found; install libsqlite3-dev.])])
+CXXFLAGS="$CXXFLAGS $SQLITE3_CFLAGS"
+LIBS="$LIBS $SQLITE3_LIBS"
+
 PKG_CHECK_MODULES([SPDLOG], [spdlog], [], [AC_MSG_ERROR([spdlog library not found; install libspdlog-dev.])])
 CXXFLAGS="$CXXFLAGS $SPDLOG_CFLAGS"
 LIBS="$LIBS $SPDLOG_LIBS"
