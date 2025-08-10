@@ -68,6 +68,17 @@ Then build and run the tests:
 make && make check
 ```
 
+Configuration and database setup
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Install the default configuration and initialize the SQLite database:
+
+```
+sudo make install
+```
+
+This creates `/etc/scastd/` (mode `755`), copies `scastd.conf`, and
+initializes `scastd.db` with permissions set to `640`.
+
 Systemd service
 ~~~~~~~~~~~~~~~~
 Install the provided `scastd.service` to run the daemon under systemd:
