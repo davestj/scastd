@@ -102,9 +102,16 @@ endpoint:
 curl http://localhost:8333/v1/status.json
 ```
 
-Send `SIGHUP` to the running process to reload `scastd.conf`. Updated
-settings such as the log directory or database credentials take effect
-without restarting.
+Optional flags control logging at startup:
+
+```
+./src/scastd --logging=false --logpath=/var/log/scastd scastd.conf &
+```
+
+`--logging` enables or disables file logging (default `true`), while
+`--logpath` overrides the log directory. Send `SIGHUP` to the running
+process to reload `scastd.conf`. Updated settings such as the log
+directory or database credentials take effect without restarting.
 
 API Versioning
 --------------

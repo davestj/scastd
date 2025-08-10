@@ -26,19 +26,29 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <iostream>
 
 Logger::Logger(const std::string &directory, bool consoleOut)
-    : logDir(directory), console(consoleOut) {
+    : logDir(directory), console(consoleOut), enabled(true) {
     openStreams();
 }
 
 void Logger::setLogDir(const std::string &directory) {
     std::lock_guard<std::mutex> lock(mtx);
     logDir = directory;
-    openStreams();
+    if (enabled)
+        openStreams();
 }
 
 void Logger::setConsoleOutput(bool enable) {
     std::lock_guard<std::mutex> lock(mtx);
     console = enable;
+}
+
+void Logger::setEnabled(bool enable) {
+    std::lock_guard<std::mutex> lock(mtx);
+    enabled = enable;
+    if (enabled)
+        openStreams();
+    else
+        closeStreams();
 }
 
 void Logger::logAccess(const std::string &message) {
@@ -54,6 +64,8 @@ void Logger::logDebug(const std::string &message) {
 }
 
 void Logger::openStreams() {
+    if (!enabled)
+        return;
     if (logDir.empty())
         logDir = ".";
     std::filesystem::create_directories(logDir);
@@ -67,6 +79,8 @@ void Logger::openStreams() {
 
 void Logger::write(std::ofstream &stream, const std::string &message, bool err) {
     std::lock_guard<std::mutex> lock(mtx);
+    if (!enabled)
+        return;
     std::string msg = message;
     if (!msg.empty() && msg.back() != '\n')
         msg.push_back('\n');
@@ -78,4 +92,10 @@ void Logger::write(std::ofstream &stream, const std::string &message, bool err) 
         else
             std::cout << msg;
     }
+}
+
+void Logger::closeStreams() {
+    if (accessStream.is_open()) accessStream.close();
+    if (errorStream.is_open()) errorStream.close();
+    if (debugStream.is_open()) debugStream.close();
 }

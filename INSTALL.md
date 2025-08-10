@@ -79,6 +79,11 @@ sudo make install
 This creates `/etc/scastd/` (mode `755`), copies `scastd.conf`, and
 initializes `scastd.db` with permissions set to `640`.
 
+When running the daemon manually, logging can be controlled without
+editing the configuration file by using command-line flags. Use
+`--logging=true|false` to enable or disable file logging and
+`--logpath=/path/to/logs` to specify an alternate log directory.
+
 Systemd service
 ~~~~~~~~~~~~~~~~
 Install the provided `scastd.service` to run the daemon under systemd:

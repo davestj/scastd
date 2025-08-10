@@ -22,11 +22,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "scastd.h"
 #include <string>
+#include <iostream>
+
+static void printUsage()
+{
+    std::cout << "Usage: scastd [options] [config]\n"
+              << "\nOptions:\n"
+              << "  --dump                 Dump the database and exit\n"
+              << "  --dump-dir DIR         Directory for database dump\n"
+              << "  --logging=true|false   Enable or disable file logging\n"
+              << "  --logpath=PATH         Override log directory\n"
+              << "  -h, --help             Show this help message\n";
+}
 
 int main(int argc, char **argv) {
     std::string configPath = "scastd.conf";
     std::string dumpDir = "/tmp";
     bool doDump = false;
+    bool loggingEnabled = true;
+    std::string logPath;
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -34,15 +48,23 @@ int main(int argc, char **argv) {
             doDump = true;
         } else if (arg == "--dump-dir" && i + 1 < argc) {
             dumpDir = argv[++i];
+        } else if (arg.rfind("--logging=", 0) == 0) {
+            std::string val = arg.substr(10);
+            loggingEnabled = !(val == "false" || val == "0");
+        } else if (arg.rfind("--logpath=", 0) == 0) {
+            logPath = arg.substr(10);
+        } else if (arg == "--help" || arg == "-h") {
+            printUsage();
+            return 0;
         } else {
             configPath = arg;
         }
     }
 
     if (doDump) {
-        return scastd::dumpDatabase(configPath, dumpDir);
+        return scastd::dumpDatabase(configPath, dumpDir, loggingEnabled, logPath);
     }
 
-    return scastd::run(configPath);
+    return scastd::run(configPath, loggingEnabled, logPath);
 }
 

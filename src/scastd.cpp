@@ -108,16 +108,20 @@ static std::string shellEscape(const std::string &in) {
         return out;
 }
 
-int dumpDatabase(const std::string &configPath, const std::string &dumpDir) {
+int dumpDatabase(const std::string &configPath, const std::string &dumpDir,
+                 bool loggingEnabled, const std::string &logPath) {
         init_i18n();
         Config cfg;
         if (!cfg.Load(configPath)) {
                 fprintf(stderr, _("Cannot load config file %s\n"), configPath.c_str());
                 return 1;
         }
-        logDir = cfg.Get("log_dir", ".");
+        logDir = logPath.empty() ? cfg.Get("log_dir", ".") : logPath;
         logger.setConsoleOutput(cfg.Get("log_console", false));
-        setupLogger();
+        logger.setEnabled(loggingEnabled);
+        if (loggingEnabled) {
+                setupLogger();
+        }
 
         std::string dbUser = cfg.Get("username", "");
         std::string dbPass = cfg.Get("password", "");
@@ -311,27 +315,18 @@ void sigHUP(int sig)
 }
 
 
-int run(const std::string &configPath)
+int run(const std::string &configPath, bool loggingEnabled, const std::string &logPath)
 {
         init_i18n();
         scastd::HttpServer httpServer;
-        xmlDocPtr doc;
-	IDatabase       *db = NULL;
-	IDatabase       *db2 = NULL;
+        IDatabase       *db = NULL;
+        IDatabase       *db2 = NULL;
         Config  cfg;
 
 	char	buf[1024];
-        const char    *p1;
-	xmlNodePtr cur;
 	IDatabase::Row       row;
-	serverData	sData;
 	char	query[2046] = "";
-	char	serverURL[255] = "";
-	char	IP[255] = "";
-	int	port = 0;
-	char	password[255] = "";
 	int	sleeptime = 0;
-	int	insert_flag = 0;
 	if (!cfg.Load(configPath)) {
 		fprintf(stderr, _("Cannot load config file %s\n"), configPath.c_str());
 		return 1;
@@ -369,9 +364,12 @@ int run(const std::string &configPath)
                 dbPort = 0;
                 dbSSLMode.clear();
         }
-        logDir = cfg.Get("log_dir", ".");
+        logDir = logPath.empty() ? cfg.Get("log_dir", ".") : logPath;
         logger.setConsoleOutput(cfg.Get("log_console", false));
-        setupLogger();
+        logger.setEnabled(loggingEnabled);
+        if (loggingEnabled) {
+                setupLogger();
+        }
         if (dbType == "mysql") {
                 db = new MySQLDatabase();
                 db2 = new MySQLDatabase();
@@ -463,11 +461,13 @@ int run(const std::string &configPath)
                         Config newCfg;
                         if (newCfg.Load(configPath)) {
                                 cfg = newCfg;
-                                std::string newLogDir = cfg.Get("log_dir", ".");
-                                logger.setConsoleOutput(cfg.Get("log_console", false));
-                                if (newLogDir != logDir) {
-                                        logDir = newLogDir;
-                                        setupLogger();
+                                if (loggingEnabled) {
+                                        std::string newLogDir = logPath.empty() ? cfg.Get("log_dir", ".") : logPath;
+                                        logger.setConsoleOutput(cfg.Get("log_console", false));
+                                        if (newLogDir != logDir) {
+                                                logDir = newLogDir;
+                                                setupLogger();
+                                        }
                                 }
                                 std::string newDbType = cfg.Get("DatabaseType", dbType);
                                 std::string newDbUser = cfg.Get("username", dbUser);

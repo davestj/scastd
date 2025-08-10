@@ -35,6 +35,7 @@ public:
 
     void setLogDir(const std::string &directory);
     void setConsoleOutput(bool enable);
+    void setEnabled(bool enable);
 
     void logAccess(const std::string &message);
     void logError(const std::string &message);
@@ -43,6 +44,7 @@ public:
 private:
     std::string logDir;
     bool console;
+    bool enabled;
     std::ofstream accessStream;
     std::ofstream errorStream;
     std::ofstream debugStream;
@@ -50,6 +52,7 @@ private:
 
     void write(std::ofstream &stream, const std::string &message, bool err);
     void openStreams();
+    void closeStreams();
 };
 
 #endif // LOGGER_H

@@ -26,8 +26,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string>
 
 namespace scastd {
-int run(const std::string &configPath);
-int dumpDatabase(const std::string &configPath, const std::string &dumpDir);
+int run(const std::string &configPath,
+        bool loggingEnabled = true,
+        const std::string &logPath = "");
+int dumpDatabase(const std::string &configPath,
+                 const std::string &dumpDir,
+                 bool loggingEnabled = true,
+                 const std::string &logPath = "");
 }
 
 #endif // SCASTD_H
