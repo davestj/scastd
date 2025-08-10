@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "i18n.h"
 #include "scastd.h"
 #include "logger.h"
+#include "StatusLogger.h"
 
 #include <thread>
 #include <mutex>
@@ -56,6 +57,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 namespace scastd {
 
 Logger logger(false);
+StatusLogger statusLogger("/var/log/scastd/status.json");
 int     paused = 0;
 int     exiting = 0;
 volatile sig_atomic_t reloadConfig = 0;
@@ -118,6 +120,7 @@ int dumpDatabase(const std::string &configPath, const std::string &dumpDir) {
         logger.setConsoleOutput(cfg.Get("log_console", false));
         logger.setDebugLevel(cfg.DebugLevel());
         logger.setRotation(cfg.LogMaxSize(), cfg.LogRetention());
+        statusLogger.setRotation(cfg.LogMaxSize(), cfg.LogRetention());
         if (cfg.SyslogEnabled()) {
                 Logger::SyslogProto proto = cfg.SyslogProtocol() == "tcp" ?
                         Logger::SyslogProto::TCP : Logger::SyslogProto::UDP;
@@ -174,7 +177,7 @@ int dumpDatabase(const std::string &configPath, const std::string &dumpDir) {
         return rc == 0 ? 0 : 1;
 }
 
-static void processServer(const std::string &serverURL,
+static bool processServer(const std::string &serverURL,
                           const std::string &password,
                           IDatabase *db) {
         char IP[255] = "";
@@ -201,29 +204,34 @@ static void processServer(const std::string &serverURL,
         if (!fetched) {
                 sprintf(buf, _("Failed to fetch data from %s\n"), serverURL.c_str());
                 logger.logError(buf);
-                return;
+                statusLogger.log("poll", "error", serverURL);
+                return false;
         }
         if (response.find("<title>SHOUTcast Administrator</title>") != std::string::npos) {
                 sprintf(buf, _("Bad password (%s/%s)\n"), serverURL.c_str(), password.c_str());
                 logger.logError(buf);
-                return;
+                statusLogger.log("poll", "error", serverURL);
+                return false;
         }
 
         const char *p1 = strchr(response.c_str(), '<');
         if (!p1) {
                 logger.logError(_("Bad parse!"));
-                return;
+                statusLogger.log("poll", "error", serverURL);
+                return false;
         }
         xmlDocPtr doc = xmlParseMemory(p1, strlen(p1));
         if (!doc) {
                 logger.logError(_("Bad parse!"));
-                return;
+                statusLogger.log("poll", "error", serverURL);
+                return false;
         }
         xmlNodePtr cur = xmlDocGetRootElement(doc);
         if (cur == NULL) {
                 logger.logError(_("Empty Document!"));
                 xmlFreeDoc(doc);
-                return;
+                statusLogger.log("poll", "error", serverURL);
+                return false;
         }
         serverData sData{};
         cur = cur->xmlChildrenNode;
@@ -277,6 +285,8 @@ static void processServer(const std::string &serverURL,
                 serverURL.c_str(), sData.currentListeners, sData.peakListeners,
                 sData.maxListeners, sData.avgTime, sData.streamHits);
         db->query(query);
+        statusLogger.log("poll", "ok", serverURL);
+        return true;
 }
 
 void sigUSR1(int sig)
@@ -346,6 +356,7 @@ int run(const std::string &configPath)
         logger.setConsoleOutput(consoleFlag);
         logger.setDebugLevel(debugLevel);
         logger.setRotation(cfg.LogMaxSize(), cfg.LogRetention());
+        statusLogger.setRotation(cfg.LogMaxSize(), cfg.LogRetention());
         if (cfg.SyslogEnabled()) {
                 Logger::SyslogProto proto = cfg.SyslogProtocol() == "tcp" ?
                         Logger::SyslogProto::TCP : Logger::SyslogProto::UDP;
@@ -602,7 +613,7 @@ int run(const std::string &configPath)
                         std::vector<std::thread> workers;
                         for (const auto &srv : servers) {
                                 workers.emplace_back([&, srv] {
-                                        processServer(srv.first, srv.second, db);
+                                        (void)processServer(srv.first, srv.second, db);
                                 });
                         }
                         for (auto &t : workers) {

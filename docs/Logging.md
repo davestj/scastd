@@ -19,3 +19,18 @@ absolute or relative to `log_dir`.
 
 When syslog forwarding is enabled, messages are still written to the
 local log files in addition to being sent to the remote server.
+
+## Status Log
+
+Scastd appends structured status entries to `/var/log/scastd/status.json`.
+Each line is a JSON object with the following schema:
+
+| Field | Description |
+| ----- | ----------- |
+| `timestamp` | UTC time in ISO&nbsp;8601 format. |
+| `action` | Origin of the entry (`poll` or `api`). |
+| `result` | Outcome such as `ok`, `error`, or HTTP status code. |
+| `metadata` | Additional context for the action. |
+
+Rotation of `status.json` uses the existing `log_max_size` and
+`log_retention` settings from `scastd.conf`.
