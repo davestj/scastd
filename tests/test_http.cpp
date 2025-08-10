@@ -67,6 +67,50 @@ TEST_CASE("HTTP server responds with status") {
     REQUIRE(std::string(ctype) == "application/xml");
     REQUIRE(buffer == "<status>ok</status>");
 
+    buffer.clear();
+    curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:18080/v1/uptime");
+    res = curl_easy_perform(curl);
+    REQUIRE(res == CURLE_OK);
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &code);
+    REQUIRE(code == 200);
+    REQUIRE(buffer.find("\"uptime\"") != std::string::npos);
+
+    curl_easy_cleanup(curl);
+    server.stop();
+}
+
+TEST_CASE("HTTP server uptime requires auth") {
+    setenv("SCASD_NO_DAEMON", "1", 1);
+    scastd::HttpServer server;
+    REQUIRE(server.start(18081, "user", "pass"));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    CURL *curl = curl_easy_init();
+    REQUIRE(curl != nullptr);
+    std::string buffer;
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
+    curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:18081/v1/uptime");
+
+    CURLcode res = curl_easy_perform(curl);
+    REQUIRE(res == CURLE_OK);
+    long code = 0;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &code);
+    REQUIRE(code == 401);
+    curl_easy_cleanup(curl);
+
+    curl = curl_easy_init();
+    REQUIRE(curl != nullptr);
+    buffer.clear();
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
+    curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:18081/v1/uptime");
+    curl_easy_setopt(curl, CURLOPT_USERPWD, "user:pass");
+    res = curl_easy_perform(curl);
+    REQUIRE(res == CURLE_OK);
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &code);
+    REQUIRE(code == 200);
+    REQUIRE(buffer.find("\"uptime\"") != std::string::npos);
     curl_easy_cleanup(curl);
     server.stop();
 }

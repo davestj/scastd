@@ -172,8 +172,10 @@ int main(int argc, char **argv)
         }
         bool httpEnabled = cfg.Get("http_enabled", true);
         int httpPort = cfg.Get("http_port", 8333);
+        std::string httpUser = cfg.Get("http_username", "");
+        std::string httpPass = cfg.Get("http_password", "");
         if (httpEnabled) {
-                if (!httpServer.start(httpPort)) {
+                if (!httpServer.start(httpPort, httpUser, httpPass)) {
                         fprintf(stderr, _("Failed to start HTTP server on port %d\n"), httpPort);
                 }
         }
