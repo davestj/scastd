@@ -1,5 +1,6 @@
 #include "catch.hpp"
 #include "icecast2.h"
+#include "CurlClient.h"
 #include <microhttpd.h>
 #include <string>
 #include <vector>
@@ -39,7 +40,8 @@ TEST_CASE("Icecast2 parses XML stats") {
     std::string xml = "<icestats><source mount=\"/stream\"><listeners>5</listeners><bitrate>128</bitrate><title>Test</title></source></icestats>";
     StatsServer server(xml);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    scastd::Icecast2 ice("localhost", 18081, "", "");
+    CurlClient client;
+    scastd::Icecast2 ice("localhost", 18081, "", "", client);
     std::vector<scastd::Icecast2::StreamInfo> stats;
     std::string err;
     REQUIRE(ice.fetchStats(stats, err));

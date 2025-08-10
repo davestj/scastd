@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string>
 #include <vector>
 
+#include "CurlClient.h"
+
 namespace scastd {
 
 // Fetch Icecast server statistics via HTTP and expose basic fields.
@@ -40,7 +42,8 @@ public:
     Icecast2(const std::string &host,
              int port,
              const std::string &username,
-             const std::string &password);
+             const std::string &password,
+             const CurlClient &client);
 
     // Fetch statistics from the server. Returns true on success.
     // On failure returns false and stores the error message in `error`.
@@ -51,6 +54,7 @@ private:
     int port;
     std::string username;
     std::string password;
+    const CurlClient &http;
 };
 
 } // namespace scastd

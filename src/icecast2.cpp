@@ -21,55 +21,30 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "icecast2.h"
 
-#include <curl/curl.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <cstdlib>
 
 namespace scastd {
 
-namespace {
-size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
-    size_t totalSize = size * nmemb;
-    std::string *s = static_cast<std::string *>(userp);
-    s->append(static_cast<char *>(contents), totalSize);
-    return totalSize;
-}
-}
-
 Icecast2::Icecast2(const std::string &h,
                    int p,
                    const std::string &user,
-                   const std::string &pass)
-    : host(h), port(p), username(user), password(pass) {}
+                   const std::string &pass,
+                   const CurlClient &client)
+    : host(h), port(p), username(user), password(pass), http(client) {}
 
 bool Icecast2::fetchStats(std::vector<StreamInfo> &stats, std::string &error) const {
-    CURL *curl = curl_easy_init();
-    if (!curl) {
-        error = "Failed to initialize curl";
-        return false;
+    std::string url = "http://";
+    if (!username.empty() || !password.empty()) {
+        url += username + ":" + password + "@";
     }
+    url += host + ":" + std::to_string(port) + "/admin/stats.xml";
 
-    std::string url = "http://" + host + ":" + std::to_string(port) + "/admin/stats.xml";
     std::string response;
-
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-    curl_easy_setopt(curl, CURLOPT_USERNAME, username.c_str());
-    curl_easy_setopt(curl, CURLOPT_PASSWORD, password.c_str());
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-    curl_easy_setopt(curl, CURLOPT_USERAGENT, "scastd/1.0");
-
-    CURLcode res = curl_easy_perform(curl);
     long http_code = 0;
-    if (res == CURLE_OK) {
-        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
-    }
-    curl_easy_cleanup(curl);
-
-    if (res != CURLE_OK) {
-        error = curl_easy_strerror(res);
+    if (!http.fetchUrl(url, response, 0, false, "scastd/1.0", &http_code)) {
+        error = "Failed to fetch stats";
         return false;
     }
     if (http_code != 200) {

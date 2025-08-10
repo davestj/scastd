@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "db/PostgresDatabase.h"
 #include "Config.h"
 
-#include "CurlWrapper.h"
+#include "CurlClient.h"
 #include "HttpServer.h"
 #include "UrlParser.h"
 
@@ -396,7 +396,8 @@ int main(int argc, char **argv)
                                 writeToLog(buf);
                                 std::string url = std::string("http://") + IP + ":" + std::to_string(port) + "/admin.cgi?pass=" + password + "&mode=viewxml";
                                 std::string response;
-                                if (fetchUrl(url, response)) {
+                                CurlClient curl;
+                                if (curl.fetchUrl(url, response)) {
                                         if (response.find("<title>SHOUTcast Administrator</title>") != std::string::npos) {
                                                 sprintf(buf, "Bad password (%s/%s)\n", serverURL, password);
                                                 writeToLog(buf);

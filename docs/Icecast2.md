@@ -8,11 +8,13 @@ HTTP Basic authentication and parses the returned `stats.xml` document.
 ## Example
 
 ```cpp
+#include "CurlClient.h"
 #include "icecast2.h"
 #include <iostream>
 
 int main() {
-    scastd::Icecast2 client("stream.example.com", 8000, "admin", "hackme");
+    CurlClient http;
+    scastd::Icecast2 client("stream.example.com", 8000, "admin", "hackme", http);
     std::vector<scastd::Icecast2::StreamInfo> stats;
     std::string err;
     if (client.fetchStats(stats, err)) {

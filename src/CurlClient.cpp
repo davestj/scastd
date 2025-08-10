@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "CurlWrapper.h"
+#include "CurlClient.h"
 
 #include <curl/curl.h>
 
@@ -33,8 +33,10 @@ size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
 }
 }
 
-bool fetchUrl(const std::string &url, std::string &response,
-              long timeout, bool ipv6, const std::string &userAgent) {
+bool CurlClient::fetchUrl(const std::string &url, std::string &response,
+                          long timeout, bool ipv6,
+                          const std::string &userAgent,
+                          long *httpCode) const {
     CURL *curl = curl_easy_init();
     if (!curl) {
         return false;
@@ -52,6 +54,9 @@ bool fetchUrl(const std::string &url, std::string &response,
     }
 
     CURLcode res = curl_easy_perform(curl);
+    if (res == CURLE_OK && httpCode) {
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, httpCode);
+    }
     curl_easy_cleanup(curl);
 
     return res == CURLE_OK;

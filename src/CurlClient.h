@@ -24,9 +24,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <string>
 
-// Fetch the content at the given URL using libcurl.
-// Returns true on success and stores the response body in `response`.
-bool fetchUrl(const std::string &url, std::string &response,
-              long timeout = 0, bool ipv6 = false,
-              const std::string &userAgent = "Mozilla/4.0 (compatible; scastd)");
+// Simple HTTP client built on top of libcurl.  Methods are virtual to allow
+// tests to provide mock implementations.
+class CurlClient {
+public:
+    virtual ~CurlClient() = default;
+
+    // Fetch the content at the given URL using libcurl.  Returns true on
+    // success and stores the response body in `response`.  If `httpCode` is
+    // non-null it will be populated with the HTTP status code from the
+    // response.
+    virtual bool fetchUrl(const std::string &url, std::string &response,
+                          long timeout = 0, bool ipv6 = false,
+                          const std::string &userAgent =
+                              "Mozilla/4.0 (compatible; scastd)",
+                          long *httpCode = nullptr) const;
+};
 
