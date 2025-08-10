@@ -3,6 +3,16 @@
 
 set -e
 
+# Ensure required autotools are available before running autoreconf
+command -v aclocal >/dev/null 2>&1 || {
+  echo "Error: 'aclocal' not found. Please install automake." >&2
+  exit 1
+}
+command -v libtoolize >/dev/null 2>&1 || {
+  echo "Error: 'libtoolize' not found. Please install libtool." >&2
+  exit 1
+}
+
 package="scastd"
 
 olddir=$(pwd)
