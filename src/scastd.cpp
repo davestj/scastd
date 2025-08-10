@@ -39,9 +39,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "HttpServer.h"
 #include "UrlParser.h"
 #include "i18n.h"
+#include "scastd.h"
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/rotating_file_sink.h>
+
+namespace scastd {
 
 std::shared_ptr<spdlog::logger> logger;
 std::string logDir = ".";
@@ -141,7 +144,7 @@ typedef struct tagServerData {
 	char	songTitle[1024];
 } serverData;
 
-int main(int argc, char **argv)
+int run(const std::string &configPath)
 {
         init_i18n();
         scastd::HttpServer httpServer;
@@ -162,14 +165,10 @@ int main(int argc, char **argv)
 	char	password[255] = "";
 	int	sleeptime = 0;
 	int	insert_flag = 0;
-        std::string configPath = "scastd.conf";
-        if (argc > 1) {
-                configPath = argv[1];
-        }
-        if (!cfg.Load(configPath)) {
-                fprintf(stderr, _("Cannot load config file %s\n"), configPath.c_str());
-                exit(1);
-        }
+	if (!cfg.Load(configPath)) {
+		fprintf(stderr, _("Cannot load config file %s\n"), configPath.c_str());
+		return 1;
+	}
         bool httpEnabled = cfg.Get("http_enabled", true);
         int httpPort = cfg.Get("http_port", 8333);
         std::string httpUser = cfg.Get("http_username", "");
@@ -337,30 +336,35 @@ int main(int argc, char **argv)
 
                                 sprintf(buf, _("Connecting to server %s at port %d\n"), IP, port);
                                 writeToLog(buf);
-                                std::string url = std::string("http://") + IP + ":" + std::to_string(port) + "/admin.cgi?pass=" + password + "&mode=viewxml";
-                                std::string response;
-                                CurlClient curl;
-                                if (curl.fetchUrl(url, response)) {
-                                        if (response.find("<title>SHOUTcast Administrator</title>") != std::string::npos) {
-                                                sprintf(buf, _("Bad password (%s/%s)\n"), serverURL, password);
-                                                writeToLog(buf);
-                                        }
-                                        else {
-                                                p1 = strchr(response.c_str(), '<');
-                                                if (p1) {
-                                                        doc = xmlParseMemory(p1, strlen(p1));
-                                                        if (!doc) {
-                                                                writeToLog(_("Bad parse!"));
-                                                        }
+std::string urlV1 = std::string("http://") + IP + ":" + std::to_string(port) + "/admin.cgi?pass=" + password + "&mode=viewxml";
+std::string urlV2 = std::string("http://") + IP + ":" + std::to_string(port) + "/admin.cgi?mode=viewxml&sid=1&pass=" + password;
+std::string response;
+CurlClient curl;
+bool fetched = curl.fetchUrl(urlV1, response);
+if (!fetched || response.find("<CURRENTLISTENERS>") == std::string::npos) {
+fetched = curl.fetchUrl(urlV2, response);
+}
+if (fetched) {
+if (response.find("<title>SHOUTcast Administrator</title>") != std::string::npos) {
+sprintf(buf, _("Bad password (%s/%s)\n"), serverURL, password);
+writeToLog(buf);
+}
+else {
+p1 = strchr(response.c_str(), '<');
+if (p1) {
+doc = xmlParseMemory(p1, strlen(p1));
+if (!doc) {
+writeToLog(_("Bad parse!"));
+}
 
-                                                        cur = xmlDocGetRootElement(doc);
-                                                        if (cur == NULL) {
-                                                                writeToLog(_("Empty Document!"));
-                                                                xmlFreeDoc(doc);
-                                                                exiting = 1;
-                                                                break;
-                                                        }
-                                                        else {
+cur = xmlDocGetRootElement(doc);
+if (cur == NULL) {
+writeToLog(_("Empty Document!"));
+xmlFreeDoc(doc);
+exiting = 1;
+break;
+}
+else {
                                                                 cur = cur->xmlChildrenNode;
                                                                 while (cur != NULL) {
 
@@ -446,3 +450,5 @@ int main(int argc, char **argv)
         return 0;
 }
 }
+
+} // namespace scastd
