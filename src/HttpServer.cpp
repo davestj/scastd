@@ -42,6 +42,7 @@ void handle_signal(int) {
 
 static const char kJsonResponse[] = "{\"status\":\"ok\"}";
 static const char kXmlResponse[] = "<status>ok</status>";
+static const char kApiVersion[] = "/v1";
 } // namespace
 
 HttpServer::HttpServer() : running_(false), daemon_(nullptr) {}
@@ -101,13 +102,19 @@ MHD_Result HttpServer::handleRequest(void *cls,
     const char *page = nullptr;
     const char *content_type = nullptr;
 
+    if (std::strncmp(url, kApiVersion, std::strlen(kApiVersion)) == 0) {
+        url += std::strlen(kApiVersion);
+    }
+
     if (std::strcmp(url, "/status.json") == 0) {
         page = kJsonResponse;
         content_type = "application/json";
     } else if (std::strcmp(url, "/status.xml") == 0) {
         page = kXmlResponse;
         content_type = "application/xml";
-    } else {
+    }
+
+    if (!page) {
         const char *not_found = _("Not Found");
         struct MHD_Response *response = MHD_create_response_from_buffer(
             std::strlen(not_found), (void *)not_found, MHD_RESPMEM_PERSISTENT);

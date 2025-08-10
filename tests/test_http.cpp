@@ -1,3 +1,24 @@
+/*
+/////////////////////////////////////////////////
+// Scast Daemon
+// Authors: oddsock, dstjohn
+/////////////////////////////////////////////////
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+*/
 #include "catch.hpp"
 #include "HttpServer.h"
 #include <curl/curl.h>
@@ -25,7 +46,7 @@ TEST_CASE("HTTP server responds with status") {
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
 
-    curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:18080/status.json");
+    curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:18080/v1/status.json");
     CURLcode res = curl_easy_perform(curl);
     REQUIRE(res == CURLE_OK);
     long code = 0;
@@ -37,7 +58,7 @@ TEST_CASE("HTTP server responds with status") {
     REQUIRE(buffer == "{\"status\":\"ok\"}");
 
     buffer.clear();
-    curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:18080/status.xml");
+    curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:18080/v1/status.xml");
     res = curl_easy_perform(curl);
     REQUIRE(res == CURLE_OK);
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &code);
