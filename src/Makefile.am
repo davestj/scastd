@@ -8,6 +8,7 @@ scastd_SOURCES = \
     UrlParser.cpp \
     i18n.cpp \
     icecast2.cpp \
+    logger.cpp \
     db/MySQLDatabase.cpp \
     db/MariaDBDatabase.cpp \
     db/PostgresDatabase.cpp \

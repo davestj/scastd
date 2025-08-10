@@ -41,9 +41,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "UrlParser.h"
 #include "i18n.h"
 #include "scastd.h"
+#include "logger.h"
 
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/rotating_file_sink.h>
 #include <thread>
 #include <mutex>
 #include <vector>
@@ -56,15 +55,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 namespace scastd {
 
-std::shared_ptr<spdlog::logger> logger;
+Logger logger;
 std::string logDir = ".";
-size_t  logMaxSize = 1024 * 1024;
-int     logRetention = 5;
-int	paused = 0;
+int     paused = 0;
 int     exiting = 0;
 volatile sig_atomic_t reloadConfig = 0;
 
-std::mutex logMutex;
 std::mutex dbMutex;
 
 typedef struct tagServerData {
@@ -99,25 +95,7 @@ void trimRight(char *buf) {
 }
 
 static void setupLogger() {
-        spdlog::shutdown();
-        auto path = logDir + "/scastd.log";
-        logger = spdlog::rotating_logger_mt("scastd", path, logMaxSize, logRetention);
-        logger->set_pattern("%Y-%m-%d %T-%v");
-        logger->flush_on(spdlog::level::info);
-}
-
-void writeToLog(const char *message) {
-        if (!logger) return;
-        std::lock_guard<std::mutex> lock(logMutex);
-        std::string msg = message ? message : "";
-        if (!msg.empty() && msg.back() == '\n') {
-                msg.pop_back();
-        }
-        logger->info("{}", msg);
-}
-void closeLog() {
-        spdlog::shutdown();
-        logger.reset();
+        logger.setLogDir(logDir);
 }
 
 static std::string shellEscape(const std::string &in) {
@@ -138,8 +116,7 @@ int dumpDatabase(const std::string &configPath, const std::string &dumpDir) {
                 return 1;
         }
         logDir = cfg.Get("log_dir", ".");
-        logMaxSize = (size_t)cfg.Get("log_max_size", 1024 * 1024);
-        logRetention = cfg.Get("log_retention", 5);
+        logger.setConsoleOutput(cfg.Get("log_console", false));
         setupLogger();
 
         std::string dbUser = cfg.Get("username", "");
@@ -183,12 +160,11 @@ int dumpDatabase(const std::string &configPath, const std::string &dumpDir) {
         int rc = system(cmd.c_str());
         if (rc == 0) {
                 std::string msg = std::string("Database dump successful: ") + dumpFile;
-                writeToLog(msg.c_str());
+                logger.logAccess(msg);
         } else {
                 std::string msg = std::string("Database dump failed: ") + dumpFile;
-                writeToLog(msg.c_str());
+                logger.logError(msg);
         }
-        closeLog();
         return rc == 0 ? 0 : 1;
 }
 
@@ -204,7 +180,7 @@ static void processServer(const std::string &serverURL,
         }
         char buf[1024];
         sprintf(buf, _("Connecting to server %s at port %d\n"), IP, port);
-        writeToLog(buf);
+        logger.logDebug(buf);
 
         std::string urlV1 = std::string("http://") + IP + ":" + std::to_string(port) +
                             "/admin.cgi?pass=" + password + "&mode=viewxml";
@@ -218,28 +194,28 @@ static void processServer(const std::string &serverURL,
         }
         if (!fetched) {
                 sprintf(buf, _("Failed to fetch data from %s\n"), serverURL.c_str());
-                writeToLog(buf);
+                logger.logError(buf);
                 return;
         }
         if (response.find("<title>SHOUTcast Administrator</title>") != std::string::npos) {
                 sprintf(buf, _("Bad password (%s/%s)\n"), serverURL.c_str(), password.c_str());
-                writeToLog(buf);
+                logger.logError(buf);
                 return;
         }
 
         const char *p1 = strchr(response.c_str(), '<');
         if (!p1) {
-                writeToLog(_("Bad parse!"));
+                logger.logError(_("Bad parse!"));
                 return;
         }
         xmlDocPtr doc = xmlParseMemory(p1, strlen(p1));
         if (!doc) {
-                writeToLog(_("Bad parse!"));
+                logger.logError(_("Bad parse!"));
                 return;
         }
         xmlNodePtr cur = xmlDocGetRootElement(doc);
         if (cur == NULL) {
-                writeToLog(_("Empty Document!"));
+                logger.logError(_("Empty Document!"));
                 xmlFreeDoc(doc);
                 return;
         }
@@ -299,38 +275,38 @@ static void processServer(const std::string &serverURL,
 
 void sigUSR1(int sig)
 {
-	if (paused) {
-                writeToLog(_("Caught SIGUSR1 - Resuming\n"));
-		paused = 0;
-	}
-	else {
-                writeToLog(_("Caught SIGUSR1 - Pausing\n"));
-		paused = 1;
-	}
+        if (paused) {
+                logger.logAccess(_("Caught SIGUSR1 - Resuming\n"));
+                paused = 0;
+        }
+        else {
+                logger.logAccess(_("Caught SIGUSR1 - Pausing\n"));
+                paused = 1;
+        }
 	
 }
 void sigUSR2(int sig)
 {
-        writeToLog(_("Caught SIGUSR2 - Exiting\n"));
+        logger.logAccess(_("Caught SIGUSR2 - Exiting\n"));
         exiting = 1;
 
 }
 
 void sigTERM(int sig)
 {
-        writeToLog(_("Caught SIGTERM - Exiting\n"));
+        logger.logAccess(_("Caught SIGTERM - Exiting\n"));
         exiting = 1;
 }
 
 void sigINT(int sig)
 {
-        writeToLog(_("Caught SIGINT - Exiting\n"));
+        logger.logAccess(_("Caught SIGINT - Exiting\n"));
         exiting = 1;
 }
 
 void sigHUP(int sig)
 {
-        writeToLog(_("Caught SIGHUP - Reloading config\n"));
+        logger.logAccess(_("Caught SIGHUP - Reloading config\n"));
 	reloadConfig = 1;
 }
 
@@ -394,8 +370,7 @@ int run(const std::string &configPath)
                 dbSSLMode.clear();
         }
         logDir = cfg.Get("log_dir", ".");
-        logMaxSize = (size_t)cfg.Get("log_max_size", 1024 * 1024);
-        logRetention = cfg.Get("log_retention", 5);
+        logger.setConsoleOutput(cfg.Get("log_console", false));
         setupLogger();
         if (dbType == "mysql") {
                 db = new MySQLDatabase();
@@ -480,7 +455,7 @@ int run(const std::string &configPath)
         sleeptime = atoi(row[0].c_str());
 	
 
-        writeToLog(_("SCASTD starting...\n"));
+        logger.logAccess(_("SCASTD starting...\n"));
 
 	while (1) {
                 if (reloadConfig) {
@@ -489,12 +464,9 @@ int run(const std::string &configPath)
                         if (newCfg.Load(configPath)) {
                                 cfg = newCfg;
                                 std::string newLogDir = cfg.Get("log_dir", ".");
-                                size_t newLogMaxSize = (size_t)cfg.Get("log_max_size", 1024 * 1024);
-                                int newLogRetention = cfg.Get("log_retention", 5);
-                                if (newLogDir != logDir || newLogMaxSize != logMaxSize || newLogRetention != logRetention) {
+                                logger.setConsoleOutput(cfg.Get("log_console", false));
+                                if (newLogDir != logDir) {
                                         logDir = newLogDir;
-                                        logMaxSize = newLogMaxSize;
-                                        logRetention = newLogRetention;
                                         setupLogger();
                                 }
                                 std::string newDbType = cfg.Get("DatabaseType", dbType);
@@ -537,7 +509,7 @@ int run(const std::string &configPath)
                                                 db = new SQLiteDatabase();
                                                 db2 = new SQLiteDatabase();
                                         } else {
-                                                writeToLog(_("Unknown DatabaseType. Falling back to sqlite\n"));
+                                                logger.logError(_("Unknown DatabaseType. Falling back to sqlite\n"));
                                                 db = new SQLiteDatabase();
                                                 db2 = new SQLiteDatabase();
                                                 newDbType = "sqlite";
@@ -571,13 +543,13 @@ int run(const std::string &configPath)
                                                 db->query(buffer.str());
                                         }
                                 }
-                                writeToLog(_("Configuration reloaded\n"));
+                                logger.logDebug(_("Configuration reloaded\n"));
                         } else {
-                                writeToLog(_("Failed to reload config\n"));
+                                logger.logError(_("Failed to reload config\n"));
                         }
                 }
 		if (exiting) {
-                        writeToLog(_("Exiting...\n"));
+                        logger.logAccess(_("Exiting...\n"));
 			break;
 		}
 		if (!paused) {
@@ -603,7 +575,7 @@ int run(const std::string &configPath)
 		if (exiting) break;
 			
                 sprintf(buf, _("Sleeping for %d seconds\n"), sleeptime);
-                writeToLog(buf);
+                logger.logDebug(buf);
 		sleep(sleeptime);
 	}
         httpServer.stop();
@@ -615,7 +587,6 @@ int run(const std::string &configPath)
                 db2->disconnect();
                 delete db2;
         }
-        closeLog();
         return 0;
 }
 }
