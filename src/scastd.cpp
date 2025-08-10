@@ -49,6 +49,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <vector>
 #include <utility>
 #include <unistd.h>
+#include <sched.h>
+#include <sys/resource.h>
 #include <sys/stat.h>
 #include <fstream>
 #include <sstream>
@@ -363,6 +365,25 @@ int run(const std::string &configPath)
                 logger.setSyslog(cfg.SyslogHost(), cfg.SyslogPort(), proto);
         }
         logger.setEnabled(loggingEnabled);
+
+        int threadCount = cfg.Get("thread_count", static_cast<int>(std::thread::hardware_concurrency()));
+        int cpuCores = cfg.Get("cpu_cores", 0);
+        int memoryLimit = cfg.Get("memory_limit", 0);
+#if defined(__linux__)
+        if (cpuCores > 0) {
+                cpu_set_t cpuset;
+                CPU_ZERO(&cpuset);
+                for (int i = 0; i < cpuCores; ++i) {
+                        CPU_SET(i, &cpuset);
+                }
+                sched_setaffinity(0, sizeof(cpuset), &cpuset);
+        }
+#endif
+        if (memoryLimit > 0) {
+                struct rlimit rl;
+                rl.rlim_cur = rl.rlim_max = static_cast<rlim_t>(memoryLimit) * 1024 * 1024;
+                setrlimit(RLIMIT_AS, &rl);
+        }
         bool httpEnabled = cfg.Get("http_enabled", true);
         int httpPort = cfg.Get("http_port", 8333);
         std::string httpUser = cfg.Get("http_username", "");
@@ -372,7 +393,7 @@ int run(const std::string &configPath)
         std::string sslKey = cfg.Get("ssl_key", "");
         if (httpEnabled) {
                 if (!httpServer.start(httpPort, httpUser, httpPass,
-                                       std::thread::hardware_concurrency(),
+                                       threadCount,
                                        sslEnabled, sslCert, sslKey)) {
                         char lbuf[256];
                         sprintf(lbuf, _("Failed to start HTTP%s server on port %d"),
@@ -611,10 +632,17 @@ int run(const std::string &configPath)
                                 servers.emplace_back(row[0], row.size() > 1 ? row[1] : "");
                         }
                         std::vector<std::thread> workers;
+                        size_t maxThreads = threadCount > 0 ? static_cast<size_t>(threadCount) : 1;
                         for (const auto &srv : servers) {
                                 workers.emplace_back([&, srv] {
                                         (void)processServer(srv.first, srv.second, db);
                                 });
+                                if (workers.size() >= maxThreads) {
+                                        for (auto &t : workers) {
+                                                if (t.joinable()) t.join();
+                                        }
+                                        workers.clear();
+                                }
                         }
                         for (auto &t : workers) {
                                 if (t.joinable()) t.join();

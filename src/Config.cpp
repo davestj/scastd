@@ -92,6 +92,19 @@ bool Config::Load(const std::string &path) {
         values["password"] = env;
     }
 
+    env = std::getenv("SCASTD_THREAD_COUNT");
+    if (env) {
+        values["thread_count"] = env;
+    }
+    env = std::getenv("SCASTD_CPU_CORES");
+    if (env) {
+        values["cpu_cores"] = env;
+    }
+    env = std::getenv("SCASTD_MEMORY_LIMIT");
+    if (env) {
+        values["memory_limit"] = env;
+    }
+
     return true;
 }
 
