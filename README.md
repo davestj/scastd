@@ -17,7 +17,8 @@ publishing them over HTTP.  It polls an Icecast2 server for current
 listener information, stores the results in a database, and exposes a
 lightweight web service built with `libmicrohttpd`.  The HTTP server
 listens on port **8333** and serves JSON or XML status responses at
-`/status.json` and `/status.xml`.  Database backends for MariaDB/MySQL
+`/v1/status.json` and `/v1/status.xml` (unversioned paths remain for
+backward compatibility).  Database backends for MariaDB/MySQL
 and PostgreSQL are currently supported.
 
 Building
@@ -75,12 +76,19 @@ endpoint:
 
 ```
 ./src/scastd scastd.conf &
-curl http://localhost:8333/status.json
+curl http://localhost:8333/v1/status.json
 ```
 
 Send `SIGHUP` to the running process to reload `scastd.conf`. Updated
 settings such as the log directory or database credentials take effect
 without restarting.
+
+API Versioning
+--------------
+HTTP endpoints are namespaced by API version (e.g., `/v1/status.json`).
+Breaking changes will result in a new major version such as `/v2`. Older
+versions may continue to be served for a transition period, but
+unversioned paths are deprecated and may be removed in a future release.
 
 
 Troubleshooting
