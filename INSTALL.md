@@ -12,12 +12,33 @@ Platform-specific build notes
 
 macOS (arm64)
 ~~~~~~~~~~~~~
-Install tools and libraries using Homebrew:
+Install Apple's command line tools and Homebrew, then fetch build dependencies.
 
-```
-brew install autoconf automake libtool pkg-config \
-             libmicrohttpd libcurl mariadb-connector-c postgresql
-```
+1. Install the Xcode Command Line Tools:
+
+   ```
+   xcode-select --install
+   ```
+
+2. Install Homebrew if it is not already present:
+
+   ```
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+   ```
+
+3. Ensure Homebrew is on your `PATH` (for arm64 installs into `/opt/homebrew`):
+
+   ```
+   echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+   eval "$(/opt/homebrew/bin/brew shellenv)"
+   ```
+
+4. Install build tools and libraries:
+
+   ```
+   brew install autoconf automake libtool pkg-config \
+                libmicrohttpd libcurl mariadb-connector-c postgresql
+   ```
 
 Then build and run the tests:
 
