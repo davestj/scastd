@@ -95,3 +95,9 @@ If the build fails, common issues and fixes include:
 After installing the required packages, rerun `./autogen.sh`,
 `./configure CXXFLAGS='-std=c++17 -g -O2'`, and `make`.  Tests (if any)
 can be executed with `make check`.
+
+Contributing
+------------
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on coding style, branch naming,
+commit conventions, and the pull request process.
