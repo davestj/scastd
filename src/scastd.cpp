@@ -397,18 +397,20 @@ int run(const std::string &configPath,
         }
         bool httpEnabled = cfg.Get("http_enabled", true);
         int httpPort = cfg.Get("http_port", 8333);
+        std::string httpIp = cfg.Get("ip", "");
         std::string httpUser = cfg.Get("http_username", "");
         std::string httpPass = cfg.Get("http_password", "");
         bool sslEnabled = cfg.Get("ssl_enabled", false);
         std::string sslCert = cfg.Get("ssl_cert", "");
         std::string sslKey = cfg.Get("ssl_key", "");
         if (httpEnabled) {
-                if (!httpServer.start(httpPort, httpUser, httpPass,
+                if (!httpServer.start(httpPort, httpIp, httpUser, httpPass,
                                        threadCount,
                                        sslEnabled, sslCert, sslKey)) {
                         char lbuf[256];
-                        snprintf(lbuf, sizeof(lbuf), _("Failed to start HTTP%s server on port %d"),
-                                sslEnabled ? "S" : "", httpPort);
+                        snprintf(lbuf, sizeof(lbuf), _("Failed to start HTTP%s server on %s:%d"),
+                                sslEnabled ? "S" : "",
+                                httpIp.empty() ? "*" : httpIp.c_str(), httpPort);
                         logger.logError(lbuf);
                 }
         }

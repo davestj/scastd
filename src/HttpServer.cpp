@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <fstream>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <sys/socket.h>
 
 namespace scastd {
 
@@ -63,6 +64,7 @@ HttpServer::~HttpServer() {
 }
 
 bool HttpServer::start(int port,
+                       const std::string &ip,
                        const std::string &user,
                        const std::string &pass,
                        int threads,
@@ -81,7 +83,25 @@ bool HttpServer::start(int port,
     password_ = pass;
     start_time_ = std::chrono::steady_clock::now();
     logger.logDebug(std::string("Starting HTTP") + (ssl_enabled ? "S" : "") +
-                    " server on port " + std::to_string(port));
+                    " server on " + (ip.empty() ? std::string("0.0.0.0") : ip) +
+                    ":" + std::to_string(port));
+
+    struct sockaddr_storage addr_storage{};
+    struct sockaddr *bind_addr = nullptr;
+    if (!ip.empty()) {
+        struct addrinfo hints{};
+        struct addrinfo *res = nullptr;
+        hints.ai_family = AF_UNSPEC;
+        hints.ai_socktype = SOCK_STREAM;
+        hints.ai_flags = AI_PASSIVE;
+        if (getaddrinfo(ip.c_str(), std::to_string(port).c_str(), &hints, &res) != 0) {
+            logger.logError("Failed to resolve bind address");
+            return false;
+        }
+        std::memcpy(&addr_storage, res->ai_addr, res->ai_addrlen);
+        bind_addr = reinterpret_cast<struct sockaddr *>(&addr_storage);
+        freeaddrinfo(res);
+    }
 
     g_server = this;
     std::signal(SIGINT, handle_signal);
@@ -106,21 +126,43 @@ bool HttpServer::start(int port,
 #else
         flags |= MHD_USE_SSL;
 #endif
-        daemon_ = MHD_start_daemon(flags,
-                                   port,
-                                   nullptr, nullptr,
-                                   &HttpServer::handleRequest, this,
-                                   MHD_OPTION_THREAD_POOL_SIZE, threads,
-                                   MHD_OPTION_HTTPS_MEM_CERT, cert_data_.c_str(),
-                                   MHD_OPTION_HTTPS_MEM_KEY, key_data_.c_str(),
-                                   MHD_OPTION_END);
+        if (bind_addr) {
+            daemon_ = MHD_start_daemon(flags,
+                                       0,
+                                       nullptr, nullptr,
+                                       &HttpServer::handleRequest, this,
+                                       MHD_OPTION_THREAD_POOL_SIZE, threads,
+                                       MHD_OPTION_HTTPS_MEM_CERT, cert_data_.c_str(),
+                                       MHD_OPTION_HTTPS_MEM_KEY, key_data_.c_str(),
+                                       MHD_OPTION_SOCK_ADDR, bind_addr,
+                                       MHD_OPTION_END);
+        } else {
+            daemon_ = MHD_start_daemon(flags,
+                                       port,
+                                       nullptr, nullptr,
+                                       &HttpServer::handleRequest, this,
+                                       MHD_OPTION_THREAD_POOL_SIZE, threads,
+                                       MHD_OPTION_HTTPS_MEM_CERT, cert_data_.c_str(),
+                                       MHD_OPTION_HTTPS_MEM_KEY, key_data_.c_str(),
+                                       MHD_OPTION_END);
+        }
     } else {
-        daemon_ = MHD_start_daemon(flags,
-                                   port,
-                                   nullptr, nullptr,
-                                   &HttpServer::handleRequest, this,
-                                   MHD_OPTION_THREAD_POOL_SIZE, threads,
-                                   MHD_OPTION_END);
+        if (bind_addr) {
+            daemon_ = MHD_start_daemon(flags,
+                                       0,
+                                       nullptr, nullptr,
+                                       &HttpServer::handleRequest, this,
+                                       MHD_OPTION_THREAD_POOL_SIZE, threads,
+                                       MHD_OPTION_SOCK_ADDR, bind_addr,
+                                       MHD_OPTION_END);
+        } else {
+            daemon_ = MHD_start_daemon(flags,
+                                       port,
+                                       nullptr, nullptr,
+                                       &HttpServer::handleRequest, this,
+                                       MHD_OPTION_THREAD_POOL_SIZE, threads,
+                                       MHD_OPTION_END);
+        }
     }
     running_ = daemon_ != nullptr;
     if (running_) {
