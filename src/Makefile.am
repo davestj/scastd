@@ -15,4 +15,4 @@ scastd_SOURCES = \
     db/PostgresDatabase.cpp \
     db/SQLiteDatabase.cpp
 
-scastd_LDADD = $(SYSLOG_LIBS)
+scastd_LDADD = $(SYSLOG_LIBS) $(LIBINTL)
