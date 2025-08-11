@@ -37,6 +37,8 @@ public:
     int Get(const std::string &key, int def) const;
     bool Get(const std::string &key, bool def) const;
 
+    void Set(const std::string &key, const std::string &value);
+
     std::string AccessLog() const;
     std::string ErrorLog() const;
     std::string DebugLog() const;

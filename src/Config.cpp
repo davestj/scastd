@@ -128,6 +128,10 @@ int Config::Get(const std::string &key, int def) const {
     return def;
 }
 
+void Config::Set(const std::string &key, const std::string &value) {
+    values[key] = value;
+}
+
 bool Config::Get(const std::string &key, bool def) const {
     std::map<std::string, std::string>::const_iterator it = values.find(key);
     if (it != values.end()) {
