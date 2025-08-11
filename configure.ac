@@ -58,6 +58,10 @@ LIBS="$LIBS $OPENSSL_LIBS"
 AC_CHECK_LIB([syslog], [openlog], [SYSLOG_LIBS="-lsyslog"], [SYSLOG_LIBS=""])
 AC_SUBST([SYSLOG_LIBS])
 
+AM_GNU_GETTEXT([external])
+AM_GNU_GETTEXT_VERSION([0.22])
+AC_SUBST([LIBINTL])
+
 
 dnl Make substitutions
 AC_SUBST(CXXFLAGS)

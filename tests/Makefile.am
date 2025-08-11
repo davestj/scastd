@@ -6,6 +6,6 @@ unit_tests_SOURCES = test_main.cpp test_config.cpp test_sql.cpp test_http.cpp te
     ../src/CurlClient.cpp ../src/logger.cpp ../src/StatusLogger.cpp \
     ../src/db/MySQLDatabase.cpp ../src/db/MariaDBDatabase.cpp \
     ../src/db/PostgresDatabase.cpp
-unit_tests_LDADD = $(DEPS_LIBS)
+unit_tests_LDADD = $(DEPS_LIBS) $(LIBINTL)
 
 TESTS = unit_tests
