@@ -12,7 +12,7 @@ This guide demonstrates how to apply the provided PostgreSQL schema and outlines
    ```
 3. From the repository root, load the schema:
    ```sh
-   psql -U scastd_user -d scastd -f src/scastd_pg.sql
+   psql -U scastd_user -d scastd -f src/postgres.sql
    ```
 4. Verify the tables were created:
    ```sh
