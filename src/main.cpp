@@ -93,6 +93,7 @@ int main(int argc, char **argv) {
     std::string dumpDir = "/tmp";
     bool doDump = false;
     bool testMode = false;
+    std::string setupdbType;
     std::map<std::string, std::string> overrides;
 
     enum {
@@ -173,7 +174,7 @@ int main(int argc, char **argv) {
             overrides["sqlite_path"] = optarg;
             break;
         case OPT_SETUPDB:
-            overrides["setupdb"] = optarg;
+            setupdbType = optarg;
             break;
         case OPT_SSL_CERT:
             overrides["ssl_cert"] = optarg;
@@ -211,6 +212,33 @@ int main(int argc, char **argv) {
         }
     } else {
         scastd::logger.logError(std::string("Cannot load config file ") + configPath);
+    }
+
+    if (!setupdbType.empty()) {
+        std::string dbType = setupdbType;
+        std::string dbUser = cfg.Get("username", "");
+        std::string dbPass = cfg.Get("password", "");
+        std::string dbHost = cfg.Get("host", "");
+        int dbPort = cfg.Get("port", 0);
+        std::string dbName = cfg.Get("dbname", "");
+        std::string dbSSLMode = cfg.Get("sslmode", "");
+        std::string sqlitePath = cfg.Get("sqlite_path", "/etc/scastd/scastd.db");
+        if (dbType == "sqlite3" || dbType == "sqlite") {
+            dbType = "sqlite";
+            dbName = sqlitePath;
+        }
+        IDatabase *db = nullptr;
+        if (dbType == "mysql") db = new MySQLDatabase();
+        else if (dbType == "mariadb") db = new MariaDBDatabase();
+        else if (dbType == "postgres") db = new PostgresDatabase();
+        else db = new SQLiteDatabase();
+        bool ok = db->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
+        if (ok) {
+            ok = scastd::setupDatabase(setupdbType, db);
+            db->disconnect();
+        }
+        delete db;
+        return ok ? 0 : 1;
     }
 
     if (testMode) {

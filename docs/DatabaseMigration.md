@@ -11,6 +11,14 @@ Configure the database engine using the `DatabaseType` field in `scastd.conf`. V
 - `mariadb`
 - `postgres`
 
+Schema setup scripts are loaded from `/etc/scastd/<dbtype>.sql` if present. Bundled copies live
+in the source tree under `src/`:
+
+- `src/mysql.sql`
+- `src/mariadb.sql`
+- `src/postgres.sql`
+- `src/sqlite.sql`
+
 Example:
 
 ```
@@ -36,7 +44,8 @@ Refer to your database documentation when porting existing schemas.
 
 ### MySQL / MariaDB
 
-The provided dump at `src/scastd.sql` has been modernized for MySQL 8 and MariaDB 10.11:
+The provided dumps at `src/mysql.sql` and `src/mariadb.sql` have been modernized for MySQL 8 and
+MariaDB 10.11:
 
 * Deprecated `timestamp(14)` and `int(11)` types were replaced with `TIMESTAMP` and `INT`.
 * All tables declare `ENGINE=InnoDB` with `CHARSET=utf8mb4` and `COLLATE=utf8mb4_unicode_ci`.
@@ -45,7 +54,7 @@ The provided dump at `src/scastd.sql` has been modernized for MySQL 8 and Mari
 
 ### PostgreSQL
 
-An equivalent schema and seed data are available in `src/scastd_pg.sql`. Key differences from the
+An equivalent schema and seed data are available in `src/postgres.sql`. Key differences from the
 MySQL dialect include:
 
 * `SERIAL` is used for auto-incrementing identifiers.

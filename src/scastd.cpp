@@ -108,6 +108,71 @@ static std::string shellEscape(const std::string &in) {
         return out;
 }
 
+static std::string trim(const std::string &s) {
+        size_t start = s.find_first_not_of(" \t\r\n");
+        if (start == std::string::npos) return "";
+        size_t end = s.find_last_not_of(" \t\r\n");
+        return s.substr(start, end - start + 1);
+}
+
+bool setupDatabase(const std::string &dbType, IDatabase *db) {
+        std::string type = dbType;
+        if (type == "sqlite3") type = "sqlite";
+        std::string script = "/etc/scastd/" + type + ".sql";
+        std::ifstream sqlFile(script);
+        if (!sqlFile) {
+                script = "src/" + type + ".sql";
+                sqlFile.open(script);
+        }
+        if (!sqlFile) {
+                logger.logError(std::string("Cannot open SQL script ") + script);
+                return false;
+        }
+        std::stringstream buffer; buffer << sqlFile.rdbuf();
+        std::string content = buffer.str();
+        if (type == "sqlite") {
+                return db->query(content);
+        }
+        std::string statement;
+        bool inString = false; char quote = 0;
+        for (size_t i = 0; i < content.size(); ++i) {
+                char c = content[i];
+                if (inString) {
+                        if (c == quote) inString = false;
+                        if (c == '\\' && i + 1 < content.size()) { statement += c; statement += content[++i]; continue; }
+                        statement += c;
+                        continue;
+                }
+                if (c == '\'' || c == '"') { inString = true; quote = c; statement += c; continue; }
+                if (c == '-' && i + 1 < content.size() && content[i+1] == '-') {
+                        while (i < content.size() && content[i] != '\n') i++;
+                        continue;
+                }
+                if (c == '#') {
+                        while (i < content.size() && content[i] != '\n') i++;
+                        continue;
+                }
+                if (c == '/' && i + 1 < content.size() && content[i+1] == '*') {
+                        i += 2;
+                        while (i + 1 < content.size() && !(content[i] == '*' && content[i+1] == '/')) i++;
+                        i++;
+                        continue;
+                }
+                if (c == ';') {
+                        std::string stmt = trim(statement);
+                        if (!stmt.empty() && !db->query(stmt)) {
+                                return false;
+                        }
+                        statement.clear();
+                        continue;
+                }
+                statement += c;
+        }
+        std::string stmt = trim(statement);
+        if (!stmt.empty() && !db->query(stmt)) return false;
+        return true;
+}
+
 int dumpDatabase(const std::string &configPath,
                  const std::map<std::string, std::string> &overrides,
                  const std::string &dumpDir) {
@@ -501,11 +566,7 @@ int run(const std::string &configPath,
         db->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
         db2->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
         if (dbType == "sqlite" && needInit) {
-                std::ifstream sqlFile("src/sqlite.sql");
-                if (sqlFile) {
-                        std::stringstream buffer; buffer << sqlFile.rdbuf();
-                        db->query(buffer.str());
-                }
+                setupDatabase("sqlite", db);
         }
         snprintf(query, sizeof(query), "select sleeptime from scastd_runtime");
         db->query(query);
@@ -622,11 +683,7 @@ int run(const std::string &configPath,
                                 db->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
                                 db2->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
                                 if (newNeedInit && dbType == "sqlite") {
-                                        std::ifstream sqlFile("src/sqlite.sql");
-                                        if (sqlFile) {
-                                                std::stringstream buffer; buffer << sqlFile.rdbuf();
-                                                db->query(buffer.str());
-                                        }
+                                        setupDatabase("sqlite", db);
                                 }
                                 logger.logDebug(_("Configuration reloaded\n"));
                         } else {
