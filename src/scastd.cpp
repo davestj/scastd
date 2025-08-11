@@ -81,7 +81,7 @@ void parseWebdata(xmlNodePtr cur)
 {
     while (cur != NULL) {
         char buf[256];
-        sprintf(buf, _("Webdata: %s"), cur->name);
+        snprintf(buf, sizeof(buf), _("Webdata: %s"), cur->name);
         logger.logDebug(buf);
         cur = cur->next;
     }
@@ -190,7 +190,7 @@ static bool processServer(const std::string &serverURL,
                 IP[sizeof(IP) - 1] = '\0';
         }
         char buf[1024];
-        sprintf(buf, _("Connecting to server %s at port %d\n"), IP, port);
+        snprintf(buf, sizeof(buf), _("Connecting to server %s at port %d\n"), IP, port);
         logger.logDebug(buf);
 
         std::string urlV1 = std::string("http://") + IP + ":" + std::to_string(port) +
@@ -204,13 +204,13 @@ static bool processServer(const std::string &serverURL,
                 fetched = curl.fetchUrl(urlV2, response);
         }
         if (!fetched) {
-                sprintf(buf, _("Failed to fetch data from %s\n"), serverURL.c_str());
+                snprintf(buf, sizeof(buf), _("Failed to fetch data from %s\n"), serverURL.c_str());
                 logger.logError(buf);
                 statusLogger.log("poll", "error", serverURL);
                 return false;
         }
         if (response.find("<title>SHOUTcast Administrator</title>") != std::string::npos) {
-                sprintf(buf, _("Bad password (%s/%s)\n"), serverURL.c_str(), password.c_str());
+                snprintf(buf, sizeof(buf), _("Bad password (%s/%s)\n"), serverURL.c_str(), password.c_str());
                 logger.logError(buf);
                 statusLogger.log("poll", "error", serverURL);
                 return false;
@@ -270,7 +270,7 @@ static bool processServer(const std::string &serverURL,
 
         char query[2046];
         std::lock_guard<std::mutex> lock(dbMutex);
-        sprintf(query, "select songTitle from scastd_songinfo where serverURL = '%s' order by time desc limit 1", serverURL.c_str());
+        snprintf(query, sizeof(query), "select songTitle from scastd_songinfo where serverURL = '%s' order by time desc limit 1", serverURL.c_str());
         db->query(query);
         IDatabase::Row row = db->fetch();
         int insert_flag = 1;
@@ -278,10 +278,11 @@ static bool processServer(const std::string &serverURL,
                 insert_flag = 0;
         }
         if (insert_flag) {
-                sprintf(query, "insert into scastd_songinfo values('%s', '%s', NULL)", serverURL.c_str(), sData.songTitle);
+                snprintf(query, sizeof(query), "insert into scastd_songinfo values('%s', '%s', NULL)", serverURL.c_str(), sData.songTitle);
                 db->query(query);
         }
-        sprintf(query,
+        snprintf(query,
+                sizeof(query),
                 "insert into scastd_serverinfo (serverURL, currentlisteners, peaklisteners, maxlisteners, averagetime, streamhits, time) "
                 "values('%s', %d, %d, %d, %d, %d, NULL)",
                 serverURL.c_str(), sData.currentListeners, sData.peakListeners,
@@ -396,7 +397,7 @@ int run(const std::string &configPath)
                                        threadCount,
                                        sslEnabled, sslCert, sslKey)) {
                         char lbuf[256];
-                        sprintf(lbuf, _("Failed to start HTTP%s server on port %d"),
+                        snprintf(lbuf, sizeof(lbuf), _("Failed to start HTTP%s server on port %d"),
                                 sslEnabled ? "S" : "", httpPort);
                         logger.logError(lbuf);
                 }
@@ -433,7 +434,7 @@ int run(const std::string &configPath)
                 db2 = new SQLiteDatabase();
         } else {
                 char lbuf[256];
-                sprintf(lbuf, _("Unknown DatabaseType '%s'. Falling back to sqlite."), dbType.c_str());
+                snprintf(lbuf, sizeof(lbuf), _("Unknown DatabaseType '%s'. Falling back to sqlite."), dbType.c_str());
                 logger.logError(lbuf);
                 db = new SQLiteDatabase();
                 db2 = new SQLiteDatabase();
@@ -494,7 +495,7 @@ int run(const std::string &configPath)
                         db->query(buffer.str());
                 }
         }
-        sprintf(query, "select sleeptime from scastd_runtime");
+        snprintf(query, sizeof(query), "select sleeptime from scastd_runtime");
         db->query(query);
         row = db->fetch();
         if (row.empty()) {
@@ -622,7 +623,7 @@ int run(const std::string &configPath)
 			break;
 		}
 		if (!paused) {
-                        sprintf(query, "select serverURL, password from scastd_memberinfo where gather_flag = 1");
+                        snprintf(query, sizeof(query), "select serverURL, password from scastd_memberinfo where gather_flag = 1");
                         db2->query(query);
                         std::vector<std::pair<std::string, std::string>> servers;
                         while (true) {
@@ -650,7 +651,7 @@ int run(const std::string &configPath)
 		}
 		if (exiting) break;
 			
-                sprintf(buf, _("Sleeping for %d seconds\n"), sleeptime);
+                snprintf(buf, sizeof(buf), _("Sleeping for %d seconds\n"), sleeptime);
                 logger.logDebug(buf);
 		sleep(sleeptime);
 	}
