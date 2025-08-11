@@ -48,6 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <mutex>
 #include <vector>
 #include <utility>
+#include <map>
 #include <unistd.h>
 #include <sched.h>
 #include <sys/resource.h>
@@ -107,13 +108,18 @@ static std::string shellEscape(const std::string &in) {
         return out;
 }
 
-int dumpDatabase(const std::string &configPath, const std::string &dumpDir) {
+int dumpDatabase(const std::string &configPath,
+                 const std::map<std::string, std::string> &overrides,
+                 const std::string &dumpDir) {
         init_i18n();
         Config cfg;
         if (!cfg.Load(configPath)) {
                 std::string msg = std::string(_("Cannot load config file ")) + configPath;
                 logger.logError(msg);
                 return 1;
+        }
+        for (const auto &kv : overrides) {
+                cfg.Set(kv.first, kv.second);
         }
         std::string logDir = cfg.Get("log_dir", "./logs");
         bool loggingEnabled = true;
@@ -330,7 +336,8 @@ void sigHUP(int sig)
 }
 
 
-int run(const std::string &configPath)
+int run(const std::string &configPath,
+        const std::map<std::string, std::string> &overrides)
 {
         init_i18n();
         scastd::HttpServer httpServer;
@@ -346,6 +353,9 @@ int run(const std::string &configPath)
                 std::string msg = std::string(_("Cannot load config file ")) + configPath;
                 logger.logError(msg);
                 return 1;
+        }
+        for (const auto &kv : overrides) {
+                cfg.Set(kv.first, kv.second);
         }
         std::string accessLog = cfg.AccessLog();
         std::string errorLog = cfg.ErrorLog();
@@ -512,6 +522,9 @@ int run(const std::string &configPath)
                         reloadConfig = 0;
                         Config newCfg;
                         if (newCfg.Load(configPath)) {
+                                for (const auto &kv : overrides) {
+                                        newCfg.Set(kv.first, kv.second);
+                                }
                                 cfg = newCfg;
                                 std::string newAccess = cfg.AccessLog();
                                 std::string newError = cfg.ErrorLog();

@@ -23,44 +23,203 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "scastd.h"
 #include "Config.h"
 #include "logger.h"
+#include "db/IDatabase.h"
+#include "db/MySQLDatabase.h"
+#include "db/MariaDBDatabase.h"
+#include "db/PostgresDatabase.h"
+#include "db/SQLiteDatabase.h"
+#include <getopt.h>
+#include <iostream>
+#include <map>
 #include <string>
 
 namespace scastd { extern Logger logger; }
+
+static void print_usage(const char *prog) {
+    std::cout << "Usage: " << prog << " [options]\n"
+              << "  -h, --help           Show this help and exit\n"
+              << "  -c, --config PATH    Configuration file\n"
+              << "      --ip ADDRESS     Bind IP address\n"
+              << "      --port PORT      HTTP server port\n"
+              << "      --debug LEVEL    Debug level\n"
+              << "      --test-mode      Validate configuration and exit\n"
+              << "      --db-host HOST   Database host\n"
+              << "      --db-port PORT   Database port\n"
+              << "      --db-name NAME   Database name\n"
+              << "      --db-user USER   Database user\n"
+              << "      --db-pass PASS   Database password\n"
+              << "      --sqlite-db PATH SQLite database file\n"
+              << "      --setupdb TYPE   Initialize database of specified type\n"
+              << "      --ssl-cert PATH  SSL certificate file\n"
+              << "      --ssl-key PATH   SSL key file\n"
+              << "      --ssl-enable     Enable SSL\n"
+              << "      --dump           Dump database and exit\n"
+              << "      --dump-dir DIR   Directory for database dump\n";
+}
+
+static bool validateConfig(const Config &cfg) {
+    std::string dbUser = cfg.Get("username", "");
+    std::string dbPass = cfg.Get("password", "");
+    std::string dbType = cfg.Get("DatabaseType", "");
+    std::string dbHost = cfg.Get("host", "");
+    int dbPort = cfg.Get("port", 0);
+    std::string dbName = cfg.Get("dbname", "");
+    std::string dbSSLMode = cfg.Get("sslmode", "");
+    std::string sqlitePath = cfg.Get("sqlite_path", "/etc/scastd/scastd.db");
+    bool useSqlite = dbType == "sqlite" || dbUser.empty() || dbHost.empty() || dbName.empty();
+    if (useSqlite) {
+        dbType = "sqlite";
+        dbName = sqlitePath;
+    }
+    IDatabase *db = nullptr;
+    if (dbType == "mysql") db = new MySQLDatabase();
+    else if (dbType == "mariadb") db = new MariaDBDatabase();
+    else if (dbType == "postgres") db = new PostgresDatabase();
+    else db = new SQLiteDatabase();
+
+    bool ok = db->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
+    if (ok) {
+        db->disconnect();
+        scastd::logger.logDebug("Test-mode: database connection succeeded");
+    } else {
+        scastd::logger.logError("Test-mode: database connection failed");
+    }
+    delete db;
+    return ok;
+}
 
 int main(int argc, char **argv) {
     std::string configPath = "scastd.conf";
     std::string dumpDir = "/tmp";
     bool doDump = false;
+    bool testMode = false;
+    std::map<std::string, std::string> overrides;
 
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-        if (arg == "--dump") {
+    enum {
+        OPT_DB_HOST = 1000,
+        OPT_DB_PORT,
+        OPT_DB_NAME,
+        OPT_DB_USER,
+        OPT_DB_PASS,
+        OPT_SQLITE_DB,
+        OPT_SETUPDB,
+        OPT_SSL_CERT,
+        OPT_SSL_KEY,
+        OPT_SSL_ENABLE,
+        OPT_DUMP,
+        OPT_DUMP_DIR
+    };
+
+    static struct option long_options[] = {
+        {"help", no_argument, 0, 'h'},
+        {"config", required_argument, 0, 'c'},
+        {"ip", required_argument, 0, 'i'},
+        {"port", required_argument, 0, 'p'},
+        {"debug", required_argument, 0, 'd'},
+        {"test-mode", no_argument, 0, 't'},
+        {"db-host", required_argument, 0, OPT_DB_HOST},
+        {"db-port", required_argument, 0, OPT_DB_PORT},
+        {"db-name", required_argument, 0, OPT_DB_NAME},
+        {"db-user", required_argument, 0, OPT_DB_USER},
+        {"db-pass", required_argument, 0, OPT_DB_PASS},
+        {"sqlite-db", required_argument, 0, OPT_SQLITE_DB},
+        {"setupdb", required_argument, 0, OPT_SETUPDB},
+        {"ssl-cert", required_argument, 0, OPT_SSL_CERT},
+        {"ssl-key", required_argument, 0, OPT_SSL_KEY},
+        {"ssl-enable", no_argument, 0, OPT_SSL_ENABLE},
+        {"dump", no_argument, 0, OPT_DUMP},
+        {"dump-dir", required_argument, 0, OPT_DUMP_DIR},
+        {0, 0, 0, 0}
+    };
+
+    int opt;
+    int long_index = 0;
+    while ((opt = getopt_long(argc, argv, "hc:i:p:d:t", long_options, &long_index)) != -1) {
+        switch (opt) {
+        case 'h':
+            print_usage(argv[0]);
+            return 0;
+        case 'c':
+            configPath = optarg;
+            break;
+        case 'i':
+            overrides["ip"] = optarg;
+            break;
+        case 'p':
+            overrides["http_port"] = optarg;
+            break;
+        case 'd':
+            overrides["debug_level"] = optarg;
+            break;
+        case 't':
+            testMode = true;
+            break;
+        case OPT_DB_HOST:
+            overrides["host"] = optarg;
+            break;
+        case OPT_DB_PORT:
+            overrides["port"] = optarg;
+            break;
+        case OPT_DB_NAME:
+            overrides["dbname"] = optarg;
+            break;
+        case OPT_DB_USER:
+            overrides["username"] = optarg;
+            break;
+        case OPT_DB_PASS:
+            overrides["password"] = optarg;
+            break;
+        case OPT_SQLITE_DB:
+            overrides["sqlite_path"] = optarg;
+            break;
+        case OPT_SETUPDB:
+            overrides["setupdb"] = optarg;
+            break;
+        case OPT_SSL_CERT:
+            overrides["ssl_cert"] = optarg;
+            break;
+        case OPT_SSL_KEY:
+            overrides["ssl_key"] = optarg;
+            break;
+        case OPT_SSL_ENABLE:
+            overrides["ssl_enabled"] = "true";
+            break;
+        case OPT_DUMP:
             doDump = true;
-        } else if (arg == "--dump-dir" && i + 1 < argc) {
-            dumpDir = argv[++i];
-        } else {
-            configPath = arg;
+            break;
+        case OPT_DUMP_DIR:
+            dumpDir = optarg;
+            break;
+        default:
+            print_usage(argv[0]);
+            return 1;
         }
     }
 
     Config cfg;
     if (cfg.Load(configPath)) {
+        for (const auto &kv : overrides) {
+            cfg.Set(kv.first, kv.second);
+        }
         scastd::logger.setLogFiles(cfg.AccessLog(), cfg.ErrorLog(), cfg.DebugLog());
         scastd::logger.setConsoleOutput(cfg.Get("log_console", false));
         scastd::logger.setDebugLevel(cfg.DebugLevel());
         if (cfg.SyslogEnabled()) {
             Logger::SyslogProto proto = cfg.SyslogProtocol() == "tcp" ?
-                                       Logger::SyslogProto::TCP : Logger::SyslogProto::UDP;
+                                        Logger::SyslogProto::TCP : Logger::SyslogProto::UDP;
             scastd::logger.setSyslog(cfg.SyslogHost(), cfg.SyslogPort(), proto);
         }
     } else {
         scastd::logger.logError(std::string("Cannot load config file ") + configPath);
     }
 
-    if (doDump) {
-        return scastd::dumpDatabase(configPath, dumpDir);
+    if (testMode) {
+        return validateConfig(cfg) ? 0 : 1;
     }
 
-    return scastd::run(configPath);
-}
+    if (doDump) {
+        return scastd::dumpDatabase(configPath, overrides, dumpDir);
+    }
 
+    return scastd::run(configPath, overrides);
+}
