@@ -7,7 +7,7 @@ AC_CONFIG_HEADERS([config.h])
 
 AC_PROG_CXX
 AC_CANONICAL_HOST
-AM_PROG_LIBTOOL
+LT_INIT
 
 case $host_os in
   darwin*)
