@@ -1,11 +1,11 @@
 ---
-name: CI
+name: DEV
 
 "on":
   push:
-    branches: ["master"]
+    branches: ["dev"]
   pull_request:
-    branches: ["master"]
+    branches: ["dev"]
 
 jobs:
   test:
@@ -24,9 +24,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Test HTTP request
-        run: |
-          curl -sS http://localhost
       - name: Install dependencies (Debian/Ubuntu)
         if: contains('debian-12 debian-13 ubuntu-24.04', matrix.os)
         run: |
@@ -93,7 +90,7 @@ jobs:
   release:
     needs: [test, lint]
     runs-on: ubuntu-24.04
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
     steps:
       - name: Create GitHub release
         if: success()
@@ -103,5 +100,5 @@ jobs:
         with:
           tag_name: v${{ github.run_number }}
           release_name: Release ${{ github.run_number }}
-          draft: true
-          prerelease: false
+          draft: false
+          prerelease: true
