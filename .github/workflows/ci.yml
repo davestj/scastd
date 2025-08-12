@@ -19,6 +19,8 @@ jobs:
             arch: x64
           - os: ubuntu-24.04
             arch: x64
+          - os: ubuntu-22.04
+            arch: x64
           - os: macos-14
             arch: arm64
     runs-on: ${{ matrix.os }}
@@ -28,20 +30,39 @@ jobs:
         run: |
           curl -sS http://localhost
       - name: Install dependencies (Debian/Ubuntu)
-        if: contains('debian-12 debian-13 ubuntu-24.04', matrix.os)
+        if: contains('debian-12 debian-13 ubuntu-24.04 ubuntu-22.04', matrix.os)
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             build-essential \
             autoconf automake libtool pkg-config \
             libxml2-dev libcurl4-openssl-dev \
-            libmysqlclient-dev mariadb-client libpq-dev libmicrohttpd-dev
-          MYSQL_CFLAGS=$(mysql_config --cflags)
-          MYSQL_LIBS=$(mysql_config --libs)
-          export CPPFLAGS="$MYSQL_CFLAGS $CPPFLAGS"
-          export LDFLAGS="$MYSQL_LIBS $LDFLAGS"
-          PCP=/usr/lib/x86_64-linux-gnu/pkgconfig
-          export PKG_CONFIG_PATH="$PCP:$PKG_CONFIG_PATH"
+            libmysqlclient-dev mariadb-client libpq-dev libmicrohttpd-dev wget
+          if [[ "${{ matrix.os }}" == "debian-12" || "${{ matrix.os }}" == "debian-13" ]]; then
+            wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10_9.4.0-1debian12_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2_9.4.0-1debian12_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb
+            sudo dpkg -i libmysqlcppconn10_9.4.0-1debian12_amd64.deb libmysqlcppconnx2_9.4.0-1debian12_amd64.deb libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb || true
+            sudo apt-get -f install -y
+          elif [[ "${{ matrix.os }}" == "ubuntu-24.04" ]]; then
+            wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10_9.4.0-1ubuntu24.04_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2_9.4.0-1ubuntu24.04_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn-dev_9.4.0-1ubuntu24.04_amd64.deb
+            sudo dpkg -i libmysqlcppconn10_9.4.0-1ubuntu24.04_amd64.deb libmysqlcppconnx2_9.4.0-1ubuntu24.04_amd64.deb libmysqlcppconn-dev_9.4.0-1ubuntu24.04_amd64.deb || true
+            sudo apt-get -f install -y
+          else
+            wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10_9.4.0-1ubuntu22.04_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2_9.4.0-1ubuntu22.04_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn-dev_9.4.0-1ubuntu22.04_amd64.deb
+            sudo dpkg -i libmysqlcppconn10_9.4.0-1ubuntu22.04_amd64.deb libmysqlcppconnx2_9.4.0-1ubuntu22.04_amd64.deb libmysqlcppconn-dev_9.4.0-1ubuntu22.04_amd64.deb || true
+            sudo apt-get -f install -y
+          fi
+          INC=/usr/include/mysql-cppconn/jdbc
+          LIB=/usr/lib/x86_64-linux-gnu
+          export CPPFLAGS="-I$INC $CPPFLAGS"
+          export LDFLAGS="-L$LIB $LDFLAGS"
+          export PKG_CONFIG_PATH="$LIB/pkgconfig:$PKG_CONFIG_PATH"
           echo "CPPFLAGS=$CPPFLAGS" >> $GITHUB_ENV
           echo "LDFLAGS=$LDFLAGS" >> $GITHUB_ENV
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
