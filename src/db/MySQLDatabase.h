@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MYSQLDATABASE_H
 
 #include "IDatabase.h"
-#include <mysql/mysql.h>
+#include <mysql.h>
 
 class MySQLDatabase : public IDatabase {
 public:
