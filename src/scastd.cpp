@@ -45,6 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "StatusLogger.h"
 
 #include <thread>
+#include <chrono>
 #include <mutex>
 #include <vector>
 #include <utility>
@@ -413,7 +414,6 @@ int run(const std::string &configPath,
 	char	buf[1024];
 	IDatabase::Row       row;
 	char	query[2046] = "";
-	int	sleeptime = 0;
         if (!cfg.Load(configPath)) {
                 std::string msg = std::string(_("Cannot load config file ")) + configPath;
                 logger.logError(msg);
@@ -422,6 +422,7 @@ int run(const std::string &configPath,
         for (const auto &kv : overrides) {
                 cfg.Set(kv.first, kv.second);
         }
+	int poll_ms = cfg.GetDuration("poll_interval", 60000);
         std::string accessLog = cfg.AccessLog();
         std::string errorLog = cfg.ErrorLog();
         std::string debugLog = cfg.DebugLog();
@@ -568,14 +569,6 @@ int run(const std::string &configPath,
         if (dbType == "sqlite" && needInit) {
                 setupDatabase("sqlite", db);
         }
-        snprintf(query, sizeof(query), "select sleeptime from scastd_runtime");
-        db->query(query);
-        row = db->fetch();
-        if (row.empty()) {
-                logger.logError(_("We must have an entry in the scastd_runtime table..exiting."));
-                exit(-1);
-        }
-        sleeptime = atoi(row[0].c_str());
 	
 
         logger.logAccess(_("SCASTD starting...\n"));
@@ -615,6 +608,7 @@ int run(const std::string &configPath,
                                 } else {
                                         logger.setSyslog("", 0, Logger::SyslogProto::UDP);
                                 }
+                                poll_ms = cfg.GetDuration("poll_interval", poll_ms);
                                 std::string newDbType = cfg.Get("DatabaseType", dbType);
                                 std::string newDbUser = cfg.Get("username", dbUser);
                                 std::string newDbPass = cfg.Get("password", dbPass);
@@ -723,9 +717,9 @@ int run(const std::string &configPath,
 		}
 		if (exiting) break;
 			
-                snprintf(buf, sizeof(buf), _("Sleeping for %d seconds\n"), sleeptime);
-                logger.logDebug(buf);
-		sleep(sleeptime);
+		snprintf(buf, sizeof(buf), _("Sleeping for %d ms\n"), poll_ms);
+		logger.logDebug(buf);
+		std::this_thread::sleep_for(std::chrono::milliseconds(poll_ms));
 	}
         httpServer.stop();
         if (db) {

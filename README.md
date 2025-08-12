@@ -68,6 +68,8 @@ Example `scastd.conf`:
 # database credentials
 username root
 password secret
+# poll interval between server checks (ms, s, m, h)
+poll_interval 5m
 # log configuration
 log_dir ./logs
 log_max_size 1048576
@@ -81,6 +83,10 @@ syslog_host localhost
 syslog_port 514
 syslog_protocol udp
 ```
+
+`poll_interval` controls how often the daemon polls the Icecast server. The value
+accepts `ms`, `s`, `m`, or `h`/`hr` suffixes (e.g., `600ms`, `60s`, `5m`, `1h`) and
+defaults to 60 seconds.
 
 The log settings allow fine-grained control over where messages are
 written. `access_log`, `error_log`, and `debug_log` may be absolute

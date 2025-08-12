@@ -36,6 +36,7 @@ public:
     }
     int Get(const std::string &key, int def) const;
     bool Get(const std::string &key, bool def) const;
+    int GetDuration(const std::string &key, int default_ms) const;
 
     void Set(const std::string &key, const std::string &value);
 

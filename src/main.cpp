@@ -42,6 +42,7 @@ static void print_usage(const char *prog) {
               << "      --ip ADDRESS     Bind IP address\n"
               << "      --port PORT      HTTP server port\n"
               << "      --debug LEVEL    Debug level\n"
+              << "      --poll INTERVAL  Poll interval (e.g., 60s, 5m)\n"
               << "      --test-mode      Validate configuration and exit\n"
               << "      --db-host HOST   Database host\n"
               << "      --db-port PORT   Database port\n"
@@ -108,7 +109,8 @@ int main(int argc, char **argv) {
         OPT_SSL_KEY,
         OPT_SSL_ENABLE,
         OPT_DUMP,
-        OPT_DUMP_DIR
+        OPT_DUMP_DIR,
+        OPT_POLL_INTERVAL
     };
 
     static struct option long_options[] = {
@@ -130,6 +132,7 @@ int main(int argc, char **argv) {
         {"ssl-enable", no_argument, 0, OPT_SSL_ENABLE},
         {"dump", no_argument, 0, OPT_DUMP},
         {"dump-dir", required_argument, 0, OPT_DUMP_DIR},
+        {"poll", required_argument, 0, OPT_POLL_INTERVAL},
         {0, 0, 0, 0}
     };
 
@@ -190,6 +193,9 @@ int main(int argc, char **argv) {
             break;
         case OPT_DUMP_DIR:
             dumpDir = optarg;
+            break;
+        case OPT_POLL_INTERVAL:
+            overrides["poll_interval"] = optarg;
             break;
         default:
             print_usage(argv[0]);

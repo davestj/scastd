@@ -128,6 +128,41 @@ int Config::Get(const std::string &key, int def) const {
     return def;
 }
 
+int Config::GetDuration(const std::string &key, int default_ms) const {
+    std::map<std::string, std::string>::const_iterator it = values.find(key);
+    if (it == values.end()) {
+        return default_ms;
+    }
+    std::string val = it->second;
+    std::string lower;
+    lower.resize(val.size());
+    std::transform(val.begin(), val.end(), lower.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+    int multiplier = 1;
+    std::string number = lower;
+    if (lower.size() >= 2 && lower.substr(lower.size() - 2) == "ms") {
+        number = lower.substr(0, lower.size() - 2);
+    } else if (!lower.empty() && lower.back() == 's') {
+        multiplier = 1000;
+        number = lower.substr(0, lower.size() - 1);
+    } else if (!lower.empty() && lower.back() == 'm') {
+        multiplier = 60 * 1000;
+        number = lower.substr(0, lower.size() - 1);
+    } else if (lower.size() >= 2 && lower.substr(lower.size() - 2) == "hr") {
+        multiplier = 60 * 60 * 1000;
+        number = lower.substr(0, lower.size() - 2);
+    } else if (!lower.empty() && lower.back() == 'h') {
+        multiplier = 60 * 60 * 1000;
+        number = lower.substr(0, lower.size() - 1);
+    }
+    try {
+        int base = std::stoi(number);
+        return base * multiplier;
+    } catch (...) {
+        return default_ms;
+    }
+}
+
 void Config::Set(const std::string &key, const std::string &value) {
     values[key] = value;
 }
