@@ -45,6 +45,14 @@ jobs:
           /opt/homebrew/opt/libxml2/lib/pkgconfig:$PKG_CONFIG_PATH" >> \
             $GITHUB_ENV
           echo "PATH=/opt/homebrew/opt/gettext/bin:$PATH" >> $GITHUB_ENV
+          echo "CPPFLAGS=-I/opt/homebrew/opt/mysql-client/include $CPPFLAGS" >> $GITHUB_ENV
+          echo "LDFLAGS=-L/opt/homebrew/opt/mysql-client/lib $LDFLAGS" >> $GITHUB_ENV
+          echo "PATH=/opt/homebrew/opt/mysql-client/bin:$PATH" >> $GITHUB_ENV
+          curl -LO https://dev.mysql.com/get/Downloads/Connector-C++/mysql-connector-c++-9.4.0-macos15-arm64.tar.gz
+          tar -xf mysql-connector-c++-9.4.0-macos15-arm64.tar.gz
+          echo "CPPFLAGS=-I$PWD/mysql-connector-c++-9.4.0-macos15-arm64/include $CPPFLAGS" >> $GITHUB_ENV
+          echo "LDFLAGS=-L$PWD/mysql-connector-c++-9.4.0-macos15-arm64/lib $LDFLAGS" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=$PWD/mysql-connector-c++-9.4.0-macos15-arm64/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
       - name: Generate configure script
         run: |
           set -o pipefail
