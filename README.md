@@ -138,6 +138,10 @@ authority for real deployments.
 
 Usage
 -----
+By default scastd runs in the foreground and logs to the console. Use
+`-D` or `--daemon` to detach and run in the background, writing the
+process ID to `/var/run/scastd.pid` and suppressing console output.
+
 Start the daemon with your configuration file and query the HTTP
 endpoint:
 
