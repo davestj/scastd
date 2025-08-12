@@ -33,6 +33,14 @@ jobs:
             autoconf automake libtool pkg-config gettext autopoint \
             libxml2-dev libcurl4-openssl-dev \
             libmysqlclient-dev libpq-dev libmicrohttpd-dev
+          wget https://ftp.gnu.org/pub/gnu/gettext/gettext-0.22.tar.gz
+          tar -xf gettext-0.22.tar.gz
+          cd gettext-0.22
+          ./configure --disable-shared
+          make -j$(nproc)
+          sudo make install
+          cd ..
+          echo "PATH=/usr/local/bin:$PATH" >> $GITHUB_ENV
       - name: Install dependencies (macOS)
         if: matrix.os == 'macos-14'
         run: |
@@ -56,6 +64,7 @@ jobs:
       - name: Generate configure script
         run: |
           set -o pipefail
+          autopoint --version
           ./autogen.sh 2>&1 | tee autogen.log
       - name: Configure
         run: |
