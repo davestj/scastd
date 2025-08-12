@@ -29,6 +29,7 @@ runs:
         export CPPFLAGS="-I$CONN_DIR/include $CPPFLAGS"
         export LDFLAGS="-L$CONN_DIR/$LIBDIR $LDFLAGS"
         export PKG_CONFIG_PATH="$CONN_DIR/$LIBDIR/pkgconfig:$PKG_CONFIG_PATH"
+        DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH:-}"
         export DYLD_LIBRARY_PATH="$CONN_DIR/$LIBDIR:$DYLD_LIBRARY_PATH"
         echo "PATH=$PATH" >> $GITHUB_ENV
         echo "CPPFLAGS=$CPPFLAGS" >> $GITHUB_ENV
