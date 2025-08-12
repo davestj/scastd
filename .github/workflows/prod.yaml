@@ -13,24 +13,35 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: debian-12
-            arch: x64
-          - os: debian-13
-            arch: x64
-          - os: ubuntu-24.04
-            arch: x64
           - os: ubuntu-22.04
             arch: x64
+            container: debian:12
+            label: debian-12
+          - os: ubuntu-22.04
+            arch: x64
+            container: debian:trixie
+            label: debian-13
+          - os: ubuntu-24.04
+            arch: x64
+            container: null
+            label: ubuntu-24.04
+          - os: ubuntu-22.04
+            arch: x64
+            container: null
+            label: ubuntu-22.04
           - os: macos-14
             arch: arm64
+            container: null
+            label: macos-14
     runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
     steps:
       - uses: actions/checkout@v4
       - name: Test HTTP request
         run: |
           curl -sS http://localhost
       - name: Install dependencies (Debian/Ubuntu)
-        if: contains('debian-12 debian-13 ubuntu-24.04 ubuntu-22.04', matrix.os)
+        if: contains('debian-12 debian-13 ubuntu-24.04 ubuntu-22.04', matrix.label)
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -38,14 +49,14 @@ jobs:
             autoconf automake libtool pkg-config \
             libxml2-dev libcurl4-openssl-dev \
             libmysqlclient-dev mariadb-client libpq-dev libmicrohttpd-dev wget
-          if [[ "${{ matrix.os }}" == "debian-12" || "${{ matrix.os }}" == "debian-13" ]]; then
+          if [[ "${{ matrix.label }}" == "debian-12" || "${{ matrix.label }}" == "debian-13" ]]; then
             wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb
             wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10_9.4.0-1debian12_amd64.deb
             wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2_9.4.0-1debian12_amd64.deb
             wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb
             sudo dpkg -i libmysqlcppconn10_9.4.0-1debian12_amd64.deb libmysqlcppconnx2_9.4.0-1debian12_amd64.deb libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb || true
             sudo apt-get -f install -y
-          elif [[ "${{ matrix.os }}" == "ubuntu-24.04" ]]; then
+          elif [[ "${{ matrix.label }}" == "ubuntu-24.04" ]]; then
             wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10_9.4.0-1ubuntu24.04_amd64.deb
             wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2_9.4.0-1ubuntu24.04_amd64.deb
             wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn-dev_9.4.0-1ubuntu24.04_amd64.deb
@@ -67,7 +78,7 @@ jobs:
           echo "LDFLAGS=$LDFLAGS" >> $GITHUB_ENV
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
       - name: Install dependencies (macOS)
-        if: matrix.os == 'macos-14'
+        if: matrix.label == 'macos-14'
         run: |
           brew update
           brew install \
@@ -86,7 +97,7 @@ jobs:
           echo "LDFLAGS=$LDFLAGS" >> $GITHUB_ENV
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
       - name: Setup MySQL Connector
-        if: matrix.os == 'macos-14'
+        if: matrix.label == 'macos-14'
         uses: ./.github/actions/setup-mysql-connector
         with:
           version: mysql-connector-c++-9.4.0-macos15-arm64
@@ -111,7 +122,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}-${{ matrix.arch }}-logs
+          name: ${{ matrix.label }}-${{ matrix.arch }}-logs
           path: |
             autogen.log
             configure.log
