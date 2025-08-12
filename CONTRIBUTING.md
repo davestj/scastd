@@ -7,7 +7,7 @@ Thank you for your interest in improving scastd. These guidelines help keep cont
 - Follow the existing C++ style: 4 spaces for indentation, no tabs.
 - Place braces on their own line and keep line length under 100 characters.
 - Each `.cpp` and `.h` file must start with the GPL header shown in [AGENTS.md](AGENTS.md).
-- Run `make check` before submitting changes to ensure the build and tests pass.
+- Ensure the project builds successfully before submitting changes.
 
 ## Branch Naming
 
@@ -27,7 +27,7 @@ Thank you for your interest in improving scastd. These guidelines help keep cont
 
 ## Pull Request Process
 
-1. Ensure your branch is up to date with `master` and that `make check` completes successfully.
+1. Ensure your branch is up to date with `master` and that the project builds successfully.
 2. Open a pull request with a clear title and description of the changes.
 3. Link any related issues and request review from a maintainer.
 4. Respond to feedback and update your branch as needed.

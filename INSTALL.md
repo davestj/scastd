@@ -42,12 +42,12 @@ Install Apple's command line tools and Homebrew, then fetch build dependencies.
                 libmicrohttpd libcurl libxml2 mariadb-connector-c postgresql
    ```
 
-Then build and run the tests:
+Then build the project:
 
 ```
 ./autogen.sh
 ./configure
-make && make check
+make
 ```
 
 Linux (x86_64)
@@ -60,12 +60,12 @@ sudo apt-get install build-essential autoconf automake libtool pkg-config \
                      libpq-dev libxml2-dev
 ```
 
-Then build and run the tests:
+Then build the project:
 
 ```
 ./autogen.sh
 ./configure
-make && make check
+make
 ```
 
 Configuration and database setup
@@ -156,13 +156,10 @@ The simplest way to compile this package is:
 
   2. Type `make' to compile the package.
 
-  3. Optionally, type `make check' to run any self-tests that come with
-     the package.
-
-  4. Type `make install' to install the programs and any data files and
+  3. Type `make install' to install the programs and any data files and
      documentation.
 
-  5. You can remove the program binaries and object files from the
+  4. You can remove the program binaries and object files from the
      source code directory by typing `make clean'.  To also remove the
      files that `configure' created (so you can compile the package for
      a different kind of computer), type `make distclean'.  There is

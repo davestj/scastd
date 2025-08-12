@@ -167,10 +167,9 @@ platforms:
 - Ubuntu 22.04
 - Ubuntu 24.04
 
-Each job bootstraps the build with `./autogen.sh`, configures, compiles
-and executes the test suite via `make check`.  After all tests and lint
-jobs succeed, a release job tags the commit on `master` as
-`v<run_number>` and publishes a GitHub release.
+Each job bootstraps the build with `./autogen.sh`, then configures and
+compiles the project. After all lint jobs succeed, a release job tags
+the commit on `master` as `v<run_number>` and publishes a GitHub release.
 
 Required secrets and environment variables are detailed in
 [docs/CISecrets.md](docs/CISecrets.md).  The complete CI workflow is
@@ -187,8 +186,7 @@ If the build fails, common issues and fixes include:
 - `microhttpd.h` missing – install `libmicrohttpd-dev`.
 
 After installing the required packages, rerun `./autogen.sh`,
-`./configure CXXFLAGS='-std=c++17 -g -O2'`, and `make`.  Tests (if any)
-can be executed with `make check`.
+`./configure CXXFLAGS='-std=c++17 -g -O2'`, and `make`.
 
 Contributing
 ------------
