@@ -69,10 +69,12 @@ jobs:
           export CPPFLAGS="-I$CONN_DIR/include $CPPFLAGS"
           export LDFLAGS="-L$CONN_DIR/lib64 $LDFLAGS"
           export PKG_CONFIG_PATH="$CONN_DIR/lib64/pkgconfig:$PKG_CONFIG_PATH"
+          export DYLD_LIBRARY_PATH="$CONN_DIR/lib64:$DYLD_LIBRARY_PATH"
           echo "PATH=$PATH" >> $GITHUB_ENV
           echo "CPPFLAGS=$CPPFLAGS" >> $GITHUB_ENV
           echo "LDFLAGS=$LDFLAGS" >> $GITHUB_ENV
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
+          echo "DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH" >> $GITHUB_ENV
       - name: Generate configure script
         run: |
           set -o pipefail
