@@ -49,4 +49,5 @@ src/scastd
 src/scastd.log
 src/.deps/
 src/.libs/
+logs/
 

@@ -61,7 +61,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 namespace scastd {
 
 Logger logger(false);
-StatusLogger statusLogger("/var/log/scastd/status.json");
+StatusLogger statusLogger("logs/status.json");
 int     paused = 0;
 int     exiting = 0;
 volatile sig_atomic_t reloadConfig = 0;
@@ -194,6 +194,7 @@ int dumpDatabase(const std::string &configPath,
         logger.setConsoleOutput(cfg.Get("log_console", false));
         logger.setDebugLevel(cfg.DebugLevel());
         logger.setRotation(cfg.LogMaxSize(), cfg.LogRetention());
+        statusLogger.setPath(logDir + "/status.json");
         statusLogger.setRotation(cfg.LogMaxSize(), cfg.LogRetention());
         if (cfg.SyslogEnabled()) {
                 Logger::SyslogProto proto = cfg.SyslogProtocol() == "tcp" ?
@@ -435,6 +436,7 @@ int run(const std::string &configPath,
         logger.setConsoleOutput(consoleFlag);
         logger.setDebugLevel(debugLevel);
         logger.setRotation(cfg.LogMaxSize(), cfg.LogRetention());
+        statusLogger.setPath(logDir + "/status.json");
         statusLogger.setRotation(cfg.LogMaxSize(), cfg.LogRetention());
         if (cfg.SyslogEnabled()) {
                 Logger::SyslogProto proto = cfg.SyslogProtocol() == "tcp" ?
@@ -442,6 +444,7 @@ int run(const std::string &configPath,
                 logger.setSyslog(cfg.SyslogHost(), cfg.SyslogPort(), proto);
         }
         logger.setEnabled(loggingEnabled);
+        logger.logDebug("scastd starting up");
 
         int threadCount = cfg.Get("thread_count", static_cast<int>(std::thread::hardware_concurrency()));
         int cpuCores = cfg.Get("cpu_cores", 0);
