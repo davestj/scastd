@@ -10,6 +10,14 @@ Public License along with this program; if not, write to the Free Software Found
 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
+Scast Daemon
+============
+
+[![Debian 12 build](https://img.shields.io/github/actions/workflow/status/scastd/scastd/ci.yml?branch=master&label=Debian%2012&logo=debian)](https://github.com/scastd/scastd/actions/workflows/ci.yml)
+[![Debian 13 build](https://img.shields.io/github/actions/workflow/status/scastd/scastd/ci.yml?branch=master&label=Debian%2013&logo=debian)](https://github.com/scastd/scastd/actions/workflows/ci.yml)
+[![Ubuntu 24.04 build](https://img.shields.io/github/actions/workflow/status/scastd/scastd/ci.yml?branch=master&label=Ubuntu%2024.04&logo=ubuntu)](https://github.com/scastd/scastd/actions/workflows/ci.yml)
+[![macOS arm64 build](https://img.shields.io/github/actions/workflow/status/scastd/scastd/ci.yml?branch=master&label=macOS%20arm64&logo=apple)](https://github.com/scastd/scastd/actions/workflows/ci.yml)
+
 Overview
 --------
 scastd is a small daemon for collecting Icecast2 stream statistics and
@@ -20,6 +28,13 @@ listens on port **8333** and serves JSON or XML status responses at
 `/v1/status.json` and `/v1/status.xml` (unversioned paths remain for
 backward compatibility).  Database backends for MariaDB/MySQL
 and PostgreSQL are currently supported.
+
+Features
+--------
+- Collects Icecast2 stream statistics
+- Exposes JSON and XML status endpoints via an embedded HTTP server
+- Supports MariaDB/MySQL and PostgreSQL backends
+- Runs in the foreground by default or as a daemon with `--daemon`
 
 Building
 --------
@@ -136,6 +151,35 @@ convenient for development but **must not** be used in production.
 Always secure the private key and obtain a certificate from a trusted
 authority for real deployments.
 
+Command-line options
+--------------------
+`scastd` runs in the foreground by default. Use `-D` or `--daemon` to detach
+and run in the background.
+
+```
+Usage: ./src/scastd [options]
+  -h, --help           Show this help and exit
+  -c, --config PATH    Configuration file
+  -D, --daemon         Run as a daemon and write PID to /var/run/scastd.pid
+      --ip ADDRESS     Bind IP address
+      --port PORT      HTTP server port
+      --debug LEVEL    Debug level
+      --poll INTERVAL  Poll interval (e.g., 60s, 5m)
+      --test-mode      Validate configuration and exit
+      --db-host HOST   Database host
+      --db-port PORT   Database port
+      --db-name NAME   Database name
+      --db-user USER   Database user
+      --db-pass PASS   Database password
+      --sqlite-db PATH SQLite database file
+      --setupdb TYPE   Initialize database of specified type
+      --ssl-cert PATH  SSL certificate file
+      --ssl-key PATH   SSL key file
+      --ssl-enable     Enable SSL
+      --dump           Dump database and exit
+      --dump-dir DIR   Directory for database dump
+```
+
 Usage
 -----
 By default scastd runs in the foreground and logs to the console. Use
@@ -166,10 +210,10 @@ Continuous Integration and Releases
 The project is built and tested by GitHub Actions on the following
 platforms:
 
-- macOS 14 (arm64)
 - Debian 12
-- Ubuntu 22.04
+- Debian 13
 - Ubuntu 24.04
+- macOS 14 (arm64)
 
 Each job bootstraps the build with `./autogen.sh`, then configures and
 compiles the project. After all lint jobs succeed, a release job tags
