@@ -67,23 +67,23 @@ jobs:
           export PATH=$B/gettext/bin:$PATH
           export CPPFLAGS=-I$B/mysql-client/include $CPPFLAGS
           export LDFLAGS=-L$B/mysql-client/lib $LDFLAGS
-          MYSQL_VER=mysql-connector-c++-9.4.0-macos15-arm64
-          MYSQL_URL=https://dev.mysql.com/get/Downloads/Connector-C++/$MYSQL_VER.tar.gz
-          curl -LO "$MYSQL_URL"
-          tar -xf "$MYSQL_VER.tar.gz"
-          CONN_DIR="${PWD}/$MYSQL_VER"
-          export PATH="$CONN_DIR/bin:$PATH"
-          export CPPFLAGS="-I$CONN_DIR/include $CPPFLAGS"
-          export LDFLAGS="-L$CONN_DIR/lib $LDFLAGS"
-          export PKG_CONFIG_PATH="$CONN_DIR/lib/pkgconfig:$PKG_CONFIG_PATH"
           echo "PATH=$PATH" >> $GITHUB_ENV
           echo "CPPFLAGS=$CPPFLAGS" >> $GITHUB_ENV
           echo "LDFLAGS=$LDFLAGS" >> $GITHUB_ENV
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
+      - name: Setup MySQL Connector
+        if: matrix.os == 'macos-14'
+        uses: ./.github/actions/setup-mysql-connector
+        with:
+          version: mysql-connector-c++-9.4.0-macos15-arm64
+      - name: Show environment variables
+        if: matrix.os == 'macos-14'
+        run: |
           echo "PATH=$PATH"
           echo "CPPFLAGS=$CPPFLAGS"
           echo "LDFLAGS=$LDFLAGS"
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
+          echo "DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH"
       - name: Verify autopoint
         run: autopoint --version
       - name: Run autogen script
