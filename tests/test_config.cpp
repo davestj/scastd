@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "catch.hpp"
-#include "Config.h"
+#include "../src/Config.h"
 #include <fstream>
 #include <cstdio>
 #include <cstdlib>
