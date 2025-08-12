@@ -1,4 +1,4 @@
-SUBDIRS = src tests scripts
+SUBDIRS = src scripts tests
 
 # Installation of configuration and SQLite database
 install-data-local:

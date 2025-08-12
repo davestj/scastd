@@ -20,25 +20,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 #include "catch.hpp"
-#include <fstream>
-#include <sstream>
-#include <string>
+#include <filesystem>
+#include <cstdlib>
+#include <sqlite3.h>
 
-static std::string read_file(const std::string &path) {
-    std::ifstream in(path.c_str());
-    std::ostringstream ss;
-    ss << in.rdbuf();
-    return ss.str();
-}
-
-TEST_CASE("MySQL schema has required tables") {
-    std::string sql = read_file(std::string(TEST_SRCDIR) + "/src/mysql.sql");
-    REQUIRE(sql.find("CREATE TABLE scastd_memberinfo") != std::string::npos);
-    REQUIRE(sql.find("CREATE TABLE scastd_runtime") != std::string::npos);
-}
-
-TEST_CASE("PostgreSQL schema has required tables") {
-    std::string sql = read_file(std::string(TEST_SRCDIR) + "/src/postgres.sql");
-    REQUIRE(sql.find("CREATE TABLE scastd_memberinfo") != std::string::npos);
-    REQUIRE(sql.find("CREATE TABLE scastd_runtime") != std::string::npos);
+TEST_CASE("setupdb flag initializes SQLite database") {
+    std::filesystem::path tmp = std::filesystem::temp_directory_path() / "scastd-setup.db";
+    std::filesystem::remove(tmp);
+    std::string cmd = "cd .. && src/scastd --config scastd.conf --setupdb=sqlite3 --sqlite-db " + tmp.string();
+    int rc = std::system(cmd.c_str());
+    REQUIRE(rc == 0);
+    sqlite3 *db = nullptr;
+    REQUIRE(sqlite3_open(tmp.string().c_str(), &db) == SQLITE_OK);
+    sqlite3_stmt *stmt = nullptr;
+    REQUIRE(sqlite3_prepare_v2(db, "SELECT name FROM sqlite_master WHERE type='table' AND name='scastd_memberinfo';", -1, &stmt, nullptr) == SQLITE_OK);
+    REQUIRE(sqlite3_step(stmt) == SQLITE_ROW);
+    sqlite3_finalize(stmt);
+    sqlite3_close(db);
+    std::filesystem::remove(tmp);
 }

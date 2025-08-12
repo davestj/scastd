@@ -9,7 +9,7 @@ fi
 if [ $1 != "" ]; then
 echo "Creating and importing the default scastd database and schema"
 mysqladmin --user=$1 --password=$2 create scastd
-mysql --user=$1 --password=$2 scastd < scastd.sql
+mysql --user=$1 --password=$2 scastd < mysql.sql
 fi
 
 printf "Would you like to start scastd now? (y/n):"

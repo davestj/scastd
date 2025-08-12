@@ -34,6 +34,7 @@ public:
     ~HttpServer();
 
     bool start(int port = 8333,
+               const std::string &ip = "",
                const std::string &user = "",
                const std::string &pass = "",
                int threads = 1,

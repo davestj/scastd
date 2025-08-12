@@ -22,7 +22,8 @@ local log files in addition to being sent to the remote server.
 
 ## Status Log
 
-Scastd appends structured status entries to `/var/log/scastd/status.json`.
+Scastd appends structured status entries to `status.json` inside
+`log_dir` (default `./logs/status.json`).
 Each line is a JSON object with the following schema:
 
 | Field | Description |

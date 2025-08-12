@@ -45,9 +45,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "StatusLogger.h"
 
 #include <thread>
+#include <chrono>
 #include <mutex>
 #include <vector>
 #include <utility>
+#include <map>
 #include <unistd.h>
 #include <sched.h>
 #include <sys/resource.h>
@@ -59,7 +61,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 namespace scastd {
 
 Logger logger(false);
-StatusLogger statusLogger("/var/log/scastd/status.json");
+StatusLogger statusLogger("logs/status.json");
 int     paused = 0;
 int     exiting = 0;
 volatile sig_atomic_t reloadConfig = 0;
@@ -107,13 +109,83 @@ static std::string shellEscape(const std::string &in) {
         return out;
 }
 
-int dumpDatabase(const std::string &configPath, const std::string &dumpDir) {
+static std::string trim(const std::string &s) {
+        size_t start = s.find_first_not_of(" \t\r\n");
+        if (start == std::string::npos) return "";
+        size_t end = s.find_last_not_of(" \t\r\n");
+        return s.substr(start, end - start + 1);
+}
+
+bool setupDatabase(const std::string &dbType, IDatabase *db) {
+        std::string type = dbType;
+        if (type == "sqlite3") type = "sqlite";
+        std::string script = "/etc/scastd/" + type + ".sql";
+        std::ifstream sqlFile(script);
+        if (!sqlFile) {
+                script = "src/" + type + ".sql";
+                sqlFile.open(script);
+        }
+        if (!sqlFile) {
+                logger.logError(std::string("Cannot open SQL script ") + script);
+                return false;
+        }
+        std::stringstream buffer; buffer << sqlFile.rdbuf();
+        std::string content = buffer.str();
+        if (type == "sqlite") {
+                return db->query(content);
+        }
+        std::string statement;
+        bool inString = false; char quote = 0;
+        for (size_t i = 0; i < content.size(); ++i) {
+                char c = content[i];
+                if (inString) {
+                        if (c == quote) inString = false;
+                        if (c == '\\' && i + 1 < content.size()) { statement += c; statement += content[++i]; continue; }
+                        statement += c;
+                        continue;
+                }
+                if (c == '\'' || c == '"') { inString = true; quote = c; statement += c; continue; }
+                if (c == '-' && i + 1 < content.size() && content[i+1] == '-') {
+                        while (i < content.size() && content[i] != '\n') i++;
+                        continue;
+                }
+                if (c == '#') {
+                        while (i < content.size() && content[i] != '\n') i++;
+                        continue;
+                }
+                if (c == '/' && i + 1 < content.size() && content[i+1] == '*') {
+                        i += 2;
+                        while (i + 1 < content.size() && !(content[i] == '*' && content[i+1] == '/')) i++;
+                        i++;
+                        continue;
+                }
+                if (c == ';') {
+                        std::string stmt = trim(statement);
+                        if (!stmt.empty() && !db->query(stmt)) {
+                                return false;
+                        }
+                        statement.clear();
+                        continue;
+                }
+                statement += c;
+        }
+        std::string stmt = trim(statement);
+        if (!stmt.empty() && !db->query(stmt)) return false;
+        return true;
+}
+
+int dumpDatabase(const std::string &configPath,
+                 const std::map<std::string, std::string> &overrides,
+                 const std::string &dumpDir) {
         init_i18n();
         Config cfg;
         if (!cfg.Load(configPath)) {
                 std::string msg = std::string(_("Cannot load config file ")) + configPath;
                 logger.logError(msg);
                 return 1;
+        }
+        for (const auto &kv : overrides) {
+                cfg.Set(kv.first, kv.second);
         }
         std::string logDir = cfg.Get("log_dir", "./logs");
         bool loggingEnabled = true;
@@ -122,6 +194,7 @@ int dumpDatabase(const std::string &configPath, const std::string &dumpDir) {
         logger.setConsoleOutput(cfg.Get("log_console", false));
         logger.setDebugLevel(cfg.DebugLevel());
         logger.setRotation(cfg.LogMaxSize(), cfg.LogRetention());
+        statusLogger.setPath(logDir + "/status.json");
         statusLogger.setRotation(cfg.LogMaxSize(), cfg.LogRetention());
         if (cfg.SyslogEnabled()) {
                 Logger::SyslogProto proto = cfg.SyslogProtocol() == "tcp" ?
@@ -330,7 +403,8 @@ void sigHUP(int sig)
 }
 
 
-int run(const std::string &configPath)
+int run(const std::string &configPath,
+        const std::map<std::string, std::string> &overrides)
 {
         init_i18n();
         scastd::HttpServer httpServer;
@@ -341,12 +415,15 @@ int run(const std::string &configPath)
 	char	buf[1024];
 	IDatabase::Row       row;
 	char	query[2046] = "";
-	int	sleeptime = 0;
         if (!cfg.Load(configPath)) {
                 std::string msg = std::string(_("Cannot load config file ")) + configPath;
                 logger.logError(msg);
                 return 1;
         }
+        for (const auto &kv : overrides) {
+                cfg.Set(kv.first, kv.second);
+        }
+	int poll_ms = cfg.GetDuration("poll_interval", 60000);
         std::string accessLog = cfg.AccessLog();
         std::string errorLog = cfg.ErrorLog();
         std::string debugLog = cfg.DebugLog();
@@ -359,6 +436,7 @@ int run(const std::string &configPath)
         logger.setConsoleOutput(consoleFlag);
         logger.setDebugLevel(debugLevel);
         logger.setRotation(cfg.LogMaxSize(), cfg.LogRetention());
+        statusLogger.setPath(logDir + "/status.json");
         statusLogger.setRotation(cfg.LogMaxSize(), cfg.LogRetention());
         if (cfg.SyslogEnabled()) {
                 Logger::SyslogProto proto = cfg.SyslogProtocol() == "tcp" ?
@@ -366,6 +444,7 @@ int run(const std::string &configPath)
                 logger.setSyslog(cfg.SyslogHost(), cfg.SyslogPort(), proto);
         }
         logger.setEnabled(loggingEnabled);
+        logger.logDebug("scastd starting up");
 
         int threadCount = cfg.Get("thread_count", static_cast<int>(std::thread::hardware_concurrency()));
         int cpuCores = cfg.Get("cpu_cores", 0);
@@ -387,18 +466,20 @@ int run(const std::string &configPath)
         }
         bool httpEnabled = cfg.Get("http_enabled", true);
         int httpPort = cfg.Get("http_port", 8333);
+        std::string httpIp = cfg.Get("ip", "");
         std::string httpUser = cfg.Get("http_username", "");
         std::string httpPass = cfg.Get("http_password", "");
         bool sslEnabled = cfg.Get("ssl_enabled", false);
         std::string sslCert = cfg.Get("ssl_cert", "");
         std::string sslKey = cfg.Get("ssl_key", "");
         if (httpEnabled) {
-                if (!httpServer.start(httpPort, httpUser, httpPass,
+                if (!httpServer.start(httpPort, httpIp, httpUser, httpPass,
                                        threadCount,
                                        sslEnabled, sslCert, sslKey)) {
                         char lbuf[256];
-                        snprintf(lbuf, sizeof(lbuf), _("Failed to start HTTP%s server on port %d"),
-                                sslEnabled ? "S" : "", httpPort);
+                        snprintf(lbuf, sizeof(lbuf), _("Failed to start HTTP%s server on %s:%d"),
+                                sslEnabled ? "S" : "",
+                                httpIp.empty() ? "*" : httpIp.c_str(), httpPort);
                         logger.logError(lbuf);
                 }
         }
@@ -489,20 +570,8 @@ int run(const std::string &configPath)
         db->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
         db2->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
         if (dbType == "sqlite" && needInit) {
-                std::ifstream sqlFile("src/sqlite.sql");
-                if (sqlFile) {
-                        std::stringstream buffer; buffer << sqlFile.rdbuf();
-                        db->query(buffer.str());
-                }
+                setupDatabase("sqlite", db);
         }
-        snprintf(query, sizeof(query), "select sleeptime from scastd_runtime");
-        db->query(query);
-        row = db->fetch();
-        if (row.empty()) {
-                logger.logError(_("We must have an entry in the scastd_runtime table..exiting."));
-                exit(-1);
-        }
-        sleeptime = atoi(row[0].c_str());
 	
 
         logger.logAccess(_("SCASTD starting...\n"));
@@ -512,6 +581,9 @@ int run(const std::string &configPath)
                         reloadConfig = 0;
                         Config newCfg;
                         if (newCfg.Load(configPath)) {
+                                for (const auto &kv : overrides) {
+                                        newCfg.Set(kv.first, kv.second);
+                                }
                                 cfg = newCfg;
                                 std::string newAccess = cfg.AccessLog();
                                 std::string newError = cfg.ErrorLog();
@@ -539,6 +611,7 @@ int run(const std::string &configPath)
                                 } else {
                                         logger.setSyslog("", 0, Logger::SyslogProto::UDP);
                                 }
+                                poll_ms = cfg.GetDuration("poll_interval", poll_ms);
                                 std::string newDbType = cfg.Get("DatabaseType", dbType);
                                 std::string newDbUser = cfg.Get("username", dbUser);
                                 std::string newDbPass = cfg.Get("password", dbPass);
@@ -607,11 +680,7 @@ int run(const std::string &configPath)
                                 db->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
                                 db2->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
                                 if (newNeedInit && dbType == "sqlite") {
-                                        std::ifstream sqlFile("src/sqlite.sql");
-                                        if (sqlFile) {
-                                                std::stringstream buffer; buffer << sqlFile.rdbuf();
-                                                db->query(buffer.str());
-                                        }
+                                        setupDatabase("sqlite", db);
                                 }
                                 logger.logDebug(_("Configuration reloaded\n"));
                         } else {
@@ -651,9 +720,9 @@ int run(const std::string &configPath)
 		}
 		if (exiting) break;
 			
-                snprintf(buf, sizeof(buf), _("Sleeping for %d seconds\n"), sleeptime);
-                logger.logDebug(buf);
-		sleep(sleeptime);
+		snprintf(buf, sizeof(buf), _("Sleeping for %d ms\n"), poll_ms);
+		logger.logDebug(buf);
+		std::this_thread::sleep_for(std::chrono::milliseconds(poll_ms));
 	}
         httpServer.stop();
         if (db) {

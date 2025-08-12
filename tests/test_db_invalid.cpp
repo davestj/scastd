@@ -21,9 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "catch.hpp"
-#include "db/MySQLDatabase.h"
-#include "db/MariaDBDatabase.h"
-#include "db/PostgresDatabase.h"
+#include "../src/db/MySQLDatabase.h"
+#include "../src/db/MariaDBDatabase.h"
+#include "../src/db/PostgresDatabase.h"
 #include <sstream>
 #include <iostream>
 

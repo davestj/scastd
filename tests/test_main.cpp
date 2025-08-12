@@ -21,8 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #define CATCH_CONFIG_RUNNER
 #include "catch.hpp"
-#include "logger.h"
-#include "StatusLogger.h"
+#include "../src/logger.h"
+#include "../src/StatusLogger.h"
 #include <sqlite3.h>
 #include <filesystem>
 #include <cstdlib>

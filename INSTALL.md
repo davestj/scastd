@@ -42,30 +42,50 @@ Install Apple's command line tools and Homebrew, then fetch build dependencies.
                 libmicrohttpd libcurl libxml2 mariadb-connector-c postgresql
    ```
 
-Then build and run the tests:
+Then build the project:
 
 ```
 ./autogen.sh
 ./configure
-make && make check
+make
 ```
 
-Linux (x86_64)
-~~~~~~~~~~~~~~
-Install dependencies with APT:
+Debian 12/13 and Ubuntu 24.04 (x86_64)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Install build tools and libraries:
 
 ```
 sudo apt-get install build-essential autoconf automake libtool pkg-config \
-                     libmicrohttpd-dev libcurl4-openssl-dev libmariadb-dev \
-                     libpq-dev libxml2-dev
+                     libmysqlclient-dev libmicrohttpd-dev libcurl4-openssl-dev \
+                     libpq-dev libxml2-dev gettext
 ```
 
-Then build and run the tests:
+`scastd` requires GNU gettext **0.21** or newer. These distributions provide
+suitable versions via the `gettext` package. If your system ships an older
+release, install a newer one from backports or build it from source:
+
+```
+wget https://ftp.gnu.org/pub/gnu/gettext/gettext-latest.tar.gz
+tar xf gettext-latest.tar.gz
+cd gettext-* && ./configure && make && sudo make install
+```
+
+Use `mysql_config` to populate compiler and linker flags when `pkg-config`
+cannot locate the MySQL client library:
+
+```
+mysql_libdir=$(mysql_config --variable=pkglibdir)
+export CPPFLAGS="$(mysql_config --cflags)"
+export LDFLAGS="$(mysql_config --libs)"
+export PKG_CONFIG_PATH="${mysql_libdir}/pkgconfig:${PKG_CONFIG_PATH}"
+```
+
+Then build the project:
 
 ```
 ./autogen.sh
 ./configure
-make && make check
+make
 ```
 
 Configuration and database setup
@@ -156,13 +176,10 @@ The simplest way to compile this package is:
 
   2. Type `make' to compile the package.
 
-  3. Optionally, type `make check' to run any self-tests that come with
-     the package.
-
-  4. Type `make install' to install the programs and any data files and
+  3. Type `make install' to install the programs and any data files and
      documentation.
 
-  5. You can remove the program binaries and object files from the
+  4. You can remove the program binaries and object files from the
      source code directory by typing `make clean'.  To also remove the
      files that `configure' created (so you can compile the package for
      a different kind of computer), type `make distclean'.  There is

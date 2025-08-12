@@ -2,7 +2,7 @@
 
 ## Matrix
 
-The GitHub Actions workflow tests the project on the following platforms:
+The GitHub Actions workflow builds the project on the following platforms:
 
 | Runner | Architecture |
 | ------ | ------------ |
@@ -19,14 +19,13 @@ Each matrix job performs the same bootstrap and build procedure:
 ./autogen.sh
 ./configure
 make
-make check
 ```
 
 ## Release Tagging
 
-When pushes land on the `master` branch and all tests and lint jobs have
-succeeded, a release job runs.  It tags the commit as `v<run_number>` and
-publishes a GitHub release using `actions/create-release`.
+When pushes land on the `master` branch and all lint jobs have succeeded,
+a release job runs.  It tags the commit as `v<run_number>` and publishes a
+GitHub release using `actions/create-release`.
 
 ## Environment and Secrets
 

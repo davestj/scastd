@@ -32,6 +32,13 @@ StatusLogger::StatusLogger(const std::string &path)
     openStream();
 }
 
+void StatusLogger::setPath(const std::string &path) {
+    std::lock_guard<std::mutex> lock(mtx_);
+    path_ = path;
+    stream_.close();
+    openStream();
+}
+
 void StatusLogger::setRotation(size_t maxBytes, int retentionCount) {
     std::lock_guard<std::mutex> lock(mtx_);
     maxSize_ = maxBytes;

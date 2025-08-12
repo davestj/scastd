@@ -1,6 +1,7 @@
 # Autotools generated files
 aclocal.m4
 autom4te.cache/
+m4/
 compile
 config.guess
 config.log
@@ -49,4 +50,5 @@ src/scastd
 src/scastd.log
 src/.deps/
 src/.libs/
+logs/
 

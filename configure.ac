@@ -31,13 +31,10 @@ PKG_CHECK_MODULES([LIBCURL], [libcurl], [], [AC_MSG_ERROR([libcurl library not f
 CXXFLAGS="$CXXFLAGS $LIBCURL_CFLAGS"
 LIBS="$LIBS $LIBCURL_LIBS"
 
-PKG_CHECK_MODULES([MYSQLCLIENT], [mysqlclient],
-  [CXXFLAGS="$CXXFLAGS $MYSQLCLIENT_CFLAGS"
-   LIBS="$LIBS $MYSQLCLIENT_LIBS"],
-  [PKG_CHECK_MODULES([MYSQLCLIENT], [libmariadb],
-     [CXXFLAGS="$CXXFLAGS $MYSQLCLIENT_CFLAGS"
-      LIBS="$LIBS $MYSQLCLIENT_LIBS"],
-     [AC_MSG_ERROR([MySQL client library not found; install libmysqlclient-dev or libmariadb-dev.])])])
+PKG_CHECK_MODULES([mysqlclient], [mysqlclient], [], [
+  AC_CHECK_HEADERS([mysql/mysql.h], [], [AC_MSG_ERROR([MySQL headers not found])])
+  AC_CHECK_LIB([mysqlclient], [mysql_init], [], [AC_MSG_ERROR([MySQL library not found])])
+])
 
 PKG_CHECK_MODULES([LIBPQ], [libpq], [], [AC_MSG_ERROR([PostgreSQL client library (libpq) not found; install libpq-dev.])])
 CXXFLAGS="$CXXFLAGS $LIBPQ_CFLAGS"
@@ -59,7 +56,7 @@ AC_CHECK_LIB([syslog], [openlog], [SYSLOG_LIBS="-lsyslog"], [SYSLOG_LIBS=""])
 AC_SUBST([SYSLOG_LIBS])
 
 AM_GNU_GETTEXT([external])
-AM_GNU_GETTEXT_VERSION([0.22])
+AM_GNU_GETTEXT_VERSION([0.21])
 AC_SUBST([LIBINTL])
 
 
@@ -69,6 +66,6 @@ AC_SUBST(LIBS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
 
-AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile scripts/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile scripts/Makefile tests/Makefile])
 AC_OUTPUT
 

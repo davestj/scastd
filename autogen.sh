@@ -8,8 +8,12 @@ command -v aclocal >/dev/null 2>&1 || {
   echo "Error: 'aclocal' not found. Please install automake." >&2
   exit 1
 }
+command -v autopoint >/dev/null 2>&1 || {
+  echo "Error: 'autopoint' not found. Please install gettext."
+  exit 1
+}
 LIBTOOLIZE=$(command -v libtoolize 2>/dev/null || command -v glibtoolize)
-[[ -z "$LIBTOOLIZE" ]] && { echo "libtoolize/glibtoolize not found"; exit 1; }
+[ -z "$LIBTOOLIZE" ] && { echo "libtoolize/glibtoolize not found"; exit 1; }
 "$LIBTOOLIZE" --force --copy
 
 package="scastd"
