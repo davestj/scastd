@@ -29,9 +29,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "db/PostgresDatabase.h"
 #include "db/SQLiteDatabase.h"
 #include <getopt.h>
+#include <fstream>
 #include <iostream>
 #include <map>
 #include <string>
+#include <unistd.h>
 
 namespace scastd { extern Logger logger; }
 
@@ -39,6 +41,7 @@ static void print_usage(const char *prog) {
     std::cout << "Usage: " << prog << " [options]\n"
               << "  -h, --help           Show this help and exit\n"
               << "  -c, --config PATH    Configuration file\n"
+              << "  -D, --daemon         Run as a daemon and write PID to /var/run/scastd.pid\n"
               << "      --ip ADDRESS     Bind IP address\n"
               << "      --port PORT      HTTP server port\n"
               << "      --debug LEVEL    Debug level\n"
@@ -94,6 +97,7 @@ int main(int argc, char **argv) {
     std::string dumpDir = "/tmp";
     bool doDump = false;
     bool testMode = false;
+    bool daemonMode = false;
     std::string setupdbType;
     std::map<std::string, std::string> overrides;
 
@@ -120,6 +124,7 @@ int main(int argc, char **argv) {
         {"port", required_argument, 0, 'p'},
         {"debug", required_argument, 0, 'd'},
         {"test-mode", no_argument, 0, 't'},
+        {"daemon", no_argument, 0, 'D'},
         {"db-host", required_argument, 0, OPT_DB_HOST},
         {"db-port", required_argument, 0, OPT_DB_PORT},
         {"db-name", required_argument, 0, OPT_DB_NAME},
@@ -138,7 +143,7 @@ int main(int argc, char **argv) {
 
     int opt;
     int long_index = 0;
-    while ((opt = getopt_long(argc, argv, "hc:i:p:d:t", long_options, &long_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "hc:i:p:d:tD", long_options, &long_index)) != -1) {
         switch (opt) {
         case 'h':
             print_usage(argv[0]);
@@ -157,6 +162,9 @@ int main(int argc, char **argv) {
             break;
         case 't':
             testMode = true;
+            break;
+        case 'D':
+            daemonMode = true;
             break;
         case OPT_DB_HOST:
             overrides["host"] = optarg;
@@ -203,13 +211,14 @@ int main(int argc, char **argv) {
         }
     }
 
+    scastd::logger.setConsoleOutput(!daemonMode);
+
     Config cfg;
     if (cfg.Load(configPath)) {
         for (const auto &kv : overrides) {
             cfg.Set(kv.first, kv.second);
         }
         scastd::logger.setLogFiles(cfg.AccessLog(), cfg.ErrorLog(), cfg.DebugLog());
-        scastd::logger.setConsoleOutput(cfg.Get("log_console", false));
         scastd::logger.setDebugLevel(cfg.DebugLevel());
         if (cfg.SyslogEnabled()) {
             Logger::SyslogProto proto = cfg.SyslogProtocol() == "tcp" ?
@@ -253,6 +262,19 @@ int main(int argc, char **argv) {
 
     if (doDump) {
         return scastd::dumpDatabase(configPath, overrides, dumpDir);
+    }
+
+    if (daemonMode) {
+        if (daemon(0, 0) != 0) {
+            scastd::logger.logError("Failed to daemonize");
+            return 1;
+        }
+        std::ofstream pidFile("/var/run/scastd.pid");
+        if (pidFile.is_open()) {
+            pidFile << getpid();
+        } else {
+            scastd::logger.logError("Cannot write PID file /var/run/scastd.pid");
+        }
     }
 
     return scastd::run(configPath, overrides);
