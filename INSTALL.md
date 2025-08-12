@@ -50,14 +50,34 @@ Then build the project:
 make
 ```
 
-Linux (x86_64)
-~~~~~~~~~~~~~~
-Install dependencies with APT:
+Debian 12/13 and Ubuntu 24.04 (x86_64)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Install build tools and libraries:
 
 ```
 sudo apt-get install build-essential autoconf automake libtool pkg-config \
-                     libmicrohttpd-dev libcurl4-openssl-dev libmariadb-dev \
-                     libpq-dev libxml2-dev
+                     libmysqlclient-dev libmicrohttpd-dev libcurl4-openssl-dev \
+                     libpq-dev libxml2-dev gettext
+```
+
+`scastd` requires GNU gettext **0.21** or newer. These distributions provide
+suitable versions via the `gettext` package. If your system ships an older
+release, install a newer one from backports or build it from source:
+
+```
+wget https://ftp.gnu.org/pub/gnu/gettext/gettext-latest.tar.gz
+tar xf gettext-latest.tar.gz
+cd gettext-* && ./configure && make && sudo make install
+```
+
+Use `mysql_config` to populate compiler and linker flags when `pkg-config`
+cannot locate the MySQL client library:
+
+```
+mysql_libdir=$(mysql_config --variable=pkglibdir)
+export CPPFLAGS="$(mysql_config --cflags)"
+export LDFLAGS="$(mysql_config --libs)"
+export PKG_CONFIG_PATH="${mysql_libdir}/pkgconfig:${PKG_CONFIG_PATH}"
 ```
 
 Then build the project:
