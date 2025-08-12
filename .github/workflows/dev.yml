@@ -34,7 +34,7 @@ jobs:
             gettext \
             autopoint \
             libxml2-dev libcurl4-openssl-dev \
-            libmysqlclient-dev libpq-dev libmicrohttpd-dev
+            libmysqlclient-dev mariadb-client libpq-dev libmicrohttpd-dev
           wget https://ftp.gnu.org/pub/gnu/gettext/gettext-0.22.tar.gz
           tar -xf gettext-0.22.tar.gz
           cd gettext-0.22
@@ -43,6 +43,14 @@ jobs:
           sudo make install
           cd ..
           echo "PATH=/usr/local/bin:$PATH" >> $GITHUB_ENV
+          MYSQL_CFLAGS=$(mysql_config --cflags)
+          MYSQL_LIBS=$(mysql_config --libs)
+          export CPPFLAGS="$MYSQL_CFLAGS $CPPFLAGS"
+          export LDFLAGS="$MYSQL_LIBS $LDFLAGS"
+          export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:$PKG_CONFIG_PATH"
+          echo "CPPFLAGS=$CPPFLAGS" >> $GITHUB_ENV
+          echo "LDFLAGS=$LDFLAGS" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
       - name: Install dependencies (macOS)
         if: matrix.os == 'macos-14'
         run: |
