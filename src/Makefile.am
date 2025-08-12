@@ -15,4 +15,5 @@ scastd_SOURCES = \
     db/PostgresDatabase.cpp \
     db/SQLiteDatabase.cpp
 
-scastd_LDADD = $(SYSLOG_LIBS) $(LIBINTL)
+scastd_CPPFLAGS = @mysqlclient_CFLAGS@
+scastd_LDADD = $(SYSLOG_LIBS) $(LIBINTL) @mysqlclient_LIBS@
