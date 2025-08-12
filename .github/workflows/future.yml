@@ -9,36 +9,29 @@ name: FutureBuildPipeline
 
 jobs:
   test:
-    name: Build and test
+    name: Build and test (${{ matrix.distro }})
     strategy:
       matrix:
+        distro: [debian-12, debian-13, ubuntu-24.04, ubuntu-22.04, macos-14]
         include:
-          - os: ubuntu-22.04
-            arch: x64
+          - distro: debian-12
+            os: ubuntu-22.04
             container: debian:12
-            label: debian-12
-          - os: ubuntu-22.04
-            arch: x64
+          - distro: debian-13
+            os: ubuntu-22.04
             container: debian:trixie
-            label: debian-13
-          - os: ubuntu-24.04
-            arch: x64
-            container: null
-            label: ubuntu-24.04
-          - os: ubuntu-22.04
-            arch: x64
-            container: null
-            label: ubuntu-22.04
-          - os: macos-14
-            arch: arm64
-            container: null
-            label: macos-14
+          - distro: ubuntu-24.04
+            os: ubuntu-24.04
+          - distro: ubuntu-22.04
+            os: ubuntu-22.04
+          - distro: macos-14
+            os: macos-14
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies (Debian/Ubuntu)
-        if: contains('debian-12 debian-13 ubuntu-24.04 ubuntu-22.04', matrix.label)
+        if: contains('debian-12 debian-13 ubuntu-24.04 ubuntu-22.04', matrix.distro)
         run: |
           SUDO=""
           command -v sudo >/dev/null 2>&1 && SUDO="sudo"
@@ -58,14 +51,14 @@ jobs:
           $SUDO make install
           cd ..
           echo "PATH=/usr/local/bin:$PATH" >> $GITHUB_ENV
-          if [[ "${{ matrix.label }}" == "debian-12" || "${{ matrix.label }}" == "debian-13" ]]; then
+          if [[ "${{ matrix.distro }}" == "debian-12" || "${{ matrix.distro }}" == "debian-13" ]]; then
             wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb
             wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10_9.4.0-1debian12_amd64.deb
             wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2_9.4.0-1debian12_amd64.deb
             wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb
             $SUDO dpkg -i libmysqlcppconn10_9.4.0-1debian12_amd64.deb libmysqlcppconnx2_9.4.0-1debian12_amd64.deb libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb || true
             $SUDO apt-get -f install -y
-          elif [[ "${{ matrix.label }}" == "ubuntu-24.04" ]]; then
+          elif [[ "${{ matrix.distro }}" == "ubuntu-24.04" ]]; then
             wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10_9.4.0-1ubuntu24.04_amd64.deb
             wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2_9.4.0-1ubuntu24.04_amd64.deb
             wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn-dev_9.4.0-1ubuntu24.04_amd64.deb
@@ -87,7 +80,7 @@ jobs:
           echo "LDFLAGS=$LDFLAGS" >> $GITHUB_ENV
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
       - name: Install dependencies (macOS)
-        if: matrix.label == 'macos-14'
+        if: matrix.distro == 'macos-14'
         run: |
           brew update
           brew install \
@@ -106,12 +99,12 @@ jobs:
           echo "LDFLAGS=$LDFLAGS" >> $GITHUB_ENV
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
       - name: Setup MySQL Connector
-        if: matrix.label == 'macos-14'
+        if: matrix.distro == 'macos-14'
         uses: ./.github/actions/setup-mysql-connector
         with:
           version: mysql-connector-c++-9.4.0-macos15-arm64
       - name: Show environment variables
-        if: matrix.label == 'macos-14'
+        if: matrix.distro == 'macos-14'
         run: |
           echo "PATH=$PATH"
           echo "CPPFLAGS=$CPPFLAGS"
@@ -141,7 +134,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.label }}-${{ matrix.arch }}-logs
+          name: ${{ matrix.distro }}-logs
           path: |
             autogen.log
             configure.log
