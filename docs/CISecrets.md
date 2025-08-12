@@ -10,7 +10,6 @@ CI runs exclusively over HTTP; TLS validation is handled manually, so no TLS cer
 | ------ | ----------- |
 | `DB_USER` | Username for database authentication. |
 | `DB_PASSWORD` | Password for `DB_USER`. |
-| `SQLITE_DB_PATH` | Path to a SQLite database used for tests. |
 
 Populate these secrets before running the CI workflow to prevent failures
 due to missing configuration.  For local development the same variables

@@ -66,6 +66,6 @@ AC_SUBST(LIBS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(LDFLAGS)
 
-AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile scripts/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile scripts/Makefile])
 AC_OUTPUT
 
