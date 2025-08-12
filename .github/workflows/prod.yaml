@@ -30,9 +30,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
     steps:
-      - name: Test HTTP request
-        run: |
-          curl -sS http://localhost
       - uses: ./.github/actions/build-and-test
         with:
           distro: ${{ matrix.distro }}
