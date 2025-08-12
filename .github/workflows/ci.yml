@@ -40,7 +40,8 @@ jobs:
           MYSQL_LIBS=$(mysql_config --libs)
           export CPPFLAGS="$MYSQL_CFLAGS $CPPFLAGS"
           export LDFLAGS="$MYSQL_LIBS $LDFLAGS"
-          export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:$PKG_CONFIG_PATH"
+          PCP=/usr/lib/x86_64-linux-gnu/pkgconfig
+          export PKG_CONFIG_PATH="$PCP:$PKG_CONFIG_PATH"
           echo "CPPFLAGS=$CPPFLAGS" >> $GITHUB_ENV
           echo "LDFLAGS=$LDFLAGS" >> $GITHUB_ENV
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
@@ -66,12 +67,14 @@ jobs:
           CONN_DIR="${PWD}/$MYSQL_VER"
           export PATH="$CONN_DIR/bin:$PATH"
           export CPPFLAGS="-I$CONN_DIR/include $CPPFLAGS"
-          export LDFLAGS="-L$CONN_DIR/lib $LDFLAGS"
-          export PKG_CONFIG_PATH="$CONN_DIR/lib/pkgconfig:$PKG_CONFIG_PATH"
+          export LDFLAGS="-L$CONN_DIR/lib64 $LDFLAGS"
+          export PKG_CONFIG_PATH="$CONN_DIR/lib64/pkgconfig:$PKG_CONFIG_PATH"
+          export DYLD_LIBRARY_PATH="$CONN_DIR/lib64:$DYLD_LIBRARY_PATH"
           echo "PATH=$PATH" >> $GITHUB_ENV
           echo "CPPFLAGS=$CPPFLAGS" >> $GITHUB_ENV
           echo "LDFLAGS=$LDFLAGS" >> $GITHUB_ENV
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
+          echo "DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH" >> $GITHUB_ENV
       - name: Generate configure script
         run: |
           set -o pipefail
@@ -88,6 +91,10 @@ jobs:
         run: |
           set -o pipefail
           make check 2>&1 | tee test.log
+      - name: Verify scastd --help
+        run: |
+          set -o pipefail
+          ./src/scastd --help 2>&1 | tee scastd-help.log
       - name: Upload build artifacts and logs
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
@@ -98,6 +105,7 @@ jobs:
             configure.log
             build.log
             test.log
+            scastd-help.log
             config.log
             tests/test-suite.log
             src/scastd
