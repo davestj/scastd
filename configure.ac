@@ -31,13 +31,10 @@ PKG_CHECK_MODULES([LIBCURL], [libcurl], [], [AC_MSG_ERROR([libcurl library not f
 CXXFLAGS="$CXXFLAGS $LIBCURL_CFLAGS"
 LIBS="$LIBS $LIBCURL_LIBS"
 
-PKG_CHECK_MODULES([MYSQLCLIENT], [mysqlclient],
-  [CXXFLAGS="$CXXFLAGS $MYSQLCLIENT_CFLAGS"
-   LIBS="$LIBS $MYSQLCLIENT_LIBS"],
-  [PKG_CHECK_MODULES([MYSQLCLIENT], [libmariadb],
-     [CXXFLAGS="$CXXFLAGS $MYSQLCLIENT_CFLAGS"
-      LIBS="$LIBS $MYSQLCLIENT_LIBS"],
-     [AC_MSG_ERROR([MySQL client library not found; install libmysqlclient-dev or libmariadb-dev.])])])
+PKG_CHECK_MODULES([mysqlclient], [mysqlclient], [], [
+  AC_CHECK_HEADERS([mysql/mysql.h], [], [AC_MSG_ERROR([MySQL headers not found])])
+  AC_CHECK_LIB([mysqlclient], [mysql_init], [], [AC_MSG_ERROR([MySQL library not found])])
+])
 
 PKG_CHECK_MODULES([LIBPQ], [libpq], [], [AC_MSG_ERROR([PostgreSQL client library (libpq) not found; install libpq-dev.])])
 CXXFLAGS="$CXXFLAGS $LIBPQ_CFLAGS"
