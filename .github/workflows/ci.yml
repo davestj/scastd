@@ -89,8 +89,9 @@ jobs:
           make 2>&1 | tee build.log
       - name: Verify scastd --help
         run: |
-          set -o pipefail
-          ./src/scastd --help 2>&1 | tee scastd-help.log
+          set -e
+          ./src/scastd --help > scastd-help.log 2>&1
+          cat scastd-help.log
       - name: Upload build artifacts and logs
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
