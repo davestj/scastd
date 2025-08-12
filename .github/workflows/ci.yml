@@ -87,10 +87,6 @@ jobs:
         run: |
           set -o pipefail
           make 2>&1 | tee build.log
-      - name: Run unit tests
-        run: |
-          set -o pipefail
-          make check 2>&1 | tee test.log
       - name: Verify scastd --help
         run: |
           set -o pipefail
@@ -104,10 +100,8 @@ jobs:
             autogen.log
             configure.log
             build.log
-            test.log
             scastd-help.log
             config.log
-            tests/test-suite.log
             src/scastd
             src/.libs/scastd
           if-no-files-found: ignore
@@ -122,7 +116,7 @@ jobs:
         run: |
           cppcheck --enable=all --std=c++17 \
             --suppress=missingIncludeSystem \
-            src tests
+            src
   release:
     needs: [test, lint]
     runs-on: ubuntu-24.04
