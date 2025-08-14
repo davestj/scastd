@@ -261,7 +261,7 @@ int main(int argc, char **argv) {
     }
 
     if (doDump) {
-        return scastd::dumpDatabase(configPath, overrides, dumpDir);
+        return scastd::dumpDatabase(configPath, overrides, dumpDir, !daemonMode);
     }
 
     if (daemonMode) {
@@ -277,5 +277,5 @@ int main(int argc, char **argv) {
         }
     }
 
-    return scastd::run(configPath, overrides);
+    return scastd::run(configPath, overrides, !daemonMode);
 }

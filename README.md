@@ -259,6 +259,8 @@ SCASTD reads settings from configuration files that support environment variable
 - **[scastd.conf](scastd.conf)** - Main configuration file with comprehensive settings
 - **[scastd_pg.conf](scastd_pg.conf)** - PostgreSQL-specific configuration example
 
+Console logging is enabled by default when SCASTD runs in the foreground. Running with `--daemon` disables console output unless `log_console true` is set in the configuration. Set `log_console false` to silence console logs even in foreground mode.
+
 ### Environment Variable Integration
 
 We implement robust environment variable support for sensitive data and containerized deployments:
