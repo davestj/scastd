@@ -29,8 +29,8 @@ am__make_running_with_option = \
   case $${target_option-} in \
       ?) ;; \
       *) echo "am__make_running_with_option: internal error: invalid" \
-              "target option '$${target_option-}' specified" >&2; \
-         exit 1;; \
+	      "target option '$${target_option-}' specified" >&2; \
+	 exit 1;; \
   esac; \
   has_opt=no; \
   sane_makeflags=$$MAKEFLAGS; \
@@ -39,9 +39,9 @@ am__make_running_with_option = \
   else \
     case $$MAKEFLAGS in \
       *\\[\ \	]*) \
-        bs=\\; \
-        sane_makeflags=`printf '%s\n' "$$MAKEFLAGS" \
-          | sed "s/$$bs$$bs[$$bs $$bs	]*//g"`;; \
+	bs=\\; \
+	sane_makeflags=`printf '%s\n' "$$MAKEFLAGS" \
+	  | sed "s/$$bs$$bs[$$bs $$bs	]*//g"`;; \
     esac; \
   fi; \
   skip_next=no; \
@@ -53,11 +53,11 @@ am__make_running_with_option = \
     test $$skip_next = yes && { skip_next=no; continue; }; \
     case $$flg in \
       *=*|--*) continue;; \
-        -*I) strip_trailopt 'I'; skip_next=yes;; \
+	-*I) strip_trailopt 'I'; skip_next=yes;; \
       -*I?*) strip_trailopt 'I';; \
-        -*O) strip_trailopt 'O'; skip_next=yes;; \
+	-*O) strip_trailopt 'O'; skip_next=yes;; \
       -*O?*) strip_trailopt 'O';; \
-        -*l) strip_trailopt 'l'; skip_next=yes;; \
+	-*l) strip_trailopt 'l'; skip_next=yes;; \
       -*l?*) strip_trailopt 'l';; \
       -[dEDm]) skip_next=yes;; \
       -[JT]) skip_next=yes;; \
@@ -186,16 +186,16 @@ am__relativize = \
     first=`echo "$$dir1" | sed -e "$$sed_first"`; \
     if test "$$first" != "."; then \
       if test "$$first" = ".."; then \
-        dir2=`echo "$$dir0" | sed -e "$$sed_last"`/"$$dir2"; \
-        dir0=`echo "$$dir0" | sed -e "$$sed_butlast"`; \
+	dir2=`echo "$$dir0" | sed -e "$$sed_last"`/"$$dir2"; \
+	dir0=`echo "$$dir0" | sed -e "$$sed_butlast"`; \
       else \
-        first2=`echo "$$dir2" | sed -e "$$sed_first"`; \
-        if test "$$first2" = "$$first"; then \
-          dir2=`echo "$$dir2" | sed -e "$$sed_rest"`; \
-        else \
-          dir2="../$$dir2"; \
-        fi; \
-        dir0="$$dir0"/"$$first"; \
+	first2=`echo "$$dir2" | sed -e "$$sed_first"`; \
+	if test "$$first2" = "$$first"; then \
+	  dir2=`echo "$$dir2" | sed -e "$$sed_rest"`; \
+	else \
+	  dir2="../$$dir2"; \
+	fi; \
+	dir0="$$dir0"/"$$first"; \
       fi; \
     fi; \
     dir1=`echo "$$dir1" | sed -e "$$sed_rest"`; \
@@ -589,12 +589,12 @@ distdir-am: $(DISTFILES)
 	    echo "     am__remove_distdir=: am__skip_length_check=: am__skip_mode_fix=: distdir)"; \
 	    ($(am__cd) $$subdir && \
 	      $(MAKE) $(AM_MAKEFLAGS) \
-	        top_distdir="$$new_top_distdir" \
-	        distdir="$$new_distdir" \
+		top_distdir="$$new_top_distdir" \
+		distdir="$$new_distdir" \
 		am__remove_distdir=: \
 		am__skip_length_check=: \
 		am__skip_mode_fix=: \
-	        distdir) \
+		distdir) \
 	      || exit 1; \
 	  fi; \
 	done
@@ -634,7 +634,7 @@ dist-tarZ: distdir
 
 dist-shar: distdir
 	@echo WARNING: "Support for shar distribution archives is" \
-	               "deprecated." >&2
+		       "deprecated." >&2
 	@echo WARNING: "It will be removed altogether in Automake 2.0" >&2
 	shar $(distdir) | eval GZIP= gzip $(GZIP_ENV) -c >$(distdir).shar.gz
 	$(am__post_remove_distdir)
@@ -690,14 +690,14 @@ distcheck: dist
 	  && $(MAKE) $(AM_MAKEFLAGS) installcheck \
 	  && $(MAKE) $(AM_MAKEFLAGS) uninstall \
 	  && $(MAKE) $(AM_MAKEFLAGS) distuninstallcheck_dir="$$dc_install_base" \
-	        distuninstallcheck \
+		distuninstallcheck \
 	  && chmod -R a-w "$$dc_install_base" \
 	  && ({ \
 	       (cd ../.. && umask 077 && mkdir "$$dc_destdir") \
 	       && $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$dc_destdir" install \
 	       && $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$dc_destdir" uninstall \
 	       && $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$dc_destdir" \
-	            distuninstallcheck_dir="$$dc_destdir" distuninstallcheck; \
+		    distuninstallcheck_dir="$$dc_destdir" distuninstallcheck; \
 	      } || { rm -rf "$$dc_destdir"; exit 1; }) \
 	  && rm -rf "$$dc_destdir" \
 	  && $(MAKE) $(AM_MAKEFLAGS) dist \
@@ -721,11 +721,11 @@ distuninstallcheck:
 	}; \
 	test `$(am__distuninstallcheck_listfiles) | wc -l` -eq 0 \
 	   || { echo "ERROR: files left after uninstall:" ; \
-	        if test -n "$(DESTDIR)"; then \
-	          echo "  (check DESTDIR support)"; \
-	        fi ; \
-	        $(distuninstallcheck_listfiles) ; \
-	        exit 1; } >&2
+		if test -n "$(DESTDIR)"; then \
+		  echo "  (check DESTDIR support)"; \
+		fi ; \
+		$(distuninstallcheck_listfiles) ; \
+		exit 1; } >&2
 distcleancheck: distclean
 	@if test '$(srcdir)' = . ; then \
 	  echo "ERROR: distcleancheck can only run from a VPATH build" ; \
@@ -868,6 +868,18 @@ install-data-local:
 	$(INSTALL_DATA) -m 640 $(srcdir)/scastd.conf $(DESTDIR)/etc/scastd/scastd.conf
 	sqlite3 $(DESTDIR)/etc/scastd/scastd.db < $(srcdir)/src/sqlite.sql
 	chmod 640 $(DESTDIR)/etc/scastd/scastd.db
+	$(MAKE) permissions_great_again
+
+# Ensure ownership and modes for installed directories and files
+permissions_great_again:
+	$(INSTALL) -d -m 750 $(DESTDIR)/var/log/scastd
+	chown root:root $(DESTDIR)/etc/scastd \
+		$(DESTDIR)/etc/scastd/scastd.conf \
+		$(DESTDIR)/etc/scastd/scastd.db \
+		$(DESTDIR)/var/log/scastd
+	chmod 755 $(DESTDIR)/etc/scastd
+	chmod 640 $(DESTDIR)/etc/scastd/scastd.conf $(DESTDIR)/etc/scastd/scastd.db
+	chmod 750 $(DESTDIR)/var/log/scastd
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
