@@ -29,10 +29,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 namespace scastd {
 int run(const std::string &configPath,
-        const std::map<std::string, std::string> &overrides);
+        const std::map<std::string, std::string> &overrides,
+        bool defaultConsoleLog);
 int dumpDatabase(const std::string &configPath,
                  const std::map<std::string, std::string> &overrides,
-                 const std::string &dumpDir);
+                 const std::string &dumpDir,
+                 bool defaultConsoleLog);
 bool setupDatabase(const std::string &dbType, IDatabase *db);
 }
 

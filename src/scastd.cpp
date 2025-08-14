@@ -176,7 +176,8 @@ bool setupDatabase(const std::string &dbType, IDatabase *db) {
 
 int dumpDatabase(const std::string &configPath,
                  const std::map<std::string, std::string> &overrides,
-                 const std::string &dumpDir) {
+                 const std::string &dumpDir,
+                 bool defaultConsoleLog) {
         init_i18n();
         Config cfg;
         if (!cfg.Load(configPath)) {
@@ -191,7 +192,7 @@ int dumpDatabase(const std::string &configPath,
         bool loggingEnabled = true;
         logger.setLogDir(logDir);
         logger.setLogFiles(cfg.AccessLog(), cfg.ErrorLog(), cfg.DebugLog());
-        logger.setConsoleOutput(cfg.Get("log_console", false));
+        logger.setConsoleOutput(cfg.Get("log_console", defaultConsoleLog));
         logger.setDebugLevel(cfg.DebugLevel());
         logger.setRotation(cfg.LogMaxSize(), cfg.LogRetention());
         statusLogger.setPath(logDir + "/status.json");
@@ -404,7 +405,8 @@ void sigHUP(int sig)
 
 
 int run(const std::string &configPath,
-        const std::map<std::string, std::string> &overrides)
+        const std::map<std::string, std::string> &overrides,
+        bool defaultConsoleLog)
 {
         init_i18n();
         scastd::HttpServer httpServer;
@@ -427,7 +429,7 @@ int run(const std::string &configPath,
         std::string accessLog = cfg.AccessLog();
         std::string errorLog = cfg.ErrorLog();
         std::string debugLog = cfg.DebugLog();
-        bool consoleFlag = cfg.Get("log_console", false);
+        bool consoleFlag = cfg.Get("log_console", defaultConsoleLog);
         int debugLevel = cfg.DebugLevel();
         std::string logDir = cfg.Get("log_dir", "./logs");
         bool loggingEnabled = true;
@@ -588,7 +590,7 @@ int run(const std::string &configPath,
                                 std::string newAccess = cfg.AccessLog();
                                 std::string newError = cfg.ErrorLog();
                                 std::string newDebug = cfg.DebugLog();
-                                bool newConsole = cfg.Get("log_console", false);
+                                bool newConsole = cfg.Get("log_console", consoleFlag);
                                 int newDebugLevel = cfg.DebugLevel();
                                 if (newAccess != accessLog || newError != errorLog || newDebug != debugLog) {
                                         accessLog = newAccess;
