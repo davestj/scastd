@@ -43,6 +43,20 @@ TEST_CASE("Config parsing") {
     std::remove(fname);
 }
 
+TEST_CASE("Logging defaults use system log directory") {
+    const char* fname = "empty.conf";
+    std::ofstream out(fname);
+    out.close();
+
+    Config cfg;
+    REQUIRE(cfg.Load(fname));
+    REQUIRE(cfg.AccessLog() == std::string("/var/log/scastd/access.log"));
+    REQUIRE(cfg.ErrorLog() == std::string("/var/log/scastd/error.log"));
+    REQUIRE(cfg.DebugLog() == std::string("/var/log/scastd/debug.log"));
+
+    std::remove(fname);
+}
+
 TEST_CASE("Environment and secret overrides") {
     const char* cfg = "test.conf";
     std::ofstream out(cfg);
