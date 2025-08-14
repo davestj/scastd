@@ -111,10 +111,11 @@ am__dirstamp = $(am__leading_dot)dirstamp
 am_unit_tests_OBJECTS = test_main.$(OBJEXT) test_config.$(OBJEXT) \
 	test_sql.$(OBJEXT) test_http.$(OBJEXT) test_icecast.$(OBJEXT) \
 	test_url_parser.$(OBJEXT) test_db_invalid.$(OBJEXT) \
-	test_setupdb.$(OBJEXT) ../src/Config.$(OBJEXT) \
-	../src/HttpServer.$(OBJEXT) ../src/icecast2.$(OBJEXT) \
-	../src/UrlParser.$(OBJEXT) ../src/CurlClient.$(OBJEXT) \
-	../src/logger.$(OBJEXT) ../src/StatusLogger.$(OBJEXT) \
+	test_setupdb.$(OBJEXT) test_missing_config.$(OBJEXT) \
+	../src/Config.$(OBJEXT) ../src/HttpServer.$(OBJEXT) \
+	../src/icecast2.$(OBJEXT) ../src/UrlParser.$(OBJEXT) \
+	../src/CurlClient.$(OBJEXT) ../src/logger.$(OBJEXT) \
+	../src/StatusLogger.$(OBJEXT) ../src/scastd.$(OBJEXT) \
 	../src/db/MySQLDatabase.$(OBJEXT) \
 	../src/db/MariaDBDatabase.$(OBJEXT) \
 	../src/db/PostgresDatabase.$(OBJEXT)
@@ -144,13 +145,15 @@ am__depfiles_remade = ../src/$(DEPDIR)/Config.Po \
 	../src/$(DEPDIR)/CurlClient.Po ../src/$(DEPDIR)/HttpServer.Po \
 	../src/$(DEPDIR)/StatusLogger.Po ../src/$(DEPDIR)/UrlParser.Po \
 	../src/$(DEPDIR)/icecast2.Po ../src/$(DEPDIR)/logger.Po \
+	../src/$(DEPDIR)/scastd.Po \
 	../src/db/$(DEPDIR)/MariaDBDatabase.Po \
 	../src/db/$(DEPDIR)/MySQLDatabase.Po \
 	../src/db/$(DEPDIR)/PostgresDatabase.Po \
 	./$(DEPDIR)/test_config.Po ./$(DEPDIR)/test_db_invalid.Po \
 	./$(DEPDIR)/test_http.Po ./$(DEPDIR)/test_icecast.Po \
-	./$(DEPDIR)/test_main.Po ./$(DEPDIR)/test_setupdb.Po \
-	./$(DEPDIR)/test_sql.Po ./$(DEPDIR)/test_url_parser.Po
+	./$(DEPDIR)/test_main.Po ./$(DEPDIR)/test_missing_config.Po \
+	./$(DEPDIR)/test_setupdb.Po ./$(DEPDIR)/test_sql.Po \
+	./$(DEPDIR)/test_url_parser.Po
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -563,13 +566,13 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/tests $(DEPS_CFLAGS) @mysqlclient_CFLAGS@ -DTEST_SRCDIR=\"$(top_srcdir)\"
-unit_tests_SOURCES = test_main.cpp test_config.cpp test_sql.cpp test_http.cpp test_icecast.cpp test_url_parser.cpp test_db_invalid.cpp test_setupdb.cpp \
+unit_tests_SOURCES = test_main.cpp test_config.cpp test_sql.cpp test_http.cpp test_icecast.cpp test_url_parser.cpp test_db_invalid.cpp test_setupdb.cpp test_missing_config.cpp \
     ../src/Config.cpp ../src/HttpServer.cpp ../src/icecast2.cpp ../src/UrlParser.cpp \
-    ../src/CurlClient.cpp ../src/logger.cpp ../src/StatusLogger.cpp \
+    ../src/CurlClient.cpp ../src/logger.cpp ../src/StatusLogger.cpp ../src/scastd.cpp \
     ../src/db/MySQLDatabase.cpp ../src/db/MariaDBDatabase.cpp \
-    ../src/db/PostgresDatabase.cpp
+    ../src/db/PostgresDatabase.cpp stubs.cpp
 
-unit_tests_LDADD = $(DEPS_LIBS) $(LIBINTL) @mysqlclient_LIBS@
+unit_tests_LDADD = $(DEPS_LIBS) $(LIBINTL) @mysqlclient_LIBS@ stubs.o
 all: all-am
 
 .SUFFIXES:
@@ -632,6 +635,8 @@ clean-checkPROGRAMS:
 	../src/$(DEPDIR)/$(am__dirstamp)
 ../src/StatusLogger.$(OBJEXT): ../src/$(am__dirstamp) \
 	../src/$(DEPDIR)/$(am__dirstamp)
+../src/scastd.$(OBJEXT): ../src/$(am__dirstamp) \
+	../src/$(DEPDIR)/$(am__dirstamp)
 ../src/db/$(am__dirstamp):
 	@$(MKDIR_P) ../src/db
 	@: > ../src/db/$(am__dirstamp)
@@ -664,6 +669,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/UrlParser.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/icecast2.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/logger.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@../src/$(DEPDIR)/scastd.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@../src/db/$(DEPDIR)/MariaDBDatabase.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@../src/db/$(DEPDIR)/MySQLDatabase.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@../src/db/$(DEPDIR)/PostgresDatabase.Po@am__quote@ # am--include-marker
@@ -672,6 +678,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_http.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_icecast.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_main.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_missing_config.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_setupdb.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_sql.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_url_parser.Po@am__quote@ # am--include-marker
@@ -1015,6 +1022,7 @@ distclean: distclean-am
 	-rm -f ../src/$(DEPDIR)/UrlParser.Po
 	-rm -f ../src/$(DEPDIR)/icecast2.Po
 	-rm -f ../src/$(DEPDIR)/logger.Po
+	-rm -f ../src/$(DEPDIR)/scastd.Po
 	-rm -f ../src/db/$(DEPDIR)/MariaDBDatabase.Po
 	-rm -f ../src/db/$(DEPDIR)/MySQLDatabase.Po
 	-rm -f ../src/db/$(DEPDIR)/PostgresDatabase.Po
@@ -1023,6 +1031,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/test_http.Po
 	-rm -f ./$(DEPDIR)/test_icecast.Po
 	-rm -f ./$(DEPDIR)/test_main.Po
+	-rm -f ./$(DEPDIR)/test_missing_config.Po
 	-rm -f ./$(DEPDIR)/test_setupdb.Po
 	-rm -f ./$(DEPDIR)/test_sql.Po
 	-rm -f ./$(DEPDIR)/test_url_parser.Po
@@ -1078,6 +1087,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ../src/$(DEPDIR)/UrlParser.Po
 	-rm -f ../src/$(DEPDIR)/icecast2.Po
 	-rm -f ../src/$(DEPDIR)/logger.Po
+	-rm -f ../src/$(DEPDIR)/scastd.Po
 	-rm -f ../src/db/$(DEPDIR)/MariaDBDatabase.Po
 	-rm -f ../src/db/$(DEPDIR)/MySQLDatabase.Po
 	-rm -f ../src/db/$(DEPDIR)/PostgresDatabase.Po
@@ -1086,6 +1096,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/test_http.Po
 	-rm -f ./$(DEPDIR)/test_icecast.Po
 	-rm -f ./$(DEPDIR)/test_main.Po
+	-rm -f ./$(DEPDIR)/test_missing_config.Po
 	-rm -f ./$(DEPDIR)/test_setupdb.Po
 	-rm -f ./$(DEPDIR)/test_sql.Po
 	-rm -f ./$(DEPDIR)/test_url_parser.Po
