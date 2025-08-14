@@ -194,19 +194,19 @@ static std::string combine_log_path(const std::string &dir, const std::string &p
 }
 
 std::string Config::AccessLog() const {
-    std::string dir = Get("log_dir", "./logs");
+    std::string dir = Get("log_dir", "/var/log/scastd");
     std::string path = Get("access_log", "access.log");
     return combine_log_path(dir, path);
 }
 
 std::string Config::ErrorLog() const {
-    std::string dir = Get("log_dir", "./logs");
+    std::string dir = Get("log_dir", "/var/log/scastd");
     std::string path = Get("error_log", "error.log");
     return combine_log_path(dir, path);
 }
 
 std::string Config::DebugLog() const {
-    std::string dir = Get("log_dir", "./logs");
+    std::string dir = Get("log_dir", "/var/log/scastd");
     std::string path = Get("debug_log", "debug.log");
     return combine_log_path(dir, path);
 }

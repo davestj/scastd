@@ -190,7 +190,7 @@ int dumpDatabase(const std::string &configPath,
         for (const auto &kv : overrides) {
                 cfg.Set(kv.first, kv.second);
         }
-        std::string logDir = cfg.Get("log_dir", "./logs");
+        std::string logDir = cfg.Get("log_dir", "/var/log/scastd");
         bool loggingEnabled = true;
         logger.setLogDir(logDir);
         logger.setLogFiles(cfg.AccessLog(), cfg.ErrorLog(), cfg.DebugLog());
@@ -436,7 +436,7 @@ int run(const std::string &configPath,
         std::string debugLog = cfg.DebugLog();
         bool consoleFlag = cfg.Get("log_console", defaultConsoleLog);
         int debugLevel = cfg.DebugLevel();
-        std::string logDir = cfg.Get("log_dir", "./logs");
+        std::string logDir = cfg.Get("log_dir", "/var/log/scastd");
         bool loggingEnabled = true;
         logger.setLogDir(logDir);
         logger.setLogFiles(accessLog, errorLog, debugLog);

@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "logger.h"
 
 #include <filesystem>
+#include <system_error>
 #include <iostream>
 #include <netdb.h>
 #include <sys/socket.h>
@@ -59,6 +60,14 @@ void Logger::setLogFiles(const std::string &accessFile,
 }
 
 void Logger::setLogDir(const std::string &directory) {
+    namespace fs = std::filesystem;
+    std::error_code ec;
+    fs::create_directories(directory, ec);
+    fs::permissions(directory,
+                    fs::perms::owner_read | fs::perms::owner_write |
+                        fs::perms::owner_exec | fs::perms::group_read |
+                        fs::perms::group_exec,
+                    fs::perm_options::replace, ec);
     setLogFiles(directory + "/access.log",
                 directory + "/error.log",
                 directory + "/debug.log");
