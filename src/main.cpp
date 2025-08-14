@@ -33,6 +33,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <iostream>
 #include <map>
 #include <string>
+#include <filesystem>
+#include <system_error>
+#include <cerrno>
+#include <cstring>
 #include <unistd.h>
 
 namespace scastd { extern Logger logger; }
@@ -41,7 +45,8 @@ static void print_usage(const char *prog) {
     std::cout << "Usage: " << prog << " [options]\n"
               << "  -h, --help           Show this help and exit\n"
               << "  -c, --config PATH    Configuration file\n"
-              << "  -D, --daemon         Run as a daemon and write PID to /var/run/scastd.pid\n"
+              << "  -D, --daemon         Run as a daemon\n"
+              << "      --pid-file PATH  PID file path (used with --daemon)\n"
               << "      --ip ADDRESS     Bind IP address\n"
               << "      --port PORT      HTTP server port\n"
               << "      --debug LEVEL    Debug level\n"
@@ -98,6 +103,7 @@ int main(int argc, char **argv) {
     bool doDump = false;
     bool testMode = false;
     bool daemonMode = false;
+    std::string pidPath = "/var/run/scastd.pid";
     std::string setupdbType;
     std::map<std::string, std::string> overrides;
 
@@ -114,7 +120,8 @@ int main(int argc, char **argv) {
         OPT_SSL_ENABLE,
         OPT_DUMP,
         OPT_DUMP_DIR,
-        OPT_POLL_INTERVAL
+        OPT_POLL_INTERVAL,
+        OPT_PID_FILE
     };
 
     static struct option long_options[] = {
@@ -138,6 +145,7 @@ int main(int argc, char **argv) {
         {"dump", no_argument, 0, OPT_DUMP},
         {"dump-dir", required_argument, 0, OPT_DUMP_DIR},
         {"poll", required_argument, 0, OPT_POLL_INTERVAL},
+        {"pid-file", required_argument, 0, OPT_PID_FILE},
         {0, 0, 0, 0}
     };
 
@@ -205,6 +213,10 @@ int main(int argc, char **argv) {
         case OPT_POLL_INTERVAL:
             overrides["poll_interval"] = optarg;
             break;
+        case OPT_PID_FILE:
+            overrides["pid_file"] = optarg;
+            pidPath = optarg;
+            break;
         default:
             print_usage(argv[0]);
             return 1;
@@ -218,6 +230,7 @@ int main(int argc, char **argv) {
         for (const auto &kv : overrides) {
             cfg.Set(kv.first, kv.second);
         }
+        pidPath = cfg.PIDFile();
         scastd::logger.setLogFiles(cfg.AccessLog(), cfg.ErrorLog(), cfg.DebugLog());
         scastd::logger.setDebugLevel(cfg.DebugLevel());
         if (cfg.SyslogEnabled()) {
@@ -269,13 +282,19 @@ int main(int argc, char **argv) {
             scastd::logger.logError("Failed to daemonize");
             return 1;
         }
-        std::ofstream pidFile("/var/run/scastd.pid");
+        std::ofstream pidFile(pidPath);
         if (pidFile.is_open()) {
             pidFile << getpid();
+            pidFile.close();
         } else {
-            scastd::logger.logError("Cannot write PID file /var/run/scastd.pid");
+            scastd::logger.logError(std::string("Cannot write PID file ") + pidPath + ": " + std::strerror(errno));
         }
     }
 
-    return scastd::run(configPath, overrides, !daemonMode);
+    int rc = scastd::run(configPath, overrides, !daemonMode);
+    if (daemonMode) {
+        std::error_code ec;
+        std::filesystem::remove(pidPath, ec);
+    }
+    return rc;
 }

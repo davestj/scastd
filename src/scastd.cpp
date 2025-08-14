@@ -545,15 +545,13 @@ int run(const std::string &configPath,
                 }
         }
 
-        logger.logDebug(_("Detaching from console..."));
+        if (defaultConsoleLog) {
+                logger.logDebug(_("Detaching from console..."));
+                if (fork()) {
+                        exit(0);
+                }
+        }
 
-	if (fork()) {
-		// Parent
-		exit(1);
-	}
-	else {
-		// Da child
-	
         if (signal(SIGUSR1, sigUSR1) == SIG_ERR) {
                 logger.logError(_("Cannot install handler for SIGUSR1"));
                 exit(1);
@@ -741,7 +739,6 @@ int run(const std::string &configPath,
                 delete db2;
         }
         return 0;
-}
 }
 
 } // namespace scastd
