@@ -3,13 +3,13 @@
 ## Release target
 
 The top-level `Makefile` provides a convenience target that builds a
-platform-appropriate package. Specify the version on the command line:
+platform-appropriate package. Specify the version and target distribution on the command line:
 
 ```bash
-make release VERSION=1.0
+make release VERSION=1.0 DISTRO=bookworm
 ```
 
-On Linux this runs `packaging/debian/build_deb.sh` and produces a `.deb`.
+On Linux this runs `packaging/debian/build_deb.sh` and produces a `.deb` in `dist/`.
 On macOS it executes `packaging/macos/build_pkg.sh` to generate a `.pkg`.
 
 ## Debian/Ubuntu
@@ -17,10 +17,10 @@ On macOS it executes `packaging/macos/build_pkg.sh` to generate a `.pkg`.
 The `packaging/debian` directory provides a helper script and systemd unit file.
 
 ```bash
-./packaging/debian/build_deb.sh 1.0
+./packaging/debian/build_deb.sh 1.0 bookworm
 ```
 
-The script compiles the project, stages the install tree and produces a `.deb` such as `scastd_1.0_amd64.deb`.
+The script compiles the project, stages the install tree and produces a `.deb` such as `scastd_1.0_bookworm_amd64.deb` inside `dist/`.
 Install the included `scastd.service` to `/etc/systemd/system` and enable it with:
 
 ```bash

@@ -1,5 +1,8 @@
 SUBDIRS = src scripts tests
 
+# Default distribution identifier for packaging
+DISTRO ?= bookworm
+
 # Installation of configuration and SQLite database
 install-data-local:
 	$(INSTALL) -d -m 755 $(DESTDIR)/etc/scastd
@@ -23,6 +26,6 @@ permissions_great_again:
 release:
 	@case "`uname -s`" in \
 	  Darwin) ./packaging/macos/build_pkg.sh $(VERSION) ;; \
-	  Linux) ./packaging/debian/build_deb.sh $(VERSION) ;; \
+	  Linux) ./packaging/debian/build_deb.sh $(VERSION) $(DISTRO) ;; \
 	  *) echo "Unsupported platform: `uname -s`" && exit 1 ;; \
 	esac
