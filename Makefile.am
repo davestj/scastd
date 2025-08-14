@@ -18,3 +18,11 @@ permissions_great_again:
 	chmod 755 $(DESTDIR)/etc/scastd
 	chmod 640 $(DESTDIR)/etc/scastd/scastd.conf $(DESTDIR)/etc/scastd/scastd.db
 	chmod 750 $(DESTDIR)/var/log/scastd
+
+# Build platform-specific packages
+release:
+	@case "`uname -s`" in \
+	  Darwin) ./packaging/macos/build_pkg.sh $(VERSION) ;; \
+	  Linux) ./packaging/debian/build_deb.sh $(VERSION) ;; \
+	  *) echo "Unsupported platform: `uname -s`" && exit 1 ;; \
+	esac

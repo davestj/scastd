@@ -1,5 +1,17 @@
 # Packaging
 
+## Release target
+
+The top-level `Makefile` provides a convenience target that builds a
+platform-appropriate package. Specify the version on the command line:
+
+```bash
+make release VERSION=1.0
+```
+
+On Linux this runs `packaging/debian/build_deb.sh` and produces a `.deb`.
+On macOS it executes `packaging/macos/build_pkg.sh` to generate a `.pkg`.
+
 ## Debian/Ubuntu
 
 The `packaging/debian` directory provides a helper script and systemd unit file.
