@@ -57,6 +57,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <fstream>
 #include <sstream>
 #include <ctime>
+#include <iostream>
 
 namespace scastd {
 
@@ -183,6 +184,7 @@ int dumpDatabase(const std::string &configPath,
         if (!cfg.Load(configPath)) {
                 std::string msg = std::string(_("Cannot load config file ")) + configPath;
                 logger.logError(msg);
+		std::cerr << msg << std::endl;
                 return 1;
         }
         for (const auto &kv : overrides) {
@@ -417,11 +419,14 @@ int run(const std::string &configPath,
 	char	buf[1024];
 	IDatabase::Row       row;
 	char	query[2046] = "";
+	logger.setConsoleOutput(defaultConsoleLog);
+	logger.setEnabled(true);
         if (!cfg.Load(configPath)) {
                 std::string msg = std::string(_("Cannot load config file ")) + configPath;
-                logger.logError(msg);
-                return 1;
-        }
+		logger.logError(msg);
+		std::cerr << msg << std::endl;
+		return 1;
+	}
         for (const auto &kv : overrides) {
                 cfg.Set(kv.first, kv.second);
         }
