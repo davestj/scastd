@@ -92,6 +92,21 @@ bool Config::Load(const std::string &path) {
         values["password"] = env;
     }
 
+    env = std::getenv("ICEADMINUSER");
+    if (!env) {
+        env = std::getenv("SCASTD_ADMINUSER");
+    }
+    if (env) {
+        values["iceadminuser"] = env;
+    }
+    env = std::getenv("ICEUSERPASS");
+    if (!env) {
+        env = std::getenv("SCASTD_USERPASS");
+    }
+    if (env) {
+        values["iceuserpass"] = env;
+    }
+
     env = std::getenv("SCASTD_THREAD_COUNT");
     if (env) {
         values["thread_count"] = env;

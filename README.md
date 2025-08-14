@@ -271,7 +271,13 @@ export SCASTD_USERNAME="statistics_user"
 export SCASTD_PASSWORD_FILE="/run/secrets/db_password"
 export SCASTD_DATABASE_HOST="mysql-cluster.internal"
 export SCASTD_API_TOKEN_SECRET="your-jwt-secret-here"
+export ICEADMINUSER="admin"
+export ICEUSERPASS="hackme"
 ```
+
+These credentials configure access to the Icecast administrative interface. If
+`ICEADMINUSER` or `ICEUSERPASS` are not provided, the daemon falls back to the
+legacy `SCASTD_ADMINUSER` and `SCASTD_USERPASS` variables.
 
 For detailed configuration instructions, please refer to our comprehensive [Installation Guide](INSTALL.md).
 
