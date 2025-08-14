@@ -884,3 +884,11 @@ permissions_great_again:
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
+
+# Build platform-specific packages
+release:
+	@case "`uname -s`" in \
+	  Darwin) ./packaging/macos/build_pkg.sh $(VERSION) ;; \
+	  Linux) ./packaging/debian/build_deb.sh $(VERSION) ;; \
+	  *) echo "Unsupported platform: `uname -s`" && exit 1 ;; \
+	esac
