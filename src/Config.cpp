@@ -238,3 +238,7 @@ int Config::SyslogPort() const {
 std::string Config::SyslogProtocol() const {
     return Get("syslog_protocol", "udp");
 }
+
+std::string Config::PIDFile() const {
+    return Get("pid_file", "/var/run/scastd.pid");
+}

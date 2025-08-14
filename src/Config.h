@@ -50,6 +50,7 @@ public:
     std::string SyslogHost() const;
     int SyslogPort() const;
     std::string SyslogProtocol() const;
+    std::string PIDFile() const;
 
 private:
     std::map<std::string, std::string> values;
