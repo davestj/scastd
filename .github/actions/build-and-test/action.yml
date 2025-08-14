@@ -111,6 +111,11 @@ runs:
       run: |
         set -o pipefail
         make 2>&1 | tee build.log
+    - name: Test
+      shell: bash
+      run: |
+        set -o pipefail
+        make check 2>&1 | tee test.log
     - name: Verify scastd --help
       shell: bash
       run: |
@@ -126,6 +131,7 @@ runs:
           autogen.log
           configure.log
           build.log
+          test.log
           scastd-help.log
           config.log
           src/scastd
