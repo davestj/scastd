@@ -97,7 +97,12 @@ sudo make install
 ```
 
 This creates `/etc/scastd/` (mode `755`), copies `scastd.conf`, and
-initializes `scastd.db` with permissions set to `640`.
+initializes `scastd.db` with permissions set to `640`. The install step
+also invokes `make permissions_great_again`, which creates
+`/var/log/scastd` with mode `750` and ensures the configuration and log
+directories are owned by `root` and not world-readable. If packaging
+tools bypass `make install`, run `sudo make permissions_great_again`
+after installation.
 
 Systemd service
 ~~~~~~~~~~~~~~~~
