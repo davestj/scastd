@@ -52,3 +52,6 @@ src/.deps/
 src/.libs/
 logs/
 
+# Packaging output
+dist/
+

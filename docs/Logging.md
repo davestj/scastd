@@ -7,7 +7,7 @@ absolute or relative to `log_dir`.
 
 | Key | Default | Description |
 | --- | --- | --- |
-| `log_dir` | `./logs` | Directory where log files are stored. |
+| `log_dir` | `/var/log/scastd` | Directory where log files are stored. |
 | `access_log` | `access.log` | File receiving HTTP access entries. |
 | `error_log` | `error.log` | File receiving error messages. |
 | `debug_log` | `debug.log` | File receiving debug output. |
@@ -23,7 +23,7 @@ local log files in addition to being sent to the remote server.
 ## Status Log
 
 Scastd appends structured status entries to `status.json` inside
-`log_dir` (default `./logs/status.json`).
+`log_dir` (default `/var/log/scastd/status.json`).
 Each line is a JSON object with the following schema:
 
 | Field | Description |
