@@ -25,7 +25,7 @@ runs:
             gettext \
             autopoint \
             libxml2-dev libcurl4-openssl-dev \
-            libmariadb-dev libmariadb-dev-compat mariadb-client libpq-dev libmicrohttpd-dev wget
+            libmariadb-dev libmariadb-dev-compat mariadb-client libpq-dev libmicrohttpd-dev libsqlite3-dev wget
         else
           # Ubuntu can still use libmysqlclient-dev
           $SUDO apt-get install -y \
@@ -34,7 +34,7 @@ runs:
             gettext \
             autopoint \
             libxml2-dev libcurl4-openssl-dev \
-            libmysqlclient-dev mariadb-client libpq-dev libmicrohttpd-dev wget
+            libmysqlclient-dev mariadb-client libpq-dev libmicrohttpd-dev libsqlite3-dev wget
         fi
         wget https://ftp.gnu.org/pub/gnu/gettext/gettext-0.22.tar.gz
         tar -xf gettext-0.22.tar.gz
