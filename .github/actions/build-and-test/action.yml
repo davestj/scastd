@@ -31,8 +31,30 @@ runs:
         $SUDO make install
         cd ..
         echo "PATH=/usr/local/bin:$PATH" >> $GITHUB_ENV
-    - name: Install dependencies (Debian 12/Ubuntu)
-      if: ${{ contains('debian-12 ubuntu-24.04 ubuntu-22.04', inputs.distro) }}
+    - name: Install dependencies (Debian 12)
+      if: ${{ inputs.distro == 'debian-12' }}
+      shell: bash
+      run: |
+        SUDO=""
+        command -v sudo >/dev/null 2>&1 && SUDO="sudo"
+        $SUDO apt-get update
+        $SUDO apt-get install -y \
+          build-essential \
+          autoconf automake libtool pkg-config \
+          gettext \
+          autopoint \
+          libxml2-dev libcurl4-openssl-dev \
+          libmariadb-dev libmariadb-dev-compat mariadb-client libpq-dev libmicrohttpd-dev wget
+        wget https://ftp.gnu.org/pub/gnu/gettext/gettext-0.22.tar.gz
+        tar -xf gettext-0.22.tar.gz
+        cd gettext-0.22
+        ./configure --disable-shared
+        make -j$(nproc)
+        $SUDO make install
+        cd ..
+        echo "PATH=/usr/local/bin:$PATH" >> $GITHUB_ENV
+    - name: Install dependencies (Ubuntu)
+      if: ${{ contains('ubuntu-24.04 ubuntu-22.04', inputs.distro) }}
       shell: bash
       run: |
         SUDO=""
@@ -53,21 +75,7 @@ runs:
         $SUDO make install
         cd ..
         echo "PATH=/usr/local/bin:$PATH" >> $GITHUB_ENV
-        if [[ "${{ inputs.distro }}" == "debian-12" ]]; then
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10_9.4.0-1debian12_amd64.deb
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2_9.4.0-1debian12_amd64.deb
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb
-          $SUDO dpkg -i libmysqlcppconn10_9.4.0-1debian12_amd64.deb libmysqlcppconnx2_9.4.0-1debian12_amd64.deb libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb || true
-          $SUDO apt-get -f install -y
-        elif [[ "${{ inputs.distro }}" == "debian-13" ]]; then
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10_9.4.0-1debian12_amd64.deb
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2_9.4.0-1debian12_amd64.deb
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb
-          $SUDO dpkg -i libmysqlcppconn10_9.4.0-1debian12_amd64.deb libmysqlcppconnx2_9.4.0-1debian12_amd64.deb libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb || true
-          $SUDO apt-get -f install -y
-        elif [[ "${{ inputs.distro }}" == "ubuntu-24.04" ]]; then
+        if [[ "${{ inputs.distro }}" == "ubuntu-24.04" ]]; then
           wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10_9.4.0-1ubuntu24.04_amd64.deb
           wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2_9.4.0-1ubuntu24.04_amd64.deb
           wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn-dev_9.4.0-1ubuntu24.04_amd64.deb
@@ -80,7 +88,7 @@ runs:
           $SUDO dpkg -i libmysqlcppconn10_9.4.0-1ubuntu22.04_amd64.deb libmysqlcppconnx2_9.4.0-1ubuntu22.04_amd64.deb libmysqlcppconn-dev_9.4.0-1ubuntu22.04_amd64.deb || true
           $SUDO apt-get -f install -y
         fi
-        if [[ "${{ inputs.distro }}" == "debian-13" ]]; then
+        if [[ "${{ inputs.distro }}" == "debian-12" || "${{ inputs.distro }}" == "debian-13" ]]; then
           INC=/usr/include/mariadb
           LIB=/usr/lib/x86_64-linux-gnu
         else
