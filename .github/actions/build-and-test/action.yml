@@ -15,24 +15,27 @@ runs:
       run: |
         SUDO=""
         command -v sudo >/dev/null 2>&1 && SUDO="sudo"
-        
         $SUDO apt-get update
         
-        # Install wget first if needed for Debian MySQL repository setup
+        # For Debian, skip libmysqlclient-dev and use MariaDB for base dependencies
         if [[ "${{ inputs.distro }}" == "debian-12" || "${{ inputs.distro }}" == "debian-13" ]]; then
-          $SUDO apt-get install -y wget
-          wget https://dev.mysql.com/get/mysql-apt-config_0.8.32-1_all.deb
-          echo "mysql-apt-config mysql-apt-config/select-server select mysql-8.0" | $SUDO debconf-set-selections
-          $SUDO dpkg -i mysql-apt-config_0.8.32-1_all.deb || true
-          $SUDO apt-get update
+          $SUDO apt-get install -y \
+            build-essential \
+            autoconf automake libtool pkg-config \
+            gettext \
+            autopoint \
+            libxml2-dev libcurl4-openssl-dev \
+            libmariadb-dev libmariadb-dev-compat mariadb-client libpq-dev libmicrohttpd-dev wget
+        else
+          # Ubuntu can still use libmysqlclient-dev
+          $SUDO apt-get install -y \
+            build-essential \
+            autoconf automake libtool pkg-config \
+            gettext \
+            autopoint \
+            libxml2-dev libcurl4-openssl-dev \
+            libmysqlclient-dev mariadb-client libpq-dev libmicrohttpd-dev wget
         fi
-        $SUDO apt-get install -y \
-          build-essential \
-          autoconf automake libtool pkg-config \
-          gettext \
-          autopoint \
-          libxml2-dev libcurl4-openssl-dev \
-          libmysqlclient-dev mariadb-client libpq-dev libmicrohttpd-dev wget
         wget https://ftp.gnu.org/pub/gnu/gettext/gettext-0.22.tar.gz
         tar -xf gettext-0.22.tar.gz
         cd gettext-0.22
