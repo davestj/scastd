@@ -30,6 +30,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/build-and-test
         with:
           distro: ${{ matrix.distro }}
