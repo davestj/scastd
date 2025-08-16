@@ -293,32 +293,67 @@ sudo launchctl load -w /Library/LaunchDaemons/com.scastd.plist
 ```bash
 scastd --help
 ```
-Key parameters include:
-`--config PATH`, `--daemon`, `--pid-file PATH`, `--ip ADDRESS`,
-`--port PORT`, `--debug LEVEL`, `--poll INTERVAL`, `--db-host HOST`,
-`--db-port PORT`, `--db-name NAME`, `--db-user USER`,
-`--db-pass PASS`, `--sqlite-db PATH`, `--ssl-cert PATH`,
-`--ssl-key PATH`, `--ssl-enable`, `--dump`, `--dump-dir DIR`.
+```text
+Usage: scastd [options]
+  -h, --help           Show this help and exit
+  -c, --config PATH    Configuration file
+  -D, --daemon         Run as a daemon
+      --pid-file PATH  PID file path (used with --daemon)
+      --ip ADDRESS     Bind IP address
+      --port PORT      HTTP server port
+      --debug LEVEL    Debug level
+      --poll INTERVAL  Poll interval (e.g., 60s, 5m)
+      --test-mode      Validate configuration and exit
+      --db-host HOST   Database host
+      --db-port PORT   Database port
+      --db-name NAME   Database name
+      --db-user USER   Database user
+      --db-pass PASS   Database password
+      --sqlite-db PATH SQLite database file
+      --setupdb TYPE   Initialize database of specified type
+      --ssl-cert PATH  SSL certificate file
+      --ssl-key PATH   SSL key file
+      --ssl-enable     Enable SSL
+      --dump           Dump database and exit
+      --dump-dir DIR   Directory for database dump
+```
 
-#### Test HTTP endpoints
+#### Enable HTTPS mode
+Run with certificate options:
+```bash
+scastd --ssl-enable \
+       --ssl-cert /etc/letsencrypt/live/example.com/fullchain.pem \
+       --ssl-key /etc/letsencrypt/live/example.com/privkey.pem
+```
+Or configure `scastd.conf`:
+```conf
+ssl_enable     true
+ssl_cert       /etc/letsencrypt/live/example.com/fullchain.pem
+ssl_key        /etc/letsencrypt/live/example.com/privkey.pem
+```
+
+#### Test HTTP/HTTPS endpoints
 ```bash
 curl http://localhost:8000/v1/status.json
 curl http://localhost:8000/v1/status.xml
 curl http://localhost:8000/v1/uptime
+curl -k https://localhost:8000/v1/status.json
 ```
 
-#### Configure HTTPS certificates
+#### Obtain TLS certificates
+*Debian/Ubuntu*
 ```bash
 sudo certbot certonly --standalone -d example.com
-# Certificates are stored under:
-#   /etc/letsencrypt/live/example.com/fullchain.pem
-#   /etc/letsencrypt/live/example.com/privkey.pem
 ```
-Reference these in `scastd.conf`:
+*macOS (Homebrew)*
+```bash
+brew install certbot
+sudo certbot certonly --standalone -d example.com
 ```
-ssl_enable     true
-ssl_cert       /etc/letsencrypt/live/example.com/fullchain.pem
-ssl_key        /etc/letsencrypt/live/example.com/privkey.pem
+Certificates are typically stored at:
+```
+/etc/letsencrypt/live/example.com/fullchain.pem
+/etc/letsencrypt/live/example.com/privkey.pem
 ```
 Restart the service after changes:
 `sudo systemctl restart scastd` or `brew services restart scastd`.
