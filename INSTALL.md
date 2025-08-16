@@ -37,6 +37,9 @@ brew install scastd
 brew services start scastd
 ```
 
+For information on building the macOS package or generating a Homebrew
+formula, consult [packaging/macos/README.md](packaging/macos/README.md).
+
 Configuration resides under the Homebrew prefix (`/usr/local` or
 `/opt/homebrew`). More details appear in [README.md](README.md).
 
