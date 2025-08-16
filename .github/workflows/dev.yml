@@ -51,16 +51,35 @@ jobs:
             src
   release:
     needs: [test, lint]
-    runs-on: ubuntu-24.04
     if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            build_script: packaging/debian/build_deb.sh
+            checksum: sha256sum
+          - os: macos-14
+            build_script: packaging/macos/build_pkg.sh
+            checksum: "shasum -a 256"
+    runs-on: ${{ matrix.os }}
     steps:
-      - name: Create GitHub release
-        if: success()
-        uses: actions/create-release@v1
+      - uses: actions/checkout@v4
+      - name: Build packages
+        run: |
+          chmod +x ${{ matrix.build_script }}
+          ${{ matrix.build_script }} ${{ github.run_number }}
+      - name: Generate checksums
+        run: |
+          for file in dist/*; do
+            ${{ matrix.checksum }} "$file" > "$file.sha256"
+          done
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ github.run_number }}
-          release_name: Release ${{ github.run_number }}
+          name: Release ${{ github.run_number }}
           draft: false
           prerelease: true
+          files: dist/*
