@@ -1,3 +1,150 @@
+Pre-built packages
+==================
+
+Debian/Ubuntu (.deb)
+--------------------
+Download the latest release package and its checksum. Verify and install:
+
+```bash
+curl -LO https://example.com/scastd_<version>_amd64.deb
+curl -LO https://example.com/scastd_<version>_amd64.deb.sha256
+sha256sum -c scastd_<version>_amd64.deb.sha256
+sudo apt install ./scastd_<version>_amd64.deb
+```
+
+The default configuration is placed at `/etc/scastd/scastd.conf`. Consult
+[README.md](README.md) for additional usage examples.
+
+macOS
+-----
+
+.pkg installer
+~~~~~~~~~~~~~~
+```bash
+curl -LO https://example.com/scastd-<version>.pkg
+shasum -a 256 scastd-<version>.pkg
+sudo installer -pkg scastd-<version>.pkg -target /
+```
+
+Configuration lives at `/usr/local/etc/scastd/scastd.conf` on Intel Macs
+or `/opt/homebrew/etc/scastd/scastd.conf` on Apple Silicon. Manage the
+daemon with `sudo launchctl load -w /Library/LaunchDaemons/com.scastd.plist`.
+
+Homebrew formula
+~~~~~~~~~~~~~~~~
+```bash
+brew install scastd
+brew services start scastd
+```
+
+Configuration resides under the Homebrew prefix (`/usr/local` or
+`/opt/homebrew`). More details appear in [README.md](README.md).
+
+Post-install configuration
+--------------------------
+
+Configuration file locations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* `/etc/scastd/scastd.conf` (Debian/Ubuntu)
+* `/usr/local/etc/scastd/scastd.conf` (macOS Intel)
+* `/opt/homebrew/etc/scastd/scastd.conf` (macOS Apple Silicon)
+
+Service management
+~~~~~~~~~~~~~~~~~~
+* Debian/Ubuntu:
+
+  ```bash
+  sudo systemctl enable --now scastd
+  sudo systemctl status scastd
+  ```
+
+* macOS (Homebrew):
+
+  ```bash
+  brew services restart scastd
+  ```
+
+* macOS (.pkg):
+
+  ```bash
+  sudo launchctl unload -w /Library/LaunchDaemons/com.scastd.plist
+  sudo launchctl load -w /Library/LaunchDaemons/com.scastd.plist
+  ```
+
+Command-line options
+~~~~~~~~~~~~~~~~~~~~
+`scastd --help` prints:
+
+```text
+Usage: scastd [options]
+  -h, --help           Show this help and exit
+  -c, --config PATH    Configuration file
+  -D, --daemon         Run as a daemon
+      --pid-file PATH  PID file path (used with --daemon)
+      --ip ADDRESS     Bind IP address
+      --port PORT      HTTP server port
+      --debug LEVEL    Debug level
+      --poll INTERVAL  Poll interval (e.g., 60s, 5m)
+      --test-mode      Validate configuration and exit
+      --db-host HOST   Database host
+      --db-port PORT   Database port
+      --db-name NAME   Database name
+      --db-user USER   Database user
+      --db-pass PASS   Database password
+      --sqlite-db PATH SQLite database file
+      --setupdb TYPE   Initialize database of specified type
+      --ssl-cert PATH  SSL certificate file
+      --ssl-key PATH   SSL key file
+      --ssl-enable     Enable SSL
+      --dump           Dump database and exit
+      --dump-dir DIR   Directory for database dump
+```
+
+See [README.md](README.md#explore-command-line-options) for examples and
+additional parameter descriptions.
+
+HTTP endpoint smoke tests
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+```bash
+curl http://localhost:8000/v1/status.json
+curl http://localhost:8000/v1/status.xml
+curl http://localhost:8000/v1/uptime
+```
+
+TLS certificates
+~~~~~~~~~~~~~~~~
+
+**Debian/Ubuntu**
+
+```bash
+sudo certbot certonly --standalone -d example.com
+# Certificates:
+#   /etc/letsencrypt/live/example.com/fullchain.pem
+#   /etc/letsencrypt/live/example.com/privkey.pem
+```
+
+Reference them in `/etc/scastd/scastd.conf`:
+
+```conf
+ssl_enable     true
+ssl_cert       /etc/letsencrypt/live/example.com/fullchain.pem
+ssl_key        /etc/letsencrypt/live/example.com/privkey.pem
+```
+
+**macOS**
+
+```bash
+brew install certbot
+sudo certbot certonly --standalone -d example.com
+# Certificates:
+#   /usr/local/etc/letsencrypt/live/example.com/... (Intel)
+#   /opt/homebrew/etc/letsencrypt/live/example.com/... (Apple Silicon)
+```
+
+Reference these paths in `scastd.conf` under the Homebrew prefix.
+For more configuration guidance, consult [README.md](README.md#⚙️-configuration-management).
+
 Dependencies
 ============
 
