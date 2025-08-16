@@ -164,6 +164,11 @@ jobs:
         with:
           version: mysql-connector-c++-9.4.0-macos15-arm64
 
+      - name: Prepare build system
+        run: |
+          ./autogen.sh
+          ./configure
+
       - name: Build release package
         run: |
           # Determine appropriate DISTRO value for make release
