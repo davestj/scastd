@@ -126,15 +126,20 @@ jobs:
             $SUDO apt-get -f install -y
           fi
 
-          # Set MySQL Connector environment
-          INC=/usr/include/mysql-cppconn/jdbc
-          LIB=/usr/lib/x86_64-linux-gnu
-          export CPPFLAGS="-I$INC $CPPFLAGS"
-          export LDFLAGS="-L$LIB $LDFLAGS"
-          export PKG_CONFIG_PATH="$LIB/pkgconfig:$PKG_CONFIG_PATH"
+          # Verify MySQL headers and configure build flags
+          if ! command -v mysql_config >/dev/null; then
+            echo "mysql_config not found" >&2
+            exit 1
+          fi
+          if [[ ! -f /usr/include/mysql/mysql.h ]]; then
+            echo "/usr/include/mysql/mysql.h not found" >&2
+            exit 1
+          fi
+          mysql_config --version
+          export CPPFLAGS="$(mysql_config --cflags) $CPPFLAGS"
+          export LDFLAGS="$(mysql_config --libs) $LDFLAGS"
           echo "CPPFLAGS=$CPPFLAGS" >> $GITHUB_ENV
           echo "LDFLAGS=$LDFLAGS" >> $GITHUB_ENV
-          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
 
       - name: Install dependencies (macOS)
         if: ${{ matrix.distro == 'macos-arm64' }}
