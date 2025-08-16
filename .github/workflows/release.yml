@@ -1,7 +1,7 @@
 ---
 name: Release
 
-on:
+"on":
   push:
     tags:
       - 'v*'
@@ -198,6 +198,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -207,16 +209,16 @@ jobs:
       - name: Prepare release assets
         run: |
           mkdir -p release-assets
-          
+
           # Collect all package files and checksums
           find artifacts -name "*.deb" -exec cp {} release-assets/ \;
           find artifacts -name "*.pkg" -exec cp {} release-assets/ \;
           find artifacts -name "*.rb" -exec cp {} release-assets/ \;
-          
+
           # Combine all checksum files
           echo "# SCASTD ${{ needs.prepare.outputs.version }} Release Checksums" > release-assets/CHECKSUMS.txt
           echo "" >> release-assets/CHECKSUMS.txt
-          
+
           for checksum_file in artifacts/*/checksums.txt; do
             if [[ -f "$checksum_file" ]]; then
               echo "## $(basename $(dirname "$checksum_file"))" >> release-assets/CHECKSUMS.txt
@@ -224,7 +226,7 @@ jobs:
               echo "" >> release-assets/CHECKSUMS.txt
             fi
           done
-          
+
           # List all release assets
           echo "Release assets prepared:"
           ls -la release-assets/
@@ -292,6 +294,21 @@ jobs:
 
           For detailed configuration instructions, see the [documentation](https://github.com/${{ github.repository }}/blob/master/docs/Packaging.md).
           EOF
+
+          echo "" >> release_notes.md
+          echo "## Changes" >> release_notes.md
+          git log -n 30 --pretty=format:"* %h %s (%an)" >> release_notes.md
+          COMMITS=$(git log -n 30 --pretty=format:%h | wc -l)
+          AUTHORS=$(git log -n 30 --format='%an' | sort -u | wc -l)
+          echo "" >> release_notes.md
+          echo "## Stats" >> release_notes.md
+          echo "* Commits: $COMMITS" >> release_notes.md
+          echo "* Authors: $AUTHORS" >> release_notes.md
+          git log -n 30 --format='%an' | sort | uniq -c | sed 's/^/  /' >> release_notes.md
+          echo "" >> release_notes.md
+          echo "## Links" >> release_notes.md
+          echo "- [README](https://github.com/${{ github.repository }}/blob/${{ needs.prepare.outputs.tag }}/README.md)" >> release_notes.md
+          echo "- [INSTALL](https://github.com/${{ github.repository }}/blob/${{ needs.prepare.outputs.tag }}/INSTALL.md)" >> release_notes.md
 
           # Set output for use in release creation
           echo "RELEASE_NOTES<<EOF" >> $GITHUB_OUTPUT
