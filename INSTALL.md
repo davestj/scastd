@@ -3,12 +3,12 @@ Pre-built packages
 
 Debian/Ubuntu (.deb)
 --------------------
-Download the latest release package and its checksum. Verify and install:
+Download the latest release package and checksum file. Verify and install:
 
 ```bash
 curl -LO https://example.com/scastd_<version>_amd64.deb
-curl -LO https://example.com/scastd_<version>_amd64.deb.sha256
-sha256sum -c scastd_<version>_amd64.deb.sha256
+curl -LO https://example.com/CHECKSUMS.txt
+sha256sum -c CHECKSUMS.txt
 sudo apt install ./scastd_<version>_amd64.deb
 ```
 
@@ -22,7 +22,8 @@ macOS
 ~~~~~~~~~~~~~~
 ```bash
 curl -LO https://example.com/scastd-<version>.pkg
-shasum -a 256 scastd-<version>.pkg
+curl -LO https://example.com/CHECKSUMS.txt
+shasum -a 256 -c CHECKSUMS.txt
 sudo installer -pkg scastd-<version>.pkg -target /
 ```
 
