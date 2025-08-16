@@ -291,7 +291,7 @@ For details on creating the macOS package or Homebrew formula yourself, see
 
 Update absolute paths for databases and certificates as needed.
 
-#### Enable and start the service
+#### Start and verify the service
 - **Debian/Ubuntu**
 ```bash
 sudo systemctl enable scastd
@@ -305,6 +305,24 @@ brew services start scastd
 ```bash
 sudo launchctl load -w /Library/LaunchDaemons/com.scastd.plist
 ```
+
+Confirm the daemon responds:
+```bash
+curl http://localhost:8000/v1/status.json
+curl http://localhost:8000/v1/status.xml
+```
+Expected responses:
+```json
+{"status":"ok"}
+```
+```xml
+<status>ok</status>
+```
+Troubleshooting tips if unreachable:
+- Check service state: `sudo systemctl status scastd` or `brew services list`
+- Ensure the configured port matches the `curl` command
+- Verify no firewall or other service blocks the port
+- Review logs in `/var/log/scastd` or with `journalctl -u scastd`
 
 #### Explore command-line options
 ```bash
