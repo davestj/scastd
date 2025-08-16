@@ -328,6 +328,31 @@ jobs:
             release-assets/*
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # List release assets via the GitHub API and fail if any expected file is missing
+      - name: Verify uploaded release assets
+        env:
+          TAG: ${{ needs.prepare.outputs.tag }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "Listing assets for release $TAG"
+          assets=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+                       -H "Accept: application/vnd.github+json" \
+                       https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$TAG | jq -r '.assets[].name')
+          echo "$assets"
+          expected="scastd_${VERSION}_bookworm_amd64.deb scastd_${VERSION}_trixie_amd64.deb scastd_${VERSION}_noble_amd64.deb scastd-${VERSION}.pkg scastd.rb CHECKSUMS.txt"
+          missing=0
+          for f in $expected; do
+            if ! grep -qx "$f" <<< "$assets"; then
+              echo "::error::Missing expected release asset: $f"
+              missing=1
+            fi
+          done
+          if [ $missing -ne 0 ]; then
+            exit 1
+          fi
+
       - name: Release Summary
         run: |
           echo "🎉 Release ${{ needs.prepare.outputs.tag }} created successfully!"
