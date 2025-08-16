@@ -33,4 +33,11 @@ Thank you for your interest in improving scastd. These guidelines help keep cont
 4. Respond to feedback and update your branch as needed.
 5. A maintainer will merge the PR once it has approval and passes all checks.
 
+## Release Verification
+
+The release workflow uploads package artifacts to a GitHub Release and then
+uses the GitHub API to list the published assets. If any expected package or
+checksum file is missing, the job fails. For the exact commands, see the
+"Verify uploaded release assets" step in `.github/workflows/release.yml`.
+
 Thanks for contributing!
