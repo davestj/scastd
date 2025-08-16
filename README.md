@@ -265,6 +265,9 @@ brew tap davestj/scastd
 brew install scastd
 ```
 
+For details on creating the macOS package or Homebrew formula yourself, see
+[packaging/macos/README.md](packaging/macos/README.md).
+
 ### 🚀 Post-Installation Steps
 
 #### Edit `scastd.conf`
