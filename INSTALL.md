@@ -1,3 +1,187 @@
+Pre-built packages
+==================
+Releases provide Debian `.deb` packages, a macOS `.pkg` installer, and a Homebrew formula (`scastd.rb`).
+
+Debian/Ubuntu (.deb)
+--------------------
+Download the latest release package and checksum file. Verify and install:
+
+```bash
+curl -LO https://example.com/scastd_<version>_amd64.deb
+curl -LO https://example.com/CHECKSUMS.txt
+sha256sum -c CHECKSUMS.txt
+sudo apt install ./scastd_<version>_amd64.deb
+```
+
+The default configuration is placed at `/etc/scastd/scastd.conf`. Consult
+[README.md](README.md) for additional usage examples.
+
+macOS
+-----
+
+.pkg installer
+~~~~~~~~~~~~~~
+```bash
+curl -LO https://example.com/scastd-<version>.pkg
+curl -LO https://example.com/CHECKSUMS.txt
+shasum -a 256 -c CHECKSUMS.txt
+sudo installer -pkg scastd-<version>.pkg -target /
+```
+
+Configuration lives at `/usr/local/etc/scastd/scastd.conf` on Intel Macs
+or `/opt/homebrew/etc/scastd/scastd.conf` on Apple Silicon. Manage the
+daemon with `sudo launchctl load -w /Library/LaunchDaemons/com.scastd.plist`.
+
+Homebrew formula
+~~~~~~~~~~~~~~~~
+Release archives also ship `scastd.rb`. To verify the formula locally:
+
+```bash
+brew install --formula ./scastd.rb
+brew services start scastd
+```
+
+Update or remove the formula:
+
+```bash
+brew upgrade scastd
+brew uninstall scastd
+```
+
+For information on building the macOS package or generating a Homebrew
+formula, consult [packaging/macos/README.md](packaging/macos/README.md).
+
+Configuration resides under the Homebrew prefix (`/usr/local` or
+`/opt/homebrew`). More details appear in [README.md](README.md).
+
+Post-install configuration
+--------------------------
+
+Configuration file locations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* `/etc/scastd/scastd.conf` (Debian/Ubuntu)
+* `/usr/local/etc/scastd/scastd.conf` (macOS Intel)
+* `/opt/homebrew/etc/scastd/scastd.conf` (macOS Apple Silicon)
+
+Service management
+~~~~~~~~~~~~~~~~~~
+* Debian/Ubuntu:
+
+  ```bash
+  sudo systemctl enable --now scastd
+  sudo systemctl status scastd
+  ```
+
+* macOS (Homebrew):
+
+  ```bash
+  brew services restart scastd
+  ```
+
+* macOS (.pkg):
+
+  ```bash
+  sudo launchctl unload -w /Library/LaunchDaemons/com.scastd.plist
+  sudo launchctl load -w /Library/LaunchDaemons/com.scastd.plist
+  ```
+
+Command-line options
+~~~~~~~~~~~~~~~~~~~~
+`scastd --help` prints:
+
+```text
+Usage: scastd [options]
+  -h, --help           Show this help and exit
+  -c, --config PATH    Configuration file
+  -D, --daemon         Run as a daemon
+      --pid-file PATH  PID file path (used with --daemon)
+      --ip ADDRESS     Bind IP address
+      --port PORT      HTTP server port
+      --debug LEVEL    Debug level
+      --poll INTERVAL  Poll interval (e.g., 60s, 5m)
+      --test-mode      Validate configuration and exit
+      --db-host HOST   Database host
+      --db-port PORT   Database port
+      --db-name NAME   Database name
+      --db-user USER   Database user
+      --db-pass PASS   Database password
+      --sqlite-db PATH SQLite database file
+      --setupdb TYPE   Initialize database of specified type
+      --ssl-cert PATH  SSL certificate file
+      --ssl-key PATH   SSL key file
+      --ssl-enable     Enable SSL
+      --dump           Dump database and exit
+      --dump-dir DIR   Directory for database dump
+```
+
+See [README.md](README.md#explore-command-line-options) for examples and
+additional parameter descriptions.
+
+Start and verify the service
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Start scastd and confirm it responds:
+```bash
+sudo systemctl start scastd    # or brew services start scastd
+curl http://localhost:8000/v1/status.json
+curl http://localhost:8000/v1/status.xml
+```
+Expected output:
+```json
+{"status":"ok"}
+```
+```xml
+<status>ok</status>
+```
+Troubleshooting if unreachable:
+- Check daemon state: `sudo systemctl status scastd` or `brew services list`
+- Ensure the configured port matches `curl` URLs
+- Review firewall rules and logs in `/var/log/scastd` or via `journalctl -u scastd`
+
+TLS certificates
+~~~~~~~~~~~~~~~~
+
+**Debian/Ubuntu**
+
+```bash
+sudo certbot certonly --standalone -d example.com
+# Certificates:
+#   /etc/letsencrypt/live/example.com/fullchain.pem
+#   /etc/letsencrypt/live/example.com/privkey.pem
+```
+
+Reference them in `/etc/scastd/scastd.conf`:
+
+```conf
+ssl_enable     true
+ssl_cert       /etc/letsencrypt/live/example.com/fullchain.pem
+ssl_key        /etc/letsencrypt/live/example.com/privkey.pem
+```
+Launch with CLI options:
+```bash
+scastd --ssl-enable \
+       --ssl-cert /etc/letsencrypt/live/example.com/fullchain.pem \
+       --ssl-key /etc/letsencrypt/live/example.com/privkey.pem
+```
+
+**macOS**
+
+```bash
+brew install certbot
+sudo certbot certonly --standalone -d example.com
+# Certificates:
+#   /usr/local/etc/letsencrypt/live/example.com/... (Intel)
+#   /opt/homebrew/etc/letsencrypt/live/example.com/... (Apple Silicon)
+```
+
+Reference in `scastd.conf` under the Homebrew prefix:
+```conf
+ssl_enable     true
+ssl_cert       /usr/local/etc/letsencrypt/live/example.com/fullchain.pem
+ssl_key        /usr/local/etc/letsencrypt/live/example.com/privkey.pem
+```
+On Apple Silicon, replace `/usr/local` with `/opt/homebrew`.
+For more configuration guidance, consult [README.md](README.md#⚙️-configuration-management).
+
 Dependencies
 ============
 
@@ -142,6 +326,16 @@ sudo /usr/share/scastd/setup_certbot.sh -e admin@example.com -d example.com [-d 
 The script installs Certbot and enables automated renewal via
 `systemctl enable --now certbot.timer` on Linux or `brew services start
 certbot` on macOS.
+
+Reporting issues
+----------------
+If you encounter packaging or installation problems, please open an
+issue and include any logs that show the failure. This helps us diagnose
+and resolve problems more quickly.
+
+- Issue tracker: <https://github.com/davestj/scastd/issues>
+- Discussions: <https://github.com/davestj/scastd/discussions>
+- Email: <davestj@gmail.com>
 
 Basic Installation
 ==================
