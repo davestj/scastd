@@ -110,6 +110,7 @@ HTTP endpoint smoke tests
 curl http://localhost:8000/v1/status.json
 curl http://localhost:8000/v1/status.xml
 curl http://localhost:8000/v1/uptime
+curl -k https://localhost:8000/v1/status.json
 ```
 
 TLS certificates
@@ -131,6 +132,12 @@ ssl_enable     true
 ssl_cert       /etc/letsencrypt/live/example.com/fullchain.pem
 ssl_key        /etc/letsencrypt/live/example.com/privkey.pem
 ```
+Launch with CLI options:
+```bash
+scastd --ssl-enable \
+       --ssl-cert /etc/letsencrypt/live/example.com/fullchain.pem \
+       --ssl-key /etc/letsencrypt/live/example.com/privkey.pem
+```
 
 **macOS**
 
@@ -142,7 +149,13 @@ sudo certbot certonly --standalone -d example.com
 #   /opt/homebrew/etc/letsencrypt/live/example.com/... (Apple Silicon)
 ```
 
-Reference these paths in `scastd.conf` under the Homebrew prefix.
+Reference in `scastd.conf` under the Homebrew prefix:
+```conf
+ssl_enable     true
+ssl_cert       /usr/local/etc/letsencrypt/live/example.com/fullchain.pem
+ssl_key        /usr/local/etc/letsencrypt/live/example.com/privkey.pem
+```
+On Apple Silicon, replace `/usr/local` with `/opt/homebrew`.
 For more configuration guidance, consult [README.md](README.md#⚙️-configuration-management).
 
 Dependencies
