@@ -239,16 +239,17 @@ jobs:
 
           This release includes packages for multiple platforms and architectures.
 
+          For installation instructions, see [INSTALL](https://github.com/${{ github.repository }}/blob/${{ needs.prepare.outputs.tag }}/INSTALL.md) or the [README](https://github.com/${{ github.repository }}/blob/${{ needs.prepare.outputs.tag }}/README.md).
+
           ### 📦 Package Downloads
 
-          **Debian/Ubuntu Packages:**
-          - `scastd_${{ needs.prepare.outputs.version }}_bookworm_amd64.deb` - Debian 12 (Bookworm)
-          - `scastd_${{ needs.prepare.outputs.version }}_trixie_amd64.deb` - Debian Trixie
-          - `scastd_${{ needs.prepare.outputs.version }}_noble_amd64.deb` - Ubuntu 24.04 (Noble)
-
-          **macOS Packages:**
-          - `scastd-${{ needs.prepare.outputs.version }}.pkg` - macOS ARM64 installer package
-          - `scastd.rb` - Homebrew formula for ARM64 macOS
+          | Package file | Platform |
+          |--------------|----------|
+          | `scastd_${{ needs.prepare.outputs.version }}_bookworm_amd64.deb` | Debian 12 (Bookworm) |
+          | `scastd_${{ needs.prepare.outputs.version }}_trixie_amd64.deb` | Debian Trixie |
+          | `scastd_${{ needs.prepare.outputs.version }}_noble_amd64.deb` | Ubuntu 24.04 (Noble) |
+          | `scastd-${{ needs.prepare.outputs.version }}.pkg` | macOS ARM64 installer package |
+          | `scastd.rb` | Homebrew formula for ARM64 macOS |
 
           ### 🔐 Security
 
