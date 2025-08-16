@@ -1,5 +1,6 @@
 Pre-built packages
 ==================
+Releases provide Debian `.deb` packages, a macOS `.pkg` installer, and a Homebrew formula (`scastd.rb`).
 
 Debian/Ubuntu (.deb)
 --------------------
@@ -33,9 +34,18 @@ daemon with `sudo launchctl load -w /Library/LaunchDaemons/com.scastd.plist`.
 
 Homebrew formula
 ~~~~~~~~~~~~~~~~
+Release archives also ship `scastd.rb`. To verify the formula locally:
+
 ```bash
-brew install scastd
+brew install --formula ./scastd.rb
 brew services start scastd
+```
+
+Update or remove the formula:
+
+```bash
+brew upgrade scastd
+brew uninstall scastd
 ```
 
 For information on building the macOS package or generating a Homebrew
