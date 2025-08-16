@@ -107,15 +107,25 @@ Usage: scastd [options]
 See [README.md](README.md#explore-command-line-options) for examples and
 additional parameter descriptions.
 
-HTTP endpoint smoke tests
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
+Start and verify the service
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Start scastd and confirm it responds:
 ```bash
+sudo systemctl start scastd    # or brew services start scastd
 curl http://localhost:8000/v1/status.json
 curl http://localhost:8000/v1/status.xml
-curl http://localhost:8000/v1/uptime
-curl -k https://localhost:8000/v1/status.json
 ```
+Expected output:
+```json
+{"status":"ok"}
+```
+```xml
+<status>ok</status>
+```
+Troubleshooting if unreachable:
+- Check daemon state: `sudo systemctl status scastd` or `brew services list`
+- Ensure the configured port matches `curl` URLs
+- Review firewall rules and logs in `/var/log/scastd` or via `journalctl -u scastd`
 
 TLS certificates
 ~~~~~~~~~~~~~~~~
