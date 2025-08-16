@@ -27,24 +27,26 @@ runs:
 
         case "${{ inputs.distro }}" in
           debian-12)
-            wget https://dev.mysql.com/get/Downloads/MySQL-8.0/libmysqlclient21_8.0.39-1debian12_amd64.deb
-            wget https://dev.mysql.com/get/Downloads/MySQL-8.0/libmysqlclient-dev_8.0.39-1debian12_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/MySQL-8.4/libmysqlclient21_8.4.0-1debian12_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/MySQL-8.4/libmysqlclient-dev_8.4.0-1debian12_amd64.deb
             ;;
           debian-13)
-            wget https://dev.mysql.com/get/Downloads/MySQL-8.0/libmysqlclient21_8.0.39-1debian12_amd64.deb
-            wget https://dev.mysql.com/get/Downloads/MySQL-8.0/libmysqlclient-dev_8.0.39-1debian12_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/MySQL-8.4/libmysqlclient21_8.4.0-1debian13_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/MySQL-8.4/libmysqlclient-dev_8.4.0-1debian13_amd64.deb
             ;;
           ubuntu-24.04)
-            wget https://dev.mysql.com/get/Downloads/MySQL-8.0/libmysqlclient21_8.0.39-1ubuntu24.04_amd64.deb
-            wget https://dev.mysql.com/get/Downloads/MySQL-8.0/libmysqlclient-dev_8.0.39-1ubuntu24.04_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/MySQL-8.4/libmysqlclient21_8.4.0-1ubuntu24.04_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/MySQL-8.4/libmysqlclient-dev_8.4.0-1ubuntu24.04_amd64.deb
             ;;
           ubuntu-22.04)
-            wget https://dev.mysql.com/get/Downloads/MySQL-8.0/libmysqlclient21_8.0.39-1ubuntu22.04_amd64.deb
-            wget https://dev.mysql.com/get/Downloads/MySQL-8.0/libmysqlclient-dev_8.0.39-1ubuntu22.04_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/MySQL-8.4/libmysqlclient21_8.4.0-1ubuntu22.04_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/MySQL-8.4/libmysqlclient-dev_8.4.0-1ubuntu22.04_amd64.deb
             ;;
         esac
-        $SUDO dpkg -i libmysqlclient21_8.0.39-1*.deb libmysqlclient-dev_8.0.39-1*.deb || true
+        $SUDO dpkg -i libmysqlclient21_8.4.0-1*.deb libmysqlclient-dev_8.4.0-1*.deb || true
         $SUDO apt-get -f install -y
+        mysql_config --version
+        test -f /usr/include/mysql/mysql.h
         wget https://ftp.gnu.org/pub/gnu/gettext/gettext-0.22.tar.gz
         tar -xf gettext-0.22.tar.gz
         cd gettext-0.22
@@ -73,14 +75,8 @@ runs:
           $SUDO dpkg -i libmysqlcppconn10_9.4.0-1ubuntu22.04_amd64.deb libmysqlcppconnx2_9.4.0-1ubuntu22.04_amd64.deb libmysqlcppconn-dev_9.4.0-1ubuntu22.04_amd64.deb || true
           $SUDO apt-get -f install -y
         fi
-        INC=/usr/include/mysql-cppconn/jdbc
-        LIB=/usr/lib/x86_64-linux-gnu
-        export CPPFLAGS="-I$INC $CPPFLAGS"
-        export LDFLAGS="-L$LIB $LDFLAGS"
-        export PKG_CONFIG_PATH="$LIB/pkgconfig:$PKG_CONFIG_PATH"
-        echo "CPPFLAGS=$CPPFLAGS" >> $GITHUB_ENV
-        echo "LDFLAGS=$LDFLAGS" >> $GITHUB_ENV
-        echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
+        export CPPFLAGS="$(mysql_config --cflags) $CPPFLAGS"
+        export LDFLAGS="$(mysql_config --libs) $LDFLAGS"
     - name: Install dependencies (macOS)
       if: ${{ inputs.distro == 'macos-14' }}
       shell: bash
