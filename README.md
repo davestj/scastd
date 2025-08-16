@@ -70,7 +70,7 @@
 
 ## 🔐 Verify Downloads
 
-Release artifacts include SHA256 checksums in `CHECKSUMS.txt`. Verify package integrity before installation:
+Releases ship Debian `.deb` packages, a macOS `.pkg` installer, and a Homebrew formula (`scastd.rb`). SHA256 checksums for all artifacts are provided in `CHECKSUMS.txt`. Verify package integrity before installation:
 
 ```bash
 sha256sum -c CHECKSUMS.txt
@@ -274,9 +274,30 @@ sudo installer -pkg scastd-<version>.pkg -target /
 ```
 
 #### macOS (Homebrew)
+Release archives include a `scastd.rb` Homebrew formula. To test it locally:
+
+```bash
+brew install --formula ./scastd.rb
+brew services start scastd
+```
+
+Once verified, install from the official tap:
+
 ```bash
 brew tap davestj/scastd
 brew install scastd
+```
+
+To update the formula later:
+
+```bash
+brew upgrade scastd
+```
+
+To remove it:
+
+```bash
+brew uninstall scastd
 ```
 
 For details on creating the macOS package or Homebrew formula yourself, see
