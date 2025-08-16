@@ -72,9 +72,9 @@ jobs:
           ${{ matrix.build_script }} ${{ github.run_number }}
       - name: Generate checksums
         run: |
-          for file in dist/*; do
-            ${{ matrix.checksum }} "$file" > "$file.sha256"
-          done
+          cd dist
+          ${{ matrix.checksum }} * > CHECKSUMS.txt
+          cat CHECKSUMS.txt
       - name: Generate release notes
         id: release_notes
         run: |
@@ -84,7 +84,11 @@ jobs:
           AUTHORS=$(git log -n 30 --format='%an' | sort -u | wc -l)
           echo -e "\n## Stats\n* Commits: $COMMITS\n* Authors: $AUTHORS" >> release_notes.md
           git log -n 30 --format='%an' | sort | uniq -c | sed 's/^/  /' >> release_notes.md
-          echo -e "\n## Links" >> release_notes.md
+          echo -e "\n## Security" >> release_notes.md
+          echo "All artifacts include SHA256 checksums in \`CHECKSUMS.txt\`. Verify downloads with:" >> release_notes.md
+          echo >> release_notes.md
+          echo -e '\n```bash\nsha256sum -c CHECKSUMS.txt\n```\n' >> release_notes.md
+          echo -e "## Links" >> release_notes.md
           echo "- [README](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/README.md)" >> release_notes.md
           echo "- [INSTALL](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/INSTALL.md)" >> release_notes.md
           echo "body<<EOF" >> $GITHUB_OUTPUT

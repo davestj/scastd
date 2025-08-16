@@ -68,6 +68,20 @@
 
 </div>
 
+## 🔐 Verify Downloads
+
+Release artifacts include SHA256 checksums in `CHECKSUMS.txt`. Verify package integrity before installation:
+
+```bash
+sha256sum -c CHECKSUMS.txt
+```
+
+macOS users can run:
+
+```bash
+shasum -a 256 -c CHECKSUMS.txt
+```
+
 ---
 
 ## 🎯 What is SCASTD?
