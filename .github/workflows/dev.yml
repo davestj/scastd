@@ -64,6 +64,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Build packages
         run: |
           chmod +x ${{ matrix.build_script }}
@@ -73,6 +75,21 @@ jobs:
           for file in dist/*; do
             ${{ matrix.checksum }} "$file" > "$file.sha256"
           done
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          echo "## Changes" > release_notes.md
+          git log -n 30 --pretty=format:"* %h %s (%an)" >> release_notes.md
+          COMMITS=$(git log -n 30 --pretty=format:%h | wc -l)
+          AUTHORS=$(git log -n 30 --format='%an' | sort -u | wc -l)
+          echo -e "\n## Stats\n* Commits: $COMMITS\n* Authors: $AUTHORS" >> release_notes.md
+          git log -n 30 --format='%an' | sort | uniq -c | sed 's/^/  /' >> release_notes.md
+          echo -e "\n## Links" >> release_notes.md
+          echo "- [README](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/README.md)" >> release_notes.md
+          echo "- [INSTALL](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/INSTALL.md)" >> release_notes.md
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          cat release_notes.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         env:
@@ -83,3 +100,4 @@ jobs:
           draft: false
           prerelease: true
           files: dist/*
+          body: ${{ steps.release_notes.outputs.body }}
