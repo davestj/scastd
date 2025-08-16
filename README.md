@@ -246,6 +246,83 @@ echo "✅ Build completed successfully!"
 echo "📍 Binary location: ./src/scastd"
 ```
 
+### 📥 Installing Pre-built Packages
+
+#### Debian/Ubuntu (.deb)
+```bash
+sudo dpkg -i scastd_<version>_amd64.deb
+sudo apt-get install -f
+```
+
+#### macOS (.pkg installer)
+```bash
+sudo installer -pkg scastd-<version>.pkg -target /
+```
+
+#### macOS (Homebrew)
+```bash
+brew tap davestj/scastd
+brew install scastd
+```
+
+### 🚀 Post-Installation Steps
+
+#### Edit `scastd.conf`
+- **Debian/Ubuntu**: `sudo nano /etc/scastd/scastd.conf`
+- **macOS (.pkg)**: `sudo nano /usr/local/etc/scastd.conf`
+- **macOS (Homebrew)**: `nano /opt/homebrew/etc/scastd.conf`
+
+Update absolute paths for databases and certificates as needed.
+
+#### Enable and start the service
+- **Debian/Ubuntu**
+```bash
+sudo systemctl enable scastd
+sudo systemctl start scastd
+```
+- **macOS (Homebrew)**
+```bash
+brew services start scastd
+```
+- **macOS (.pkg)**
+```bash
+sudo launchctl load -w /Library/LaunchDaemons/com.scastd.plist
+```
+
+#### Explore command-line options
+```bash
+scastd --help
+```
+Key parameters include:
+`--config PATH`, `--daemon`, `--pid-file PATH`, `--ip ADDRESS`,
+`--port PORT`, `--debug LEVEL`, `--poll INTERVAL`, `--db-host HOST`,
+`--db-port PORT`, `--db-name NAME`, `--db-user USER`,
+`--db-pass PASS`, `--sqlite-db PATH`, `--ssl-cert PATH`,
+`--ssl-key PATH`, `--ssl-enable`, `--dump`, `--dump-dir DIR`.
+
+#### Test HTTP endpoints
+```bash
+curl http://localhost:8000/v1/status.json
+curl http://localhost:8000/v1/status.xml
+curl http://localhost:8000/v1/uptime
+```
+
+#### Configure HTTPS certificates
+```bash
+sudo certbot certonly --standalone -d example.com
+# Certificates are stored under:
+#   /etc/letsencrypt/live/example.com/fullchain.pem
+#   /etc/letsencrypt/live/example.com/privkey.pem
+```
+Reference these in `scastd.conf`:
+```
+ssl_enable     true
+ssl_cert       /etc/letsencrypt/live/example.com/fullchain.pem
+ssl_key        /etc/letsencrypt/live/example.com/privkey.pem
+```
+Restart the service after changes:
+`sudo systemctl restart scastd` or `brew services restart scastd`.
+
 ---
 
 ## ⚙️ Configuration Management
