@@ -109,3 +109,12 @@ The generated formula supports:
 - Automatic service management via `brew services`
 - Proper configuration file and database setup
 - Comprehensive test suite validation
+
+## Reporting Issues
+
+Report any packaging or installation problems through our support channels.
+Include relevant build or runtime logs so we can help troubleshoot quickly.
+
+- Issue tracker: <https://github.com/davestj/scastd/issues>
+- Discussions: <https://github.com/davestj/scastd/discussions>
+- Email: <davestj@gmail.com>

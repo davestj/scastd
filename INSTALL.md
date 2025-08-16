@@ -327,6 +327,16 @@ The script installs Certbot and enables automated renewal via
 `systemctl enable --now certbot.timer` on Linux or `brew services start
 certbot` on macOS.
 
+Reporting issues
+----------------
+If you encounter packaging or installation problems, please open an
+issue and include any logs that show the failure. This helps us diagnose
+and resolve problems more quickly.
+
+- Issue tracker: <https://github.com/davestj/scastd/issues>
+- Discussions: <https://github.com/davestj/scastd/discussions>
+- Email: <davestj@gmail.com>
+
 Basic Installation
 ==================
 
