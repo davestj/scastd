@@ -69,8 +69,29 @@ jobs:
             autoconf automake libtool pkg-config \
             gettext autopoint \
             libxml2-dev libcurl4-openssl-dev \
-            libmysqlclient-dev mariadb-client libpq-dev libmicrohttpd-dev \
+            mariadb-client libpq-dev libmicrohttpd-dev \
             wget dpkg-dev
+
+          case "${{ matrix.distro }}" in
+            debian-12)
+              wget https://dev.mysql.com/get/Downloads/MySQL-8.4/libmysqlclient21_8.4.0-1debian12_amd64.deb
+              wget https://dev.mysql.com/get/Downloads/MySQL-8.4/libmysqlclient-dev_8.4.0-1debian12_amd64.deb
+              $SUDO dpkg -i libmysqlclient21_8.4.0-1debian12_amd64.deb libmysqlclient-dev_8.4.0-1debian12_amd64.deb || true
+              $SUDO apt-get -f install -y
+              ;;
+            debian-trixie)
+              wget https://dev.mysql.com/get/Downloads/MySQL-8.4/libmysqlclient21_8.4.0-1debian12_amd64.deb
+              wget https://dev.mysql.com/get/Downloads/MySQL-8.4/libmysqlclient-dev_8.4.0-1debian12_amd64.deb
+              $SUDO dpkg -i libmysqlclient21_8.4.0-1debian12_amd64.deb libmysqlclient-dev_8.4.0-1debian12_amd64.deb || true
+              $SUDO apt-get -f install -y
+              ;;
+            ubuntu-24.04)
+              wget https://dev.mysql.com/get/Downloads/MySQL-8.4/libmysqlclient21_8.4.0-1ubuntu24.04_amd64.deb
+              wget https://dev.mysql.com/get/Downloads/MySQL-8.4/libmysqlclient-dev_8.4.0-1ubuntu24.04_amd64.deb
+              $SUDO dpkg -i libmysqlclient21_8.4.0-1ubuntu24.04_amd64.deb libmysqlclient-dev_8.4.0-1ubuntu24.04_amd64.deb || true
+              $SUDO apt-get -f install -y
+              ;;
+          esac
 
           # Install newer gettext for all distributions
           wget https://ftp.gnu.org/pub/gnu/gettext/gettext-0.22.tar.gz
