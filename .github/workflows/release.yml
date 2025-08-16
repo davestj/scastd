@@ -1,7 +1,7 @@
 ---
 name: Release
 
-on:
+"on":
   push:
     tags:
       - 'v*'
@@ -198,6 +198,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -207,16 +209,16 @@ jobs:
       - name: Prepare release assets
         run: |
           mkdir -p release-assets
-          
+
           # Collect all package files and checksums
           find artifacts -name "*.deb" -exec cp {} release-assets/ \;
           find artifacts -name "*.pkg" -exec cp {} release-assets/ \;
           find artifacts -name "*.rb" -exec cp {} release-assets/ \;
-          
+
           # Combine all checksum files
           echo "# SCASTD ${{ needs.prepare.outputs.version }} Release Checksums" > release-assets/CHECKSUMS.txt
           echo "" >> release-assets/CHECKSUMS.txt
-          
+
           for checksum_file in artifacts/*/checksums.txt; do
             if [[ -f "$checksum_file" ]]; then
               echo "## $(basename $(dirname "$checksum_file"))" >> release-assets/CHECKSUMS.txt
@@ -224,7 +226,7 @@ jobs:
               echo "" >> release-assets/CHECKSUMS.txt
             fi
           done
-          
+
           # List all release assets
           echo "Release assets prepared:"
           ls -la release-assets/
@@ -237,16 +239,17 @@ jobs:
 
           This release includes packages for multiple platforms and architectures.
 
+          For installation instructions, see [INSTALL](https://github.com/${{ github.repository }}/blob/${{ needs.prepare.outputs.tag }}/INSTALL.md) or the [README](https://github.com/${{ github.repository }}/blob/${{ needs.prepare.outputs.tag }}/README.md).
+
           ### 📦 Package Downloads
 
-          **Debian/Ubuntu Packages:**
-          - `scastd_${{ needs.prepare.outputs.version }}_bookworm_amd64.deb` - Debian 12 (Bookworm)
-          - `scastd_${{ needs.prepare.outputs.version }}_trixie_amd64.deb` - Debian Trixie
-          - `scastd_${{ needs.prepare.outputs.version }}_noble_amd64.deb` - Ubuntu 24.04 (Noble)
-
-          **macOS Packages:**
-          - `scastd-${{ needs.prepare.outputs.version }}.pkg` - macOS ARM64 installer package
-          - `scastd.rb` - Homebrew formula for ARM64 macOS
+          | Package file | Platform |
+          |--------------|----------|
+          | `scastd_${{ needs.prepare.outputs.version }}_bookworm_amd64.deb` | Debian 12 (Bookworm) |
+          | `scastd_${{ needs.prepare.outputs.version }}_trixie_amd64.deb` | Debian Trixie |
+          | `scastd_${{ needs.prepare.outputs.version }}_noble_amd64.deb` | Ubuntu 24.04 (Noble) |
+          | `scastd-${{ needs.prepare.outputs.version }}.pkg` | macOS ARM64 installer package |
+          | `scastd.rb` | Homebrew formula for ARM64 macOS |
 
           ### 🔐 Security
 
@@ -292,6 +295,12 @@ jobs:
 
           For detailed configuration instructions, see the [documentation](https://github.com/${{ github.repository }}/blob/master/docs/Packaging.md).
           EOF
+          PREV_TAG=$(git tag --sort=committerdate | tail -n 2 | head -n 1)
+          ./scripts/generate_release_notes.sh "$PREV_TAG" "${{ needs.prepare.outputs.tag }}" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "## Links" >> release_notes.md
+          echo "- [README](https://github.com/${{ github.repository }}/blob/${{ needs.prepare.outputs.tag }}/README.md)" >> release_notes.md
+          echo "- [INSTALL](https://github.com/${{ github.repository }}/blob/${{ needs.prepare.outputs.tag }}/INSTALL.md)" >> release_notes.md
 
           # Set output for use in release creation
           echo "RELEASE_NOTES<<EOF" >> $GITHUB_OUTPUT
@@ -310,6 +319,31 @@ jobs:
             release-assets/*
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # List release assets via the GitHub API and fail if any expected file is missing
+      - name: Verify uploaded release assets
+        env:
+          TAG: ${{ needs.prepare.outputs.tag }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "Listing assets for release $TAG"
+          assets=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+                       -H "Accept: application/vnd.github+json" \
+                       https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$TAG | jq -r '.assets[].name')
+          echo "$assets"
+          expected="scastd_${VERSION}_bookworm_amd64.deb scastd_${VERSION}_trixie_amd64.deb scastd_${VERSION}_noble_amd64.deb scastd-${VERSION}.pkg scastd.rb CHECKSUMS.txt"
+          missing=0
+          for f in $expected; do
+            if ! grep -qx "$f" <<< "$assets"; then
+              echo "::error::Missing expected release asset: $f"
+              missing=1
+            fi
+          done
+          if [ $missing -ne 0 ]; then
+            exit 1
+          fi
+
       - name: Release Summary
         run: |
           echo "🎉 Release ${{ needs.prepare.outputs.tag }} created successfully!"
@@ -318,3 +352,58 @@ jobs:
           ls -la release-assets/
           echo ""
           echo "🔗 Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ needs.prepare.outputs.tag }}"
+
+  verify-install:
+    needs: [prepare, build-packages]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            container: debian:12
+            package: scastd_${{ needs.prepare.outputs.version }}_bookworm_amd64.deb
+          - os: ubuntu-22.04
+            container: debian:trixie
+            package: scastd_${{ needs.prepare.outputs.version }}_trixie_amd64.deb
+          - os: ubuntu-24.04
+            container: ubuntu:24.04
+            package: scastd_${{ needs.prepare.outputs.version }}_noble_amd64.deb
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    steps:
+      - name: Download release package
+        run: |
+          curl -L -o ${{ matrix.package }} https://github.com/${{ github.repository }}/releases/download/${{ needs.prepare.outputs.tag }}/${{ matrix.package }}
+
+      - name: Install package
+        run: |
+          apt-get update
+          apt-get install -y curl
+          dpkg -i ${{ matrix.package }} || (apt-get -f install -y && dpkg -i ${{ matrix.package }})
+
+      - name: Verify scastd version
+        run: |
+          out=$(scastd --version)
+          echo "$out"
+          grep "${{ needs.prepare.outputs.version }}" <<< "$out"
+
+      - name: HTTP test
+        run: |
+          cat > scastd.conf <<'EOF'
+          pid_file /tmp/scastd.pid
+          log_dir /tmp
+          access_log access.log
+          error_log error.log
+          debug_log debug.log
+          debug_level 1
+          log_console true
+          http_enabled true
+          http_port 8000
+          DatabaseType sqlite
+          sqlite_path /tmp/scastd.db
+          EOF
+          scastd --config scastd.conf &
+          PID=$!
+          sleep 2
+          curl -f http://localhost:8000/status.json
+          kill $PID

@@ -68,6 +68,20 @@
 
 </div>
 
+## 🔐 Verify Downloads
+
+Releases ship Debian `.deb` packages, a macOS `.pkg` installer, and a Homebrew formula (`scastd.rb`). SHA256 checksums for all artifacts are provided in `CHECKSUMS.txt`. Verify package integrity before installation:
+
+```bash
+sha256sum -c CHECKSUMS.txt
+```
+
+macOS users can run:
+
+```bash
+shasum -a 256 -c CHECKSUMS.txt
+```
+
 ---
 
 ## 🎯 What is SCASTD?
@@ -244,6 +258,177 @@ make check
 
 echo "✅ Build completed successfully!"
 echo "📍 Binary location: ./src/scastd"
+```
+
+### 📥 Installing Pre-built Packages
+
+#### Debian/Ubuntu (.deb)
+```bash
+sudo dpkg -i scastd_<version>_amd64.deb
+sudo apt-get install -f
+```
+
+#### macOS (.pkg installer)
+```bash
+sudo installer -pkg scastd-<version>.pkg -target /
+```
+
+#### macOS (Homebrew)
+Release archives include a `scastd.rb` Homebrew formula. To test it locally:
+
+```bash
+brew install --formula ./scastd.rb
+brew services start scastd
+```
+
+Once verified, install from the official tap:
+
+```bash
+brew tap davestj/scastd
+brew install scastd
+```
+
+To update the formula later:
+
+```bash
+brew upgrade scastd
+```
+
+To remove it:
+
+```bash
+brew uninstall scastd
+```
+
+For details on creating the macOS package or Homebrew formula yourself, see
+[packaging/macos/README.md](packaging/macos/README.md).
+
+### 🚀 Post-Installation Steps
+
+#### Edit `scastd.conf`
+- **Debian/Ubuntu**: `sudo nano /etc/scastd/scastd.conf`
+- **macOS (.pkg)**: `sudo nano /usr/local/etc/scastd.conf`
+- **macOS (Homebrew)**: `nano /opt/homebrew/etc/scastd.conf`
+
+Update absolute paths for databases and certificates as needed.
+
+#### Start and verify the service
+- **Debian/Ubuntu**
+```bash
+sudo systemctl enable scastd
+sudo systemctl start scastd
+```
+- **macOS (Homebrew)**
+```bash
+brew services start scastd
+```
+- **macOS (.pkg)**
+```bash
+sudo launchctl load -w /Library/LaunchDaemons/com.scastd.plist
+```
+
+Confirm the daemon responds:
+```bash
+curl http://localhost:8000/v1/status.json
+curl http://localhost:8000/v1/status.xml
+```
+Expected responses:
+```json
+{"status":"ok"}
+```
+```xml
+<status>ok</status>
+```
+Troubleshooting tips if unreachable:
+- Check service state: `sudo systemctl status scastd` or `brew services list`
+- Ensure the configured port matches the `curl` command
+- Verify no firewall or other service blocks the port
+- Review logs in `/var/log/scastd` or with `journalctl -u scastd`
+
+#### Explore command-line options
+```bash
+scastd --help
+```
+```text
+Usage: scastd [options]
+  -h, --help           Show this help and exit
+  -c, --config PATH    Configuration file
+  -D, --daemon         Run as a daemon
+      --pid-file PATH  PID file path (used with --daemon)
+      --ip ADDRESS     Bind IP address
+      --port PORT      HTTP server port
+      --debug LEVEL    Debug level
+      --poll INTERVAL  Poll interval (e.g., 60s, 5m)
+      --test-mode      Validate configuration and exit
+      --db-host HOST   Database host
+      --db-port PORT   Database port
+      --db-name NAME   Database name
+      --db-user USER   Database user
+      --db-pass PASS   Database password
+      --sqlite-db PATH SQLite database file
+      --setupdb TYPE   Initialize database of specified type
+      --ssl-cert PATH  SSL certificate file
+      --ssl-key PATH   SSL key file
+      --ssl-enable     Enable SSL
+      --dump           Dump database and exit
+      --dump-dir DIR   Directory for database dump
+```
+
+#### Enable HTTPS mode
+Run with certificate options:
+```bash
+scastd --ssl-enable \
+       --ssl-cert /etc/letsencrypt/live/example.com/fullchain.pem \
+       --ssl-key /etc/letsencrypt/live/example.com/privkey.pem
+```
+Or configure `scastd.conf`:
+```conf
+ssl_enable     true
+ssl_cert       /etc/letsencrypt/live/example.com/fullchain.pem
+ssl_key        /etc/letsencrypt/live/example.com/privkey.pem
+```
+On macOS the Homebrew prefix contains the certificates:
+```conf
+ssl_enable     true
+ssl_cert       /usr/local/etc/letsencrypt/live/example.com/fullchain.pem
+ssl_key        /usr/local/etc/letsencrypt/live/example.com/privkey.pem
+# Use /opt/homebrew on Apple Silicon
+```
+
+#### Test HTTP/HTTPS endpoints
+```bash
+curl http://localhost:8000/v1/status.json
+curl http://localhost:8000/v1/status.xml
+curl http://localhost:8000/v1/uptime
+curl -k https://localhost:8000/v1/status.json
+curl https://example.com:8000/v1/status.json
+```
+
+#### Obtain TLS certificates
+*Debian/Ubuntu*
+```bash
+sudo certbot certonly --standalone -d example.com
+```
+*macOS (Homebrew)*
+```bash
+brew install certbot
+sudo certbot certonly --standalone -d example.com
+```
+Certificates are placed under the Let's Encrypt directory for your
+platform:
+
+| Platform | Certificate path |
+| --- | --- |
+| Debian/Ubuntu | `/etc/letsencrypt/live/example.com/` |
+| macOS (Intel) | `/usr/local/etc/letsencrypt/live/example.com/` |
+| macOS (Apple Silicon) | `/opt/homebrew/etc/letsencrypt/live/example.com/` |
+
+Reference `fullchain.pem` and `privkey.pem` from that directory in
+`scastd.conf` and restart the daemon:
+
+```bash
+sudo systemctl restart scastd      # or reload
+brew services restart scastd       # macOS
 ```
 
 ---
