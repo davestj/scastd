@@ -40,4 +40,19 @@ uses the GitHub API to list the published assets. If any expected package or
 checksum file is missing, the job fails. For the exact commands, see the
 "Verify uploaded release assets" step in `.github/workflows/release.yml`.
 
+## Release Notes
+
+Release notes are generated with `scripts/generate_release_notes.sh`. The
+script summarizes commits, contributors, and line counts between two refs and
+outputs Markdown suitable for GitHub releases.
+
+To preview the notes locally for the range between two tags:
+
+```bash
+scripts/generate_release_notes.sh v79 v81
+```
+
+If no starting ref is provided, the script compares the previous tag to the
+current `HEAD`.
+
 Thanks for contributing!

@@ -295,17 +295,8 @@ jobs:
 
           For detailed configuration instructions, see the [documentation](https://github.com/${{ github.repository }}/blob/master/docs/Packaging.md).
           EOF
-
-          echo "" >> release_notes.md
-          echo "## Changes" >> release_notes.md
-          git log -n 30 --pretty=format:"* %h %s (%an)" >> release_notes.md
-          COMMITS=$(git log -n 30 --pretty=format:%h | wc -l)
-          AUTHORS=$(git log -n 30 --format='%an' | sort -u | wc -l)
-          echo "" >> release_notes.md
-          echo "## Stats" >> release_notes.md
-          echo "* Commits: $COMMITS" >> release_notes.md
-          echo "* Authors: $AUTHORS" >> release_notes.md
-          git log -n 30 --format='%an' | sort | uniq -c | sed 's/^/  /' >> release_notes.md
+          PREV_TAG=$(git tag --sort=committerdate | tail -n 2 | head -n 1)
+          ./scripts/generate_release_notes.sh "$PREV_TAG" "${{ needs.prepare.outputs.tag }}" >> release_notes.md
           echo "" >> release_notes.md
           echo "## Links" >> release_notes.md
           echo "- [README](https://github.com/${{ github.repository }}/blob/${{ needs.prepare.outputs.tag }}/README.md)" >> release_notes.md
