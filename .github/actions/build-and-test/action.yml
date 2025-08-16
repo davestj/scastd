@@ -45,8 +45,9 @@ runs:
         esac
         $SUDO dpkg -i libmysqlclient21_8.4.0-1*.deb libmysqlclient-dev_8.4.0-1*.deb || true
         $SUDO apt-get -f install -y
-        mysql_config --version
+        dpkg -s libmysqlclient-dev | grep -q '^Status: install ok'
         test -f /usr/include/mysql/mysql.h
+        mysql_config --version
         wget https://ftp.gnu.org/pub/gnu/gettext/gettext-0.22.tar.gz
         tar -xf gettext-0.22.tar.gz
         cd gettext-0.22
