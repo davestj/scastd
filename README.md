@@ -366,6 +366,13 @@ ssl_enable     true
 ssl_cert       /etc/letsencrypt/live/example.com/fullchain.pem
 ssl_key        /etc/letsencrypt/live/example.com/privkey.pem
 ```
+On macOS the Homebrew prefix contains the certificates:
+```conf
+ssl_enable     true
+ssl_cert       /usr/local/etc/letsencrypt/live/example.com/fullchain.pem
+ssl_key        /usr/local/etc/letsencrypt/live/example.com/privkey.pem
+# Use /opt/homebrew on Apple Silicon
+```
 
 #### Test HTTP/HTTPS endpoints
 ```bash
@@ -373,6 +380,7 @@ curl http://localhost:8000/v1/status.json
 curl http://localhost:8000/v1/status.xml
 curl http://localhost:8000/v1/uptime
 curl -k https://localhost:8000/v1/status.json
+curl https://example.com:8000/v1/status.json
 ```
 
 #### Obtain TLS certificates
@@ -385,13 +393,22 @@ sudo certbot certonly --standalone -d example.com
 brew install certbot
 sudo certbot certonly --standalone -d example.com
 ```
-Certificates are typically stored at:
+Certificates are placed under the Let's Encrypt directory for your
+platform:
+
+| Platform | Certificate path |
+| --- | --- |
+| Debian/Ubuntu | `/etc/letsencrypt/live/example.com/` |
+| macOS (Intel) | `/usr/local/etc/letsencrypt/live/example.com/` |
+| macOS (Apple Silicon) | `/opt/homebrew/etc/letsencrypt/live/example.com/` |
+
+Reference `fullchain.pem` and `privkey.pem` from that directory in
+`scastd.conf` and restart the daemon:
+
+```bash
+sudo systemctl restart scastd      # or reload
+brew services restart scastd       # macOS
 ```
-/etc/letsencrypt/live/example.com/fullchain.pem
-/etc/letsencrypt/live/example.com/privkey.pem
-```
-Restart the service after changes:
-`sudo systemctl restart scastd` or `brew services restart scastd`.
 
 ---
 
