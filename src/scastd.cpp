@@ -57,6 +57,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <fstream>
 #include <sstream>
 #include <ctime>
+#include <iostream>
 
 namespace scastd {
 
@@ -176,22 +177,24 @@ bool setupDatabase(const std::string &dbType, IDatabase *db) {
 
 int dumpDatabase(const std::string &configPath,
                  const std::map<std::string, std::string> &overrides,
-                 const std::string &dumpDir) {
+                 const std::string &dumpDir,
+                 bool defaultConsoleLog) {
         init_i18n();
         Config cfg;
         if (!cfg.Load(configPath)) {
                 std::string msg = std::string(_("Cannot load config file ")) + configPath;
                 logger.logError(msg);
+		std::cerr << msg << std::endl;
                 return 1;
         }
         for (const auto &kv : overrides) {
                 cfg.Set(kv.first, kv.second);
         }
-        std::string logDir = cfg.Get("log_dir", "./logs");
+        std::string logDir = cfg.Get("log_dir", "/var/log/scastd");
         bool loggingEnabled = true;
         logger.setLogDir(logDir);
         logger.setLogFiles(cfg.AccessLog(), cfg.ErrorLog(), cfg.DebugLog());
-        logger.setConsoleOutput(cfg.Get("log_console", false));
+        logger.setConsoleOutput(cfg.Get("log_console", defaultConsoleLog));
         logger.setDebugLevel(cfg.DebugLevel());
         logger.setRotation(cfg.LogMaxSize(), cfg.LogRetention());
         statusLogger.setPath(logDir + "/status.json");
@@ -404,7 +407,8 @@ void sigHUP(int sig)
 
 
 int run(const std::string &configPath,
-        const std::map<std::string, std::string> &overrides)
+        const std::map<std::string, std::string> &overrides,
+        bool defaultConsoleLog)
 {
         init_i18n();
         scastd::HttpServer httpServer;
@@ -415,11 +419,14 @@ int run(const std::string &configPath,
 	char	buf[1024];
 	IDatabase::Row       row;
 	char	query[2046] = "";
+	logger.setConsoleOutput(defaultConsoleLog);
+	logger.setEnabled(true);
         if (!cfg.Load(configPath)) {
                 std::string msg = std::string(_("Cannot load config file ")) + configPath;
-                logger.logError(msg);
-                return 1;
-        }
+		logger.logError(msg);
+		std::cerr << msg << std::endl;
+		return 1;
+	}
         for (const auto &kv : overrides) {
                 cfg.Set(kv.first, kv.second);
         }
@@ -427,9 +434,9 @@ int run(const std::string &configPath,
         std::string accessLog = cfg.AccessLog();
         std::string errorLog = cfg.ErrorLog();
         std::string debugLog = cfg.DebugLog();
-        bool consoleFlag = cfg.Get("log_console", false);
+        bool consoleFlag = cfg.Get("log_console", defaultConsoleLog);
         int debugLevel = cfg.DebugLevel();
-        std::string logDir = cfg.Get("log_dir", "./logs");
+        std::string logDir = cfg.Get("log_dir", "/var/log/scastd");
         bool loggingEnabled = true;
         logger.setLogDir(logDir);
         logger.setLogFiles(accessLog, errorLog, debugLog);
@@ -538,15 +545,13 @@ int run(const std::string &configPath,
                 }
         }
 
-        logger.logDebug(_("Detaching from console..."));
+        if (defaultConsoleLog) {
+                logger.logDebug(_("Detaching from console..."));
+                if (fork()) {
+                        exit(0);
+                }
+        }
 
-	if (fork()) {
-		// Parent
-		exit(1);
-	}
-	else {
-		// Da child
-	
         if (signal(SIGUSR1, sigUSR1) == SIG_ERR) {
                 logger.logError(_("Cannot install handler for SIGUSR1"));
                 exit(1);
@@ -588,7 +593,7 @@ int run(const std::string &configPath,
                                 std::string newAccess = cfg.AccessLog();
                                 std::string newError = cfg.ErrorLog();
                                 std::string newDebug = cfg.DebugLog();
-                                bool newConsole = cfg.Get("log_console", false);
+                                bool newConsole = cfg.Get("log_console", consoleFlag);
                                 int newDebugLevel = cfg.DebugLevel();
                                 if (newAccess != accessLog || newError != errorLog || newDebug != debugLog) {
                                         accessLog = newAccess;
@@ -734,7 +739,6 @@ int run(const std::string &configPath,
                 delete db2;
         }
         return 0;
-}
 }
 
 } // namespace scastd

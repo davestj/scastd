@@ -20,22 +20,30 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#ifndef SCASTD_H
-#define SCASTD_H
-
-#include <string>
-#include <map>
-#include "db/IDatabase.h"
+#include "catch.hpp"
+#include "../src/scastd.h"
+#include "../src/logger.h"
+#include <sstream>
+#include <iostream>
 
 namespace scastd {
-int run(const std::string &configPath,
-        const std::map<std::string, std::string> &overrides,
-        bool defaultConsoleLog);
-int dumpDatabase(const std::string &configPath,
-                 const std::map<std::string, std::string> &overrides,
-                 const std::string &dumpDir,
-                 bool defaultConsoleLog);
-bool setupDatabase(const std::string &dbType, IDatabase *db);
+extern Logger logger;
 }
 
-#endif // SCASTD_H
+TEST_CASE("Missing config file logs error") {
+    using namespace scastd;
+    logger.setEnabled(false);
+    logger.setConsoleOutput(false);
+
+    std::stringstream err;
+    auto oldBuf = std::cerr.rdbuf(err.rdbuf());
+    int rc = run("nonexistent.conf", {}, false);
+    std::cerr.rdbuf(oldBuf);
+
+    // Restore logger state for other tests
+    logger.setEnabled(true);
+    logger.setConsoleOutput(true);
+
+    REQUIRE(rc == 1);
+    REQUIRE(err.str().find("Cannot load config file nonexistent.conf") != std::string::npos);
+}

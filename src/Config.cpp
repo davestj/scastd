@@ -92,6 +92,21 @@ bool Config::Load(const std::string &path) {
         values["password"] = env;
     }
 
+    env = std::getenv("ICEADMINUSER");
+    if (!env) {
+        env = std::getenv("SCASTD_ADMINUSER");
+    }
+    if (env) {
+        values["iceadminuser"] = env;
+    }
+    env = std::getenv("ICEUSERPASS");
+    if (!env) {
+        env = std::getenv("SCASTD_USERPASS");
+    }
+    if (env) {
+        values["iceuserpass"] = env;
+    }
+
     env = std::getenv("SCASTD_THREAD_COUNT");
     if (env) {
         values["thread_count"] = env;
@@ -194,19 +209,19 @@ static std::string combine_log_path(const std::string &dir, const std::string &p
 }
 
 std::string Config::AccessLog() const {
-    std::string dir = Get("log_dir", "./logs");
+    std::string dir = Get("log_dir", "/var/log/scastd");
     std::string path = Get("access_log", "access.log");
     return combine_log_path(dir, path);
 }
 
 std::string Config::ErrorLog() const {
-    std::string dir = Get("log_dir", "./logs");
+    std::string dir = Get("log_dir", "/var/log/scastd");
     std::string path = Get("error_log", "error.log");
     return combine_log_path(dir, path);
 }
 
 std::string Config::DebugLog() const {
-    std::string dir = Get("log_dir", "./logs");
+    std::string dir = Get("log_dir", "/var/log/scastd");
     std::string path = Get("debug_log", "debug.log");
     return combine_log_path(dir, path);
 }
@@ -237,4 +252,8 @@ int Config::SyslogPort() const {
 
 std::string Config::SyslogProtocol() const {
     return Get("syslog_protocol", "udp");
+}
+
+std::string Config::PIDFile() const {
+    return Get("pid_file", "/var/run/scastd.pid");
 }

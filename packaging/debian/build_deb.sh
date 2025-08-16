@@ -2,11 +2,13 @@
 set -euo pipefail
 
 VERSION=${1:-1.0}
+DISTRO=${2:-bookworm}
 PREFIX=/usr/local
 BUILD_DIR=$(pwd)/deb_build
+OUT_DIR=$(pwd)/dist
 
 rm -rf "$BUILD_DIR"
-mkdir -p "$BUILD_DIR"
+mkdir -p "$BUILD_DIR" "$OUT_DIR"
 
 # Build and stage files
 ./autogen.sh
@@ -30,4 +32,4 @@ CTRL
 cp packaging/debian/postinst "$BUILD_DIR/DEBIAN/postinst"
 chmod 755 "$BUILD_DIR/DEBIAN/postinst"
 
-dpkg-deb --build "$BUILD_DIR" "scastd_${VERSION}_$(dpkg --print-architecture).deb"
+dpkg-deb --build "$BUILD_DIR" "$OUT_DIR/scastd_${VERSION}_${DISTRO}_$(dpkg --print-architecture).deb"

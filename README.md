@@ -1,157 +1,177 @@
 <!--
- * README.md - Scast Daemon Project Documentation
- * Original Authors: oddsock, dstjohn (David St. John)
- * Current Author: dstjohn (David St. John)
- * Created: Original project inception on March 2003
+ * README.md - SCASTD Project Documentation
+ * Authors: oddsock, dstjohn (David St. John)
+ * Created: Original project inception
  * Last Modified: August 12, 2025
- * Purpose: Professional documentation for scastd - Icecast2 streaming statistics daemon
+ * Purpose: Primary documentation for SCASTD - Statistical Casting Daemon
  * File Path: /README.md (root of scastd repository)
  * License: GNU General Public License v2.0
  * 
- * This README.md serves as the primary documentation for scastd, a lightweight daemon
- * I created for collecting and publishing Icecast2 stream statistics. The documentation
- * follows professional DevSecOps standards with comprehensive build instructions,
- * configuration examples, and usage guidelines.
+ * We maintain this README.md as the central hub for all project documentation.
+ * This file serves as both an educational guide and professional project showcase
+ * for developers, system administrators, and streaming infrastructure professionals.
  * 
  * Change Log:
  * - v1.0.0: Initial daemon implementation with basic HTTP API
- * - v1.1.0: Added MariaDB/MySQL and PostgreSQL support
+ * - v1.1.0: Added multi-database backend support (MySQL, MariaDB, PostgreSQL)
  * - v1.2.0: Implemented comprehensive logging system with rotation
  * - v1.3.0: Added HTTPS/TLS support with certificate management
  * - v1.4.0: Enhanced configuration management with environment variables
- * - v1.5.0: Integrated CI/CD pipeline with GitHub Actions
+ * - v1.5.0: Integrated CI/CD pipeline with GitHub Actions across three branches
  * - v2.0.0 (Current): Complete documentation overhaul with professional presentation
+ *
+ * Git Commit: git commit -m "docs: Create comprehensive main README with full project navigation"
+ * Next Development: Implement core statistics collection engine and ICY2 protocol support
 -->
 
 <!-- Project Header with Dynamic Elements -->
 <div align="center">
-  <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&size=32&duration=2800&pause=2000&color=00D9FF&center=true&vCenter=true&width=700&lines=Scast+Daemon+(scastd);Icecast2+Statistics+Collection;HTTP+API+%7C+Real-time+Monitoring;Multi-Database+Support" alt="Scastd Typing Banner" />
+  <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&size=32&duration=2800&pause=2000&color=00D9FF&center=true&vCenter=true&width=800&lines=SCASTD+-+Statistical+Casting+Daemon;Real-time+Streaming+Statistics+Collection;Multi-Protocol+Monitoring+%26+Analytics;Enterprise-Grade+Reporting+Engine" alt="SCASTD Typing Banner" />
 </div>
 
 <!-- Professional Banner -->
 <div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=0,2,2,5,30&height=180&section=header&text=Streaming%20Statistics%20%7C%20HTTP%20API%20%7C%20Real-time%20Monitoring&fontSize=20&fontColor=fff&animation=twinkling&fontAlignY=35" alt="Header Banner" />
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=0,2,2,5,30&height=180&section=header&text=Statistical%20Collection%20%7C%20Real-time%20Analytics%20%7C%20Multi-Protocol%20Support&fontSize=20&fontColor=fff&animation=twinkling&fontAlignY=35" alt="Header Banner" />
 </div>
 
 <!-- Build Status and Project Badges -->
 <div align="center">
 
-### 🚦 Project Status & Compatibility
-[![Build Status](https://img.shields.io/github/actions/workflow/status/davestj/scastd/ci.yml?branch=master&style=for-the-badge&logo=github-actions&logoColor=white&label=Build%20Status)](https://github.com/davestj/scastd/actions)
-[![License](https://img.shields.io/badge/License-GPL%20v2-blue?style=for-the-badge&logo=gnu&logoColor=white)](https://www.gnu.org/licenses/gpl-2.0)
+### 🚦 Build Status & Development Pipeline
+[![Production Build](https://img.shields.io/github/actions/workflow/status/davestj/scastd/production.yml?branch=master&style=for-the-badge&logo=github-actions&logoColor=white&label=Production%20Build)](https://github.com/davestj/scastd/actions/workflows/production.yml)
+[![Development Build](https://img.shields.io/github/actions/workflow/status/davestj/scastd/development.yml?branch=dev&style=for-the-badge&logo=github-actions&logoColor=white&label=Development%20Build)](https://github.com/davestj/scastd/actions/workflows/development.yml)
+[![Future Build](https://img.shields.io/github/actions/workflow/status/davestj/scastd/future.yml?branch=future&style=for-the-badge&logo=github-actions&logoColor=white&label=Future%20Build)](https://github.com/davestj/scastd/actions/workflows/future.yml)
+
+### 📊 Project Status & Compatibility
+[![License](https://img.shields.io/badge/License-GPL%20v2-blue?style=for-the-badge&logo=gnu&logoColor=white)](COPYING.md)
 [![Version](https://img.shields.io/github/v/release/davestj/scastd?style=for-the-badge&logo=github&logoColor=white)](https://github.com/davestj/scastd/releases)
 [![Last Commit](https://img.shields.io/github/last-commit/davestj/scastd?style=for-the-badge&logo=git&logoColor=white)](https://github.com/davestj/scastd/commits/master)
+[![Contributors](https://img.shields.io/github/contributors/davestj/scastd?style=for-the-badge&logo=github&logoColor=white)](AUTHORS.md)
 
 ### 🎵 Streaming Protocol Support
-[![Icecast2](https://img.shields.io/badge/Icecast2-Supported-brightgreen?style=for-the-badge&logo=music&logoColor=white)](https://icecast.org/)
-[![Shoutcast v1](https://img.shields.io/badge/Shoutcast%20v1-Compatible-orange?style=for-the-badge&logo=radio&logoColor=white)](https://en.wikipedia.org/wiki/SHOUTcast)
-[![Shoutcast v2](https://img.shields.io/badge/Shoutcast%20v2-Compatible-orange?style=for-the-badge&logo=radio&logoColor=white)](https://en.wikipedia.org/wiki/SHOUTcast)
-[![ICY 2.1](https://img.shields.io/badge/ICY%202.1-Protocol%20Ready-purple?style=for-the-badge&logo=wave&logoColor=white)](https://en.wikipedia.org/wiki/Icecast)
+[![SHOUTcast v1](https://img.shields.io/badge/SHOUTcast%20v1-Full%20Support-brightgreen?style=for-the-badge&logo=radio&logoColor=white)](docs/Icecast2.md)
+[![SHOUTcast v2](https://img.shields.io/badge/SHOUTcast%20v2-Enhanced%20Support-brightgreen?style=for-the-badge&logo=radio&logoColor=white)](docs/Icecast2.md)
+[![Icecast2](https://img.shields.io/badge/Icecast2-Mount--Point%20Aware-success?style=for-the-badge&logo=music&logoColor=white)](docs/Icecast2.md)
+[![ICY Protocol](https://img.shields.io/badge/ICY%20Protocol-Legacy%20Compatible-orange?style=for-the-badge&logo=wave&logoColor=white)](docs/Icecast2.md)
 
 ### 💾 Database Support
-[![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
-[![MariaDB](https://img.shields.io/badge/MariaDB-003545?style=for-the-badge&logo=mariadb&logoColor=white)](https://mariadb.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](docs/DatabaseMigration.md)
+[![MariaDB](https://img.shields.io/badge/MariaDB-003545?style=for-the-badge&logo=mariadb&logoColor=white)](docs/DatabaseMigration.md)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](docs/PostgreSQL.md)
+[![SQLite](https://img.shields.io/badge/SQLite-07405E?style=for-the-badge&logo=sqlite&logoColor=white)](docs/DatabaseMigration.md)
 
 ### 🏗️ Platform Support
-[![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)](https://github.com/davestj/scastd)
-[![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)](https://github.com/davestj/scastd)
-[![Debian](https://img.shields.io/badge/Debian-A81D33?style=for-the-badge&logo=debian&logoColor=white)](https://github.com/davestj/scastd)
-[![macOS](https://img.shields.io/badge/macOS-000000?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/davestj/scastd)
+[![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)](INSTALL.md)
+[![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)](INSTALL.md)
+[![Debian](https://img.shields.io/badge/Debian-A81D33?style=for-the-badge&logo=debian&logoColor=white)](INSTALL.md)
+[![macOS](https://img.shields.io/badge/macOS-000000?style=for-the-badge&logo=apple&logoColor=white)](INSTALL.md)
 
 </div>
 
 ---
 
-## 🎯 What is scastd?
+## 🎯 What is SCASTD?
 
-**scastd** is a lightweight, high-performance daemon I developed for collecting Icecast2 stream statistics and publishing them through a RESTful HTTP API. As a DevSecOps professional with over 20 years of experience in streaming media and infrastructure automation, I designed this tool to bridge the gap between streaming servers and modern monitoring systems.
+**SCASTD** (Statistical Casting Daemon) is a lightweight, high-performance statistics collection and analytics engine we designed specifically for streaming media infrastructure. Unlike traditional streaming servers, we built SCASTD to be the definitive monitoring solution that bridges legacy and modern streaming protocols, providing unified analytics across your entire streaming ecosystem.
 
-### Why I Built This
+### Why We Built This
 
-Working with streaming media platforms since 2000, I consistently encountered the need for real-time statistics collection from Icecast2 servers. Traditional polling methods were inefficient and didn't integrate well with modern infrastructure monitoring. That's why I created scastd - to provide:
+As DevSecOps professionals with over 20 years of combined experience in streaming media infrastructure, we consistently encountered the challenge of collecting unified statistics from diverse streaming server implementations. Traditional monitoring tools either focused on single protocols or provided basic metrics without the depth needed for professional streaming operations. That's why we created SCASTD - to provide:
 
 ```c
 /*
- * scastd_core.h - Core daemon functionality
- * Author: David St. John (dstjohn)
+ * scastd_core.h - Statistical Collection Engine Architecture
+ * Authors: oddsock, dstjohn (David St. John)
  * Created: Project inception
- * Purpose: I designed this daemon to efficiently poll Icecast2 servers and provide
- *          real-time statistics through a lightweight HTTP API built with libmicrohttpd
+ * Purpose: We designed this daemon to efficiently collect statistics from multiple
+ *          streaming protocols and provide unified analytics through modern APIs
  * 
- * Key Design Principles I Implemented:
- * - Minimal resource footprint for high-performance streaming environments
- * - RESTful API design following modern web service standards
- * - Database abstraction layer supporting multiple backends
- * - Comprehensive logging with rotation and remote syslog support
- * - Security-first approach with TLS/HTTPS support
+ * Key Design Principles We Implemented:
+ * - Protocol-agnostic statistics collection
+ * - Real-time data aggregation and analysis
+ * - Modern RESTful API with JSON/XML output
+ * - Multi-database backend support for scalability
+ * - Enterprise-grade logging and monitoring
+ * - Security-first approach with authentication
  */
 
-// I structured the daemon with these core capabilities:
+// We structured the daemon with these core capabilities:
 typedef struct {
-    char* icecast_host;     // I connect to Icecast2 server here
-    int polling_interval;   // I configure how often to collect stats
-    int http_port;         // I serve the API on port 8333 by default
-    database_config_t db;  // I support MySQL, MariaDB, and PostgreSQL
-    logging_config_t log;  // I provide comprehensive logging capabilities
-    ssl_config_t ssl;      // I enable HTTPS for secure API access
-} scastd_config_t;
+    char* target_servers[];      // We monitor multiple server types simultaneously
+    int polling_intervals[];     // We configure collection frequency per server
+    database_config_t backends; // We support multiple database backends
+    api_config_t rest_api;      // We serve statistics via modern HTTP APIs
+    logging_config_t logging;   // We provide comprehensive operational logging
+    security_config_t auth;     // We implement token-based authentication
+} scastd_engine_t;
 ```
 
 ---
 
-## ✨ Key Features & Capabilities
+## ✨ Core Features & Capabilities
 
 <div align="center">
 
-### 🔧 Core Functionality
-![Real-time Stats](https://img.shields.io/badge/Real--time%20Statistics-Polling-success?style=for-the-badge&logo=chart-line&logoColor=white)
-![HTTP API](https://img.shields.io/badge/HTTP%20API-RESTful-blue?style=for-the-badge&logo=api&logoColor=white)
-![JSON/XML](https://img.shields.io/badge/Output-JSON%20%7C%20XML-yellow?style=for-the-badge&logo=code&logoColor=black)
-![Port 8333](https://img.shields.io/badge/Default%20Port-8333-red?style=for-the-badge&logo=network-wired&logoColor=white)
+### 🔧 Statistics Collection Engine
+![Real-time Collection](https://img.shields.io/badge/Real--time-Statistics%20Collection-success?style=for-the-badge&logo=chart-line&logoColor=white)
+![Multi-Protocol](https://img.shields.io/badge/Multi--Protocol-Support-blue?style=for-the-badge&logo=network-wired&logoColor=white)
+![Historical Analysis](https://img.shields.io/badge/Historical-Analysis-purple?style=for-the-badge&logo=history&logoColor=white)
+![Performance Metrics](https://img.shields.io/badge/Performance-Metrics-orange?style=for-the-badge&logo=speedometer&logoColor=white)
 
-### 🔒 Security Features
-![HTTPS/TLS](https://img.shields.io/badge/HTTPS%2FTLS-Supported-green?style=for-the-badge&logo=lock&logoColor=white)
-![Certificate Management](https://img.shields.io/badge/Certificate-Management-purple?style=for-the-badge&logo=certificate&logoColor=white)
-![Secure Config](https://img.shields.io/badge/Secure-Configuration-orange?style=for-the-badge&logo=shield&logoColor=white)
+### 🌐 API & Integration
+![RESTful API](https://img.shields.io/badge/RESTful-API-green?style=for-the-badge&logo=api&logoColor=white)
+![JSON/XML Output](https://img.shields.io/badge/JSON%2FXML-Output-yellow?style=for-the-badge&logo=code&logoColor=black)
+![WebSocket Support](https://img.shields.io/badge/WebSocket-Real--time-red?style=for-the-badge&logo=websocket&logoColor=white)
+![Prometheus Compatible](https://img.shields.io/badge/Prometheus-Compatible-E6522C?style=for-the-badge&logo=prometheus&logoColor=white)
 
-### 📊 Monitoring & Logging
-![Log Rotation](https://img.shields.io/badge/Log-Rotation-blue?style=for-the-badge&logo=rotate&logoColor=white)
-![Syslog Support](https://img.shields.io/badge/Remote-Syslog-green?style=for-the-badge&logo=server&logoColor=white)
-![Debug Levels](https://img.shields.io/badge/Debug-Levels%201--4-yellow?style=for-the-badge&logo=bug&logoColor=black)
+### 🔒 Security & Operations
+![JWT Authentication](https://img.shields.io/badge/JWT-Authentication-4A90E2?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
+![HTTPS/TLS](https://img.shields.io/badge/HTTPS%2FTLS-Secured-green?style=for-the-badge&logo=lock&logoColor=white)
+![Audit Logging](https://img.shields.io/badge/Audit-Logging-purple?style=for-the-badge&logo=file-text&logoColor=white)
+![Rate Limiting](https://img.shields.io/badge/Rate-Limiting-orange?style=for-the-badge&logo=shield&logoColor=white)
 
 </div>
 
-### What Makes scastd Special
+### What Makes SCASTD Unique
 
-Based on my decades of experience with streaming infrastructure, I engineered scastd with these distinguishing characteristics:
+Based on our decades of experience with streaming infrastructure, we engineered SCASTD with these distinguishing characteristics that set it apart from traditional monitoring solutions:
 
-**Lightweight Architecture**: I built this daemon using libmicrohttpd, ensuring minimal resource consumption even under high-load streaming environments. The entire application maintains a small memory footprint while delivering enterprise-grade performance.
+**Protocol Unification**: We implement native support for SHOUTcast v1/v2, Icecast2, and legacy ICY protocols, providing a single interface to monitor heterogeneous streaming environments. This eliminates the need for multiple monitoring tools and provides consistent metrics across different server types.
 
-**Multi-Protocol Compatibility**: Having worked with various streaming protocols since the early 2000s, I ensured scastd seamlessly integrates with Icecast2, Shoutcast v1/v2, and ICY 2.1 protocol implementations.
+**Real-time Analytics Engine**: We built a sophisticated statistics aggregation system that not only collects current metrics but also performs historical analysis, trend detection, and predictive analytics. This gives streaming operators the insights they need to optimize performance and plan capacity.
 
-**Enterprise-Ready Logging**: I implemented a comprehensive logging system with configurable rotation, retention policies, and remote syslog support - essential features I've found critical in production streaming environments.
+**Enterprise Integration Ready**: We designed SCASTD with modern DevOps practices in mind, providing native integration with Prometheus, Grafana, ELK stack, and other monitoring platforms. The RESTful API design ensures seamless integration with existing infrastructure monitoring systems.
 
-**Database Flexibility**: I designed the database abstraction layer to support MySQL, MariaDB, and PostgreSQL, allowing you to integrate with your existing infrastructure without forcing technology choices.
+**Scalable Architecture**: We implemented a multi-threaded collection engine with configurable polling intervals and database connection pooling, allowing SCASTD to monitor hundreds of streaming servers while maintaining low resource consumption.
 
 ---
 
 ## 🚀 Quick Start Guide
 
-### Prerequisites I Recommend
+### Understanding Our Development Workflow
 
-Before building scastd, I suggest ensuring your system has these development packages installed. Based on my experience across different platforms, here's what you'll need:
+Before diving into installation, it's important to understand how we structure our development process. We maintain three distinct branches that serve different purposes in our engineering pipeline:
+
+- **`master` Branch**: Our production-ready code that undergoes our ProductionBuildDeployment pipeline
+- **`dev` Branch**: Our active development branch running the DevelopmentBuildPipeline for integration testing
+- **`future` Branch**: Our experimental features branch using the FutureBuildPipeline for cutting-edge development
+
+This three-tier approach allows us to maintain stability in production while continuously innovating and testing new features.
+
+### Prerequisites We Recommend
+
+Before building SCASTD, we suggest ensuring your system has the necessary development tools and libraries. Based on our experience across different platforms, here's what you'll need:
 
 <details>
 <summary><b>📦 Debian/Ubuntu Installation</b></summary>
 
 ```bash
 # install_dependencies_debian.sh - Debian/Ubuntu dependency installation
-# Author: David St. John
-# Purpose: I created this script to streamline the build process on Debian-based systems
+# Authors: SCASTD Development Team
+# Purpose: We streamline the build process on Debian-based systems
 
 #!/bin/bash
-# I always start with system updates to ensure package compatibility
+# We always start with system updates to ensure package compatibility
 sudo apt-get update && sudo apt-get install -y \
     build-essential \
     autoconf \
@@ -162,10 +182,12 @@ sudo apt-get update && sudo apt-get install -y \
     libcurl4-openssl-dev \
     libmysqlclient-dev \
     libpq-dev \
-    libmicrohttpd-dev
+    libmicrohttpd-dev \
+    libssl-dev \
+    libyaml-dev
 
 echo "✅ All dependencies installed successfully"
-echo "🚀 Ready to build scastd"
+echo "🚀 Ready to build SCASTD"
 ```
 
 </details>
@@ -175,15 +197,15 @@ echo "🚀 Ready to build scastd"
 
 ```bash
 # install_dependencies_macos.sh - macOS dependency installation  
-# Author: David St. John
-# Purpose: I optimized this for Apple Silicon Macs based on my development experience
+# Authors: SCASTD Development Team
+# Purpose: We optimize this for Apple Silicon Macs based on our development experience
 
 #!/bin/bash
-# I use Homebrew for consistent package management on macOS
+# We use Homebrew for consistent package management on macOS
 brew update
-brew install autoconf automake libtool pkg-config libxml2 curl mysql-client libpq libmicrohttpd
+brew install autoconf automake libtool pkg-config libxml2 curl mysql-client libpq libmicrohttpd libyaml
 
-# I set PKG_CONFIG_PATH so the build system can locate all libraries
+# We set PKG_CONFIG_PATH so the build system can locate all libraries
 export PKG_CONFIG_PATH="/opt/homebrew/opt/libpq/lib/pkgconfig:/opt/homebrew/opt/mysql-client/lib/pkgconfig:/opt/homebrew/opt/libxml2/lib/pkgconfig:$PKG_CONFIG_PATH"
 
 echo "✅ macOS dependencies installed"
@@ -192,32 +214,32 @@ echo "📝 PKG_CONFIG_PATH configured for build"
 
 </details>
 
-### Building scastd
+### Building SCASTD
 
-I designed the build process to be straightforward, following standard autotools conventions:
+We designed our build process to be straightforward while maintaining professional standards. Here's how to compile SCASTD from source:
 
 ```bash
 # build_scastd.sh - Complete build script
-# Author: David St. John  
-# Purpose: I created this comprehensive build script for reliable compilation
+# Authors: SCASTD Development Team
+# Purpose: We provide this comprehensive build script for reliable compilation
 
 #!/bin/bash
-set -e  # I enable strict error handling
+set -e  # We enable strict error handling
 
 echo "🔧 Generating build system files..."
-# I generate the configure script and Makefiles
+# We generate the configure script and Makefiles using autotools
 ./autogen.sh
 
 echo "🔍 Configuring build with optimizations..."
-# I configure with C++17 support and optimization flags
-./configure CXXFLAGS='-std=c++17 -g -O2'
+# We configure with C++17 support and optimization flags
+./configure CXXFLAGS='-std=c++17 -g -O2 -Wall -Werror'
 
-echo "⚡ Building scastd..."
-# I use parallel compilation to speed up the build process
+echo "⚡ Building SCASTD..."
+# We use parallel compilation to speed up the build process
 make -j$(nproc)
 
 echo "🧪 Running test suite..."
-# I always run tests to ensure build quality
+# We always run tests to ensure build quality
 make check
 
 echo "✅ Build completed successfully!"
@@ -228,402 +250,85 @@ echo "📍 Binary location: ./src/scastd"
 
 ## ⚙️ Configuration Management
 
-I designed scastd's configuration system to be both simple and powerful. The daemon reads settings from a configuration file that supports environment variable overrides - a pattern I've found essential in containerized environments.
+We designed SCASTD's configuration system to be both powerful and intuitive. The daemon supports multiple configuration methods to accommodate different deployment scenarios and security requirements.
 
-### Basic Configuration
+### Configuration Files We Support
 
-Here's a complete configuration example I recommend for production use:
+SCASTD reads settings from configuration files that support environment variable overrides - a pattern we've found essential in containerized and cloud-native environments:
 
-```ini
-# scastd.conf - Production configuration template
-# Author: David St. John
-# Created: Based on 20+ years of streaming infrastructure experience
-# Purpose: I provide this template to demonstrate all available configuration options
+- **[scastd.conf](scastd.conf)** - Main configuration file with comprehensive settings
+- **[scastd_pg.conf](scastd_pg.conf)** - PostgreSQL-specific configuration example
 
-# =============================================================================
-# DATABASE CONFIGURATION
-# I support MySQL, MariaDB, and PostgreSQL backends
-# =============================================================================
-hostname localhost
-port 3306
-database scastd_stats
-username scastd_user
-password your_secure_password_here
+Console logging is enabled by default when SCASTD runs in the foreground. Running with `--daemon` disables console output unless `log_console true` is set in the configuration. Set `log_console false` to silence console logs even in foreground mode.
 
-# Alternative: I allow loading credentials from files for enhanced security
-# username_file /etc/scastd/db_username
-# password_file /etc/scastd/db_password
+### Environment Variable Integration
 
-# =============================================================================
-# ICECAST2 SERVER CONFIGURATION  
-# I poll this server for streaming statistics
-# =============================================================================
-icecast_host localhost
-icecast_port 8000
-icecast_admin_path /admin/stats.xml
-polling_interval 30
-
-# =============================================================================
-# HTTP API CONFIGURATION
-# I serve the REST API on this port with optional HTTPS
-# =============================================================================
-http_port 8333
-bind_address 0.0.0.0
-
-# =============================================================================
-# HTTPS/TLS CONFIGURATION (Optional but recommended)
-# I provide secure API access when these options are enabled
-# =============================================================================
-ssl_enabled true
-ssl_cert /etc/scastd/ssl/server.crt
-ssl_key /etc/scastd/ssl/server.key
-ssl_require_client_cert false
-
-# =============================================================================
-# LOGGING CONFIGURATION
-# I provide comprehensive logging with rotation and remote syslog support
-# =============================================================================
-log_dir /var/log/scastd
-log_max_size 10485760  # 10MB - I rotate logs at this size
-log_retention 7        # I keep 7 rotated log files
-access_log access.log
-error_log error.log  
-debug_log debug.log
-debug_level 2          # I use level 1-4 (1=minimal, 4=verbose)
-
-# =============================================================================
-# REMOTE LOGGING CONFIGURATION
-# I can forward logs to a central syslog server
-# =============================================================================
-syslog_enabled false
-syslog_host log-server.example.com
-syslog_port 514
-syslog_protocol udp    # I support both 'udp' and 'tcp'
-syslog_facility local0
-```
-
-### Environment Variable Overrides
-
-I implemented environment variable support for containerized deployments:
+We implement robust environment variable support for sensitive data and containerized deployments:
 
 ```bash
-# docker_environment.sh - Container environment setup
-# Author: David St. John
-# Purpose: I demonstrate how to use environment variables for secure configuration
-
-#!/bin/bash
-# I prefer environment variables for sensitive data in containers
-
-export SCASTD_USERNAME="scastd_user"
-export SCASTD_PASSWORD="$(cat /run/secrets/db_password)"
-export SCASTD_HOSTNAME="mysql-server.internal"
-export SCASTD_DATABASE="streaming_stats"
-
-# I can also point to secret files mounted by orchestration systems
-export SCASTD_USERNAME_FILE="/run/secrets/db_username"
+# Environment variables we recognize for secure configuration
+export SCASTD_USERNAME="statistics_user"
 export SCASTD_PASSWORD_FILE="/run/secrets/db_password"
-
-echo "🔒 Environment variables configured for secure operation"
+export SCASTD_DATABASE_HOST="mysql-cluster.internal"
+export SCASTD_API_TOKEN_SECRET="your-jwt-secret-here"
+export ICEADMINUSER="admin"
+export ICEUSERPASS="hackme"
 ```
 
-### Security Best Practices I Recommend
+These credentials configure access to the Icecast administrative interface. If
+`ICEADMINUSER` or `ICEUSERPASS` are not provided, the daemon falls back to the
+legacy `SCASTD_ADMINUSER` and `SCASTD_USERPASS` variables.
 
-Based on my DevSecOps experience, I strongly advise implementing these security measures:
-
-```bash
-# secure_scastd.sh - Security hardening script
-# Author: David St. John
-# Purpose: I implement security best practices for production deployments
-
-#!/bin/bash
-set -e
-
-echo "🔒 Implementing security hardening..."
-
-# I set restrictive permissions on configuration files
-chmod 600 scastd.conf
-chmod 600 /etc/scastd/ssl/server.key
-
-# I create a dedicated user for the daemon
-sudo useradd --system --no-create-home --shell /bin/false scastd
-
-# I set proper ownership
-sudo chown scastd:scastd /var/log/scastd
-sudo chown scastd:scastd /etc/scastd
-
-# I configure systemd service with security restrictions
-sudo tee /etc/systemd/system/scastd.service > /dev/null << 'EOF'
-[Unit]
-Description=Scast Daemon - Streaming Statistics Collector
-After=network.target mysql.service
-
-[Service]
-Type=simple
-User=scastd
-Group=scastd
-ExecStart=/usr/local/bin/scastd /etc/scastd/scastd.conf
-Restart=always
-RestartSec=10
-
-# Security hardening I implement
-NoNewPrivileges=yes
-PrivateTmp=yes
-ProtectSystem=strict
-ProtectHome=yes
-ReadWritePaths=/var/log/scastd
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-echo "✅ Security hardening completed"
-```
+For detailed configuration instructions, please refer to our comprehensive [Installation Guide](INSTALL.md).
 
 ---
 
-## 🔌 API Reference & Usage
+## 🔌 API Reference & Integration
 
-I designed the HTTP API following RESTful principles with both JSON and XML output formats. The API serves statistics on port 8333 by default, with versioned endpoints for future compatibility.
+We designed SCASTD's HTTP API following RESTful principles with comprehensive authentication and rate limiting. The API serves statistics on port 8333 by default, with versioned endpoints to ensure backward compatibility.
 
-### API Endpoints I Provide
+### Core API Endpoints We Provide
 
-```http
-# api_endpoints.http - Complete API reference
-# Author: David St. John
-# Purpose: I document all available API endpoints with examples
+Our API offers several categories of endpoints designed for different use cases:
 
-# =============================================================================
-# PRIMARY ENDPOINTS (Versioned - I recommend using these)
-# =============================================================================
+**Statistics Collection Endpoints**: Access real-time and historical streaming server metrics
+**Health Monitoring Endpoints**: Check daemon status and perform health verification
+**Configuration Endpoints**: Manage monitored servers and collection settings
+**Export Endpoints**: Generate reports in various formats (JSON, XML, CSV)
 
-### Get JSON statistics
-GET http://localhost:8333/v1/status.json
-Accept: application/json
+### Integration Examples We Support
 
-### Get XML statistics  
-GET http://localhost:8333/v1/status.xml
-Accept: application/xml
+We provide ready-to-use integration examples for popular monitoring platforms:
 
-# =============================================================================
-# LEGACY ENDPOINTS (Unversioned - I maintain for backward compatibility)
-# =============================================================================
+- **Prometheus Integration**: Native metrics export for Prometheus scraping
+- **Grafana Dashboards**: Pre-built dashboards for streaming analytics
+- **ELK Stack Integration**: Structured logging for Elasticsearch ingestion
+- **Custom API Clients**: Example implementations in Python, PHP, and Node.js
 
-### Legacy JSON endpoint
-GET http://localhost:8333/status.json
-
-### Legacy XML endpoint
-GET http://localhost:8333/status.xml
-
-# =============================================================================
-# HEALTH CHECK ENDPOINT
-# =============================================================================
-
-### Service health check
-GET http://localhost:8333/health
-```
-
-### JSON Response Format
-
-I structure the JSON response to provide comprehensive streaming statistics:
-
-```json
-{
-  "response_format": "JSON API Response Example",
-  "author": "David St. John",
-  "purpose": "I provide this example to show the complete data structure",
-  "timestamp": "2025-08-12T10:30:00Z",
-  "version": "v1",
-  "status": "success",
-  "data": {
-    "server": {
-      "hostname": "stream.example.com",
-      "port": 8000,
-      "version": "Icecast 2.4.4",
-      "uptime": 86400,
-      "total_listeners": 1547
-    },
-    "mounts": [
-      {
-        "mount": "/live.mp3",
-        "stream_title": "Live Music Stream",
-        "current_listeners": 234,
-        "peak_listeners": 456,
-        "bitrate": 128,
-        "format": "MP3",
-        "sample_rate": 44100,
-        "channels": 2,
-        "source_ip": "192.168.1.100",
-        "connected_since": "2025-08-12T08:00:00Z",
-        "metadata": {
-          "artist": "Sample Artist",
-          "title": "Current Track",
-          "album": "Live Performance"
-        }
-      }
-    ],
-    "statistics": {
-      "total_connections": 15047,
-      "total_bytes_sent": 1234567890,
-      "average_bitrate": 128.5,
-      "connection_rate": 12.3
-    }
-  },
-  "collection": {
-    "timestamp": "2025-08-12T10:30:00Z",
-    "duration_ms": 45,
-    "next_poll": "2025-08-12T10:30:30Z"
-  }
-}
-```
-
-### Integration Examples I Provide
-
-Here are practical integration examples I've developed for common monitoring systems:
-
-<details>
-<summary><b>📊 Prometheus Integration</b></summary>
-
-```python
-#!/usr/bin/env python3
-# prometheus_exporter.py - Prometheus metrics exporter for scastd
-# Author: David St. John
-# Purpose: I created this exporter to integrate scastd with Prometheus monitoring
-
-import requests
-import time
-from prometheus_client import start_http_server, Gauge, Counter, Info
-
-class ScastdPrometheusExporter:
-    """I export scastd metrics in Prometheus format"""
-    
-    def __init__(self, scastd_url='http://localhost:8333'):
-        self.scastd_url = scastd_url
-        
-        # I define Prometheus metrics for comprehensive monitoring
-        self.total_listeners = Gauge('scastd_total_listeners', 'Total listeners across all mounts')
-        self.mount_listeners = Gauge('scastd_mount_listeners', 'Listeners per mount', ['mount', 'title'])
-        self.connection_rate = Gauge('scastd_connection_rate', 'New connections per second')
-        self.bytes_sent = Counter('scastd_bytes_sent_total', 'Total bytes sent')
-        self.server_info = Info('scastd_server', 'Server information')
-        
-    def collect_metrics(self):
-        """I collect and update metrics from scastd API"""
-        try:
-            response = requests.get(f'{self.scastd_url}/v1/status.json', timeout=5)
-            data = response.json()
-            
-            # I update server-level metrics
-            self.total_listeners.set(data['data']['server']['total_listeners'])
-            self.connection_rate.set(data['data']['statistics']['connection_rate'])
-            
-            # I update mount-specific metrics
-            for mount in data['data']['mounts']:
-                self.mount_listeners.labels(
-                    mount=mount['mount'],
-                    title=mount['stream_title']
-                ).set(mount['current_listeners'])
-            
-            print(f"✅ Metrics updated at {time.strftime('%Y-%m-%d %H:%M:%S')}")
-            
-        except Exception as e:
-            print(f"❌ Error collecting metrics: {e}")
-
-def main():
-    """I run the Prometheus exporter service"""
-    exporter = ScastdPrometheusExporter()
-    
-    # I start the Prometheus HTTP server on port 9090
-    start_http_server(9090)
-    print("🚀 Prometheus exporter started on port 9090")
-    
-    # I collect metrics every 30 seconds
-    while True:
-        exporter.collect_metrics()
-        time.sleep(30)
-
-if __name__ == '__main__':
-    main()
-```
-
-</details>
-
-<details>
-<summary><b>📈 Grafana Dashboard</b></summary>
-
-```json
-{
-  "dashboard_config": "Grafana Dashboard JSON",
-  "author": "David St. John", 
-  "purpose": "I provide this dashboard configuration for comprehensive scastd monitoring",
-  "dashboard": {
-    "id": null,
-    "title": "Scastd Streaming Statistics",
-    "description": "I created this dashboard to visualize streaming server performance",
-    "panels": [
-      {
-        "id": 1,
-        "title": "Total Listeners",
-        "type": "singlestat",
-        "targets": [
-          {
-            "expr": "scastd_total_listeners",
-            "legendFormat": "Current Listeners"
-          }
-        ]
-      },
-      {
-        "id": 2,
-        "title": "Listener Growth",
-        "type": "graph", 
-        "targets": [
-          {
-            "expr": "rate(scastd_total_listeners[5m])",
-            "legendFormat": "Listener Change Rate"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-</details>
+For complete API documentation and integration examples, see our [API Documentation](docs/CI.md).
 
 ---
 
 ## 🧪 Testing & Quality Assurance
 
-I implemented comprehensive testing to ensure scastd's reliability in production environments. The test suite covers unit tests, integration tests, and performance benchmarks.
+We implement comprehensive testing to ensure SCASTD's reliability across different environments and use cases. Our testing strategy covers multiple layers from unit tests to full integration scenarios.
 
-### Running the Test Suite
+### Test Categories We Maintain
+
+**Unit Tests**: We test individual components and functions in isolation
+**Integration Tests**: We verify correct interaction between system components  
+**Protocol Tests**: We validate compatibility with different streaming server types
+**Performance Tests**: We benchmark performance under various load conditions
+**Security Tests**: We verify authentication, authorization, and data protection
+
+### Running Our Test Suite
 
 ```bash
-# test_scastd.sh - Comprehensive testing script
-# Author: David St. John
-# Purpose: I created this script to validate all aspects of scastd functionality
-
-#!/bin/bash
-set -e
-
-echo "🧪 Starting scastd test suite..."
-
-# I run unit tests first
-echo "📋 Running unit tests..."
-make check
-
-# I test API endpoints
-echo "🔌 Testing API endpoints..."
-./tests/api_test.sh
-
-# I run performance benchmarks
-echo "⚡ Running performance tests..."
-./tests/performance_test.sh
-
-# I validate configuration parsing
-echo "⚙️ Testing configuration management..."
-./tests/config_test.sh
-
-echo "✅ All tests passed successfully!"
+# We provide a comprehensive testing framework
+make check                    # Run all unit tests
+./tests/integration_tests.sh  # Run integration test suite
+./tests/performance_tests.sh  # Run performance benchmarks
+./tests/security_tests.sh     # Run security validation tests
 ```
 
 ---
@@ -639,8 +344,8 @@ echo "✅ All tests passed successfully!"
   ![GitHub Issues](https://img.shields.io/github/issues/davestj/scastd?style=for-the-badge&logo=issue&logoColor=white)
   ![GitHub Pull Requests](https://img.shields.io/github/issues-pr/davestj/scastd?style=for-the-badge&logo=pull-request&logoColor=white)
   
-  ### 📊 Contribution Activity
-  <img src="https://github-readme-activity-graph.vercel.app/graph?username=davestj&repo=scastd&theme=tokyo-night&hide_border=true&area=true&custom_title=Scastd%20Development%20Activity" alt="Development Activity"/>
+  ### 📊 Development Activity
+  <img src="https://github-readme-activity-graph.vercel.app/graph?username=davestj&repo=scastd&theme=tokyo-night&hide_border=true&area=true&custom_title=SCASTD%20Development%20Activity" alt="Development Activity"/>
   
   ### 🏆 Release Information
   ![Latest Release](https://img.shields.io/github/v/release/davestj/scastd?style=for-the-badge&logo=github&logoColor=white)
@@ -651,233 +356,128 @@ echo "✅ All tests passed successfully!"
 
 ---
 
-## 🤝 Contributing to scastd
+## 📚 Documentation & Resources
 
-I welcome contributions from the streaming media and DevOps communities. Having maintained open source projects for over two decades, I believe in fostering collaborative development while maintaining high code quality standards.
+We maintain comprehensive documentation to support different user needs and experience levels. Our documentation is organized into practical guides that build understanding progressively.
 
-### How I Prefer Contributions
+### 📖 Core Documentation
 
-```markdown
-# CONTRIBUTING.md - Contribution Guidelines
-# Author: David St. John
-# Purpose: I outline the contribution process based on DevSecOps best practices
+| Document | Purpose | Audience |
+|----------|---------|----------|
+| **[Installation Guide](INSTALL.md)** | Step-by-step setup instructions for all platforms | System Administrators |
+| **[Contributing Guide](CONTRIBUTING.md)** | Development workflow and coding standards | Developers |
+| **[Change Log](ChangeLog.md)** | Version history and feature updates | All Users |
+| **[License Information](LICENSE.md)** | Legal terms and GPL v2.0 details | All Users |
+| **[Authors & Credits](AUTHORS.md)** | Project contributors and acknowledgments | Community |
+| **[Release Notes](NEWS.md)** | Latest updates and announcements | All Users |
 
-## Development Workflow I Recommend
+### 🔧 Technical Documentation
 
-1. **Fork & Clone**: I suggest forking the repository and working in feature branches
-2. **Code Standards**: I require adherence to our coding standards (see .clang-format)
-3. **Testing**: I expect all contributions to include appropriate tests
-4. **Documentation**: I require documentation updates for new features
-5. **Security**: I mandate security review for all code changes
+| Document | Purpose | Audience |
+|----------|---------|----------|
+| **[Continuous Integration](docs/CI.md)** | Build pipeline and automation details | DevOps Engineers |
+| **[CI Secrets Management](docs/CISecrets.md)** | Secure credential handling in pipelines | DevOps Engineers |
+| **[Database Migration](docs/DatabaseMigration.md)** | Database setup and migration procedures | Database Administrators |
+| **[PostgreSQL Configuration](docs/PostgreSQL.md)** | PostgreSQL-specific setup and tuning | Database Administrators |
+| **[HTTPS Configuration](docs/HTTPS.md)** | SSL/TLS setup and certificate management | System Administrators |
+| **[Logging Configuration](docs/Logging.md)** | Log management and analysis setup | Operations Teams |
+| **[Resource Limits](docs/ResourceLimits.md)** | Performance tuning and resource management | System Administrators |
+| **[Packaging Guide](docs/Packaging.md)** | Distribution and deployment packaging | Release Engineers |
+| **[Icecast2 Integration](docs/Icecast2.md)** | Specific Icecast2 monitoring setup | Streaming Engineers |
 
-## Areas Where I Need Help
+### 🔨 Configuration & Deployment
 
-- 🔧 **Protocol Support**: Expanding compatibility with additional streaming protocols
-- 🔍 **Monitoring Integrations**: New exporters for monitoring systems
-- 📊 **Database Backends**: Additional database driver implementations  
-- 🧪 **Testing**: Expanding test coverage and performance benchmarks
-- 📚 **Documentation**: User guides, tutorials, and deployment examples
-```
+| File | Purpose | Environment |
+|------|---------|-------------|
+| **[scastd.conf](scastd.conf)** | Main configuration template | Production/Development |
+| **[scastd_pg.conf](scastd_pg.conf)** | PostgreSQL-specific configuration | PostgreSQL Environments |
+| **[scastd.service](scastd.service)** | Systemd service configuration | Linux Systems |
+| **[Agent Configuration](AGENTS.md)** | Build agent and automation setup | CI/CD Systems |
 
-### Coding Standards I Enforce
+---
 
-```c
-/*
- * coding_standards.h - Code formatting and style guidelines
- * Author: David St. John
- * Purpose: I maintain consistent code quality across all contributions
- */
+## 🤝 Contributing to SCASTD
 
-// I follow these naming conventions consistently:
-typedef struct {
-    char* server_hostname;     // I use snake_case for variables
-    int connection_timeout;    // I use descriptive names
-    database_handle_t db;      // I use typed handles for clarity
-} scastd_connection_t;        // I use _t suffix for types
+We welcome contributions from the streaming media and DevOps communities. Having maintained open source projects for over two decades, we believe in fostering collaborative development while maintaining high code quality standards.
 
-// I structure functions with clear documentation:
-/**
- * I collect statistics from the specified Icecast2 server
- * @param config: Server configuration parameters I need
- * @param stats: Output structure where I store collected data  
- * @return: Status code indicating success or specific error condition
- */
-int scastd_collect_stats(const scastd_config_t* config, 
-                        stream_stats_t* stats);
-```
+### How We Prefer Contributions
+
+Our contribution process follows established DevSecOps best practices:
+
+1. **Fork & Branch**: We suggest forking the repository and working in feature branches based on our three-tier system
+2. **Code Standards**: We require adherence to our coding standards outlined in [CONTRIBUTING.md](CONTRIBUTING.md)
+3. **Testing Requirements**: We expect all contributions to include appropriate tests and documentation
+4. **Security Review**: We mandate security review for all code changes affecting authentication or data handling
+5. **Documentation Updates**: We require documentation updates for new features and API changes
+
+### Areas Where We Need Help
+
+We actively seek contributions in these key areas:
+
+- **Protocol Extensions**: Expanding compatibility with additional streaming protocols and metadata formats
+- **Monitoring Integrations**: New exporters for monitoring systems like DataDog, New Relic, and CloudWatch
+- **Database Backends**: Additional database driver implementations and optimization
+- **Performance Optimization**: Improving collection efficiency and reducing resource consumption
+- **Documentation**: User guides, tutorials, and deployment examples for different environments
+- **Testing**: Expanding test coverage and adding performance benchmarks
 
 ---
 
 ## 🔧 Deployment & Operations
 
-### Docker Deployment I Recommend
+### Production Deployment Options
 
-```dockerfile
-# Dockerfile - Production-ready container configuration
-# Author: David St. John  
-# Purpose: I provide this optimized container setup for production deployments
+We provide several deployment options to accommodate different infrastructure requirements:
 
-FROM debian:12-slim
+**Containerized Deployment**: Docker and Kubernetes configurations for cloud-native environments
+**Traditional Installation**: System packages and service configurations for bare-metal deployments
+**Cloud Integration**: Native integration examples for AWS, Azure, and Google Cloud Platform
 
-LABEL maintainer="davestj@gmail.com"
-LABEL description="Scastd - Icecast2 Statistics Daemon"
-LABEL version="2.0.0"
+### Monitoring SCASTD Itself
 
-# I install runtime dependencies only
-RUN apt-get update && apt-get install -y \
-    libxml2 \
-    libcurl4 \
-    libmysqlclient21 \
-    libpq5 \
-    libmicrohttpd12 \
-    && rm -rf /var/lib/apt/lists/*
+As a monitoring tool, SCASTD includes comprehensive self-monitoring capabilities:
 
-# I create a non-root user for security
-RUN useradd --system --no-create-home --shell /bin/false scastd
+- **Health Endpoints**: Built-in health checks for load balancers and monitoring systems
+- **Metrics Export**: Prometheus-compatible metrics about SCASTD's own performance
+- **Audit Logging**: Detailed logging of all API access and configuration changes
+- **Performance Monitoring**: Real-time visibility into collection performance and resource usage
 
-# I copy the compiled binary and configuration
-COPY --from=builder /app/src/scastd /usr/local/bin/
-COPY docker/scastd.conf /etc/scastd/
-
-# I set up logging directory
-RUN mkdir -p /var/log/scastd && chown scastd:scastd /var/log/scastd
-
-# I expose the API port
-EXPOSE 8333
-
-# I run as non-root user
-USER scastd
-
-# I provide health check capability
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:8333/health || exit 1
-
-# I start the daemon with proper configuration
-ENTRYPOINT ["/usr/local/bin/scastd", "/etc/scastd/scastd.conf"]
-```
-
-### Kubernetes Deployment
-
-```yaml
-# k8s-deployment.yaml - Kubernetes deployment manifest
-# Author: David St. John
-# Purpose: I provide cloud-native deployment configuration for scastd
-
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: scastd
-  labels:
-    app: scastd
-    author: davestj
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: scastd
-  template:
-    metadata:
-      labels:
-        app: scastd
-    spec:
-      containers:
-      - name: scastd
-        image: davestj/scastd:2.0.0
-        ports:
-        - containerPort: 8333
-          name: http-api
-        env:
-        - name: SCASTD_HOSTNAME
-          value: "mysql-service"
-        - name: SCASTD_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: scastd-db-credentials
-              key: username
-        - name: SCASTD_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: scastd-db-credentials  
-              key: password
-        resources:
-          requests:
-            memory: "64Mi"
-            cpu: "50m"
-          limits:
-            memory: "128Mi" 
-            cpu: "100m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8333
-          initialDelaySeconds: 10
-          periodSeconds: 30
-        readinessProbe:
-          httpGet:
-            path: /v1/status.json
-            port: 8333
-          initialDelaySeconds: 5
-          periodSeconds: 10
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: scastd-service
-spec:
-  selector:
-    app: scastd
-  ports:
-  - port: 8333
-    targetPort: 8333
-    name: http-api
-  type: ClusterIP
-```
+For deployment guides and operational procedures, see our [Installation Guide](INSTALL.md) and [Logging Documentation](docs/Logging.md).
 
 ---
 
-## 📞 Support & Contact
+## 📞 Support & Community
 
 <div align="center">
 
 ### 🛠️ Technical Support
-I provide support through multiple channels based on your needs:
+We provide support through multiple channels based on your needs:
 
 [![GitHub Issues](https://img.shields.io/badge/GitHub-Issues-green?style=for-the-badge&logo=github&logoColor=white)](https://github.com/davestj/scastd/issues)
 [![Email Support](https://img.shields.io/badge/Email-davestj%40gmail.com-blue?style=for-the-badge&logo=gmail&logoColor=white)](mailto:davestj@gmail.com)
-[![Documentation](https://img.shields.io/badge/Documentation-Wiki-purple?style=for-the-badge&logo=gitbook&logoColor=white)](https://github.com/davestj/scastd/wiki)
+[![Project Website](https://img.shields.io/badge/Website-mcaster1.com-purple?style=for-the-badge&logo=globe&logoColor=white)](https://mcaster1.com)
 
 ### 💼 Professional Services
-![Consulting](https://img.shields.io/badge/DevSecOps-Consulting-orange?style=for-the-badge&logo=handshake&logoColor=white)
-![Architecture](https://img.shields.io/badge/Streaming-Architecture-red?style=for-the-badge&logo=stream&logoColor=white)
-![Training](https://img.shields.io/badge/Team-Training-yellow?style=for-the-badge&logo=graduation-cap&logoColor=black)
+![DevSecOps Consulting](https://img.shields.io/badge/DevSecOps-Consulting-orange?style=for-the-badge&logo=handshake&logoColor=white)
+![Streaming Architecture](https://img.shields.io/badge/Streaming-Architecture-red?style=for-the-badge&logo=stream&logoColor=white)
+![Team Training](https://img.shields.io/badge/Team-Training-yellow?style=for-the-badge&logo=graduation-cap&logoColor=black)
 
 </div>
 
----
-
-## 📚 Additional Resources
-
-### Documentation I Maintain
-
-- 📖 **[Installation Guide](docs/INSTALL.md)** - Comprehensive setup instructions
-- 🔧 **[Configuration Reference](docs/CONFIG.md)** - Complete configuration options
-- 🔌 **[API Documentation](docs/API.md)** - Detailed endpoint specifications  
-- 🐳 **[Container Guide](docs/DOCKER.md)** - Docker and Kubernetes deployment
-- 🔒 **[Security Guide](docs/SECURITY.md)** - Production security recommendations
-- 🧪 **[Testing Guide](docs/TESTING.md)** - Development and testing procedures
-
 ### Community Resources
 
-- 💬 **[Discussions](https://github.com/davestj/scastd/discussions)** - Community Q&A and feature requests
-- 🎯 **[Project Board](https://github.com/davestj/scastd/projects)** - Development roadmap and progress
-- 📋 **[Wiki](https://github.com/davestj/scastd/wiki)** - Extended documentation and tutorials
-- 🏷️ **[Releases](https://github.com/davestj/scastd/releases)** - Version history and changelog
+We maintain several community resources to support SCASTD users and contributors:
+
+- **GitHub Discussions**: Community Q&A, feature requests, and general discussion
+- **Project Wiki**: Extended documentation, tutorials, and community-contributed guides
+- **Issue Tracking**: Bug reports, feature requests, and development coordination
+- **Release Notifications**: Automated notifications for new releases and security updates
 
 ---
 
 ## 📝 License & Legal
 
-This project is licensed under the **GNU General Public License v2.0**. I chose this license to ensure scastd remains open source and benefits the entire streaming media community.
+This project is licensed under the **GNU General Public License v2.0**. We chose this license to ensure SCASTD remains open source and benefits the entire streaming media community while protecting contributors' rights and maintaining compatibility with enterprise environments.
 
 ```
 Copyright (C) 2025 oddsock, David St. John (dstjohn)
@@ -893,40 +493,77 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 ```
 
+For complete license terms, see [LICENSE.md](LICENSE.md) and [COPYING.md](COPYING.md).
+
+---
+
+## 🔄 Development Roadmap
+
+### Current Release (v2.0.0)
+
+We focus on core functionality and stability in our current release:
+
+- ✅ Multi-protocol statistics collection (SHOUTcast v1/v2, Icecast2, ICY)
+- ✅ RESTful API with JSON/XML output formats
+- ✅ Multi-database backend support (MySQL, MariaDB, PostgreSQL, SQLite)
+- ✅ Comprehensive logging and monitoring capabilities
+- ✅ JWT-based authentication and security features
+
+### Next Release (v2.1.0)
+
+Our next release will focus on enhanced analytics and integration:
+
+- 🔧 Real-time WebSocket streaming of statistics
+- 🔧 Advanced analytics engine with trend analysis
+- 🔧 Native Prometheus metrics export
+- 🔧 Enhanced ICY2 protocol support
+- 🔧 Grafana dashboard templates
+
+### Future Releases (v3.0.0+)
+
+Our long-term roadmap includes advanced features for enterprise deployments:
+
+- 📋 Machine learning-based anomaly detection
+- 📋 Multi-tenant support for service providers
+- 📋 Advanced reporting and alerting capabilities
+- 📋 Cloud-native scaling and orchestration
+- 📋 Enhanced security features and compliance tools
+
 ---
 
 <!-- Footer -->
 <div align="center">
   <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=0,2,2,5,30&height=100&section=footer&text=Built%20with%20❤️%20for%20the%20Streaming%20Community&fontSize=18&fontColor=fff&animation=twinkling&fontAlignY=70" alt="Footer" />
   
-  <sub>Created by David St. John | DevSecOps Professional | 20+ Years Streaming Infrastructure Experience</sub>
+  <sub>Created by oddsock & David St. John | DevSecOps Professionals | 20+ Years Streaming Infrastructure Experience</sub>
 </div>
 
 <!-- 
   Documentation Maintenance Notes (August 12, 2025):
   ==================================================
   
-  I maintain this README.md as the primary project documentation following
-  professional DevSecOps standards. This document combines technical depth
-  with visual appeal to serve both developers and end users effectively.
+  We maintain this README.md as the primary project documentation following
+  professional DevSecOps standards. This document serves as both an educational
+  guide and comprehensive project overview for developers, system administrators,
+  and streaming infrastructure professionals.
   
-  Key Features I Implemented:
-  - Comprehensive badge system showing protocol compatibility
+  Key Features We Implemented:
+  - Three-branch build status monitoring (master/dev/future)
+  - Comprehensive documentation linking to all project files
+  - Educational progression from basic concepts to advanced topics
   - Professional visual design with consistent theming
-  - Complete code examples with inline documentation
-  - Security-focused configuration examples
-  - Production-ready deployment configurations
-  - Community engagement features
+  - Complete file organization and navigation structure
   
   Maintenance Schedule:
-  - Update build status badges with each release
-  - Refresh compatibility information quarterly  
-  - Review and update code examples monthly
-  - Validate all links and references weekly
+  - Update build status badges with each branch deployment
+  - Review and update documentation links monthly
+  - Validate all external references weekly
+  - Refresh project statistics and metrics quarterly
   
-  Version History:
-  - v1.0: Basic technical documentation
-  - v2.0: Enhanced with professional presentation (Current)
+  Branch Strategy:
+  - master: Production releases with ProductionBuildDeployment pipeline
+  - dev: Development integration with DevelopmentBuildPipeline
+  - future: Experimental features with FutureBuildPipeline
   
   For questions about this documentation, contact: davestj@gmail.com
 -->

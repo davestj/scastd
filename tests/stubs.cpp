@@ -20,22 +20,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#ifndef SCASTD_H
-#define SCASTD_H
+#include "../src/i18n.h"
+#include "../src/db/SQLiteDatabase.h"
 
-#include <string>
-#include <map>
-#include "db/IDatabase.h"
+void init_i18n() {}
 
-namespace scastd {
-int run(const std::string &configPath,
-        const std::map<std::string, std::string> &overrides,
-        bool defaultConsoleLog);
-int dumpDatabase(const std::string &configPath,
-                 const std::map<std::string, std::string> &overrides,
-                 const std::string &dumpDir,
-                 bool defaultConsoleLog);
-bool setupDatabase(const std::string &dbType, IDatabase *db);
-}
-
-#endif // SCASTD_H
+SQLiteDatabase::SQLiteDatabase() : db(nullptr), stmt(nullptr) {}
+SQLiteDatabase::~SQLiteDatabase() {}
+bool SQLiteDatabase::connect(const std::string &, const std::string &, const std::string &, int, const std::string &, const std::string &) { return false; }
+bool SQLiteDatabase::query(const std::string &) { return false; }
+IDatabase::Row SQLiteDatabase::fetch() { return {}; }
+void SQLiteDatabase::disconnect() {}

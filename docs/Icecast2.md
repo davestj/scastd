@@ -30,3 +30,17 @@ int main() {
 
 The `fetchStats` method returns a vector of `StreamInfo` structures which can be
 used by the existing database layer to record real‑time stream statistics.
+
+## Configuration
+
+The Icecast statistics client reads credentials from the environment. For
+backward compatibility the daemon checks the legacy `SCASTD_*` variables if the
+new names are not set:
+
+| Variable | Description | Fallback |
+| -------- | ----------- | -------- |
+| `ICEADMINUSER` | Username for the Icecast admin interface | `SCASTD_ADMINUSER` |
+| `ICEUSERPASS` | Password for the admin user | `SCASTD_USERPASS` |
+
+These values are used when establishing the HTTP connection to
+`/admin/stats.xml`.

@@ -1,0 +1,320 @@
+---
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Extract version from tag for use across jobs
+  prepare:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG#v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION from tag: $TAG"
+
+  # Build packages for different distributions
+  build-packages:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distro: debian-12
+            os: ubuntu-22.04
+            container: debian:12
+            package_name: scastd_${{ needs.prepare.outputs.version }}_bookworm_amd64.deb
+          - distro: debian-trixie
+            os: ubuntu-22.04
+            container: debian:trixie
+            package_name: scastd_${{ needs.prepare.outputs.version }}_trixie_amd64.deb
+          - distro: ubuntu-24.04
+            os: ubuntu-24.04
+            package_name: scastd_${{ needs.prepare.outputs.version }}_noble_amd64.deb
+          - distro: macos-arm64
+            os: macos-14
+            package_name: scastd-${{ needs.prepare.outputs.version }}.pkg
+            formula_name: scastd.rb
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (Debian/Ubuntu)
+        if: ${{ contains('debian-12 debian-trixie ubuntu-24.04', matrix.distro) }}
+        run: |
+          SUDO=""
+          command -v sudo >/dev/null 2>&1 && SUDO="sudo"
+          $SUDO apt-get update
+          $SUDO apt-get install -y \
+            build-essential \
+            autoconf automake libtool pkg-config \
+            gettext autopoint \
+            libxml2-dev libcurl4-openssl-dev \
+            libmysqlclient-dev mariadb-client libpq-dev libmicrohttpd-dev \
+            wget dpkg-dev
+
+          # Install newer gettext for all distributions
+          wget https://ftp.gnu.org/pub/gnu/gettext/gettext-0.22.tar.gz
+          tar -xf gettext-0.22.tar.gz
+          cd gettext-0.22
+          ./configure --disable-shared
+          make -j$(nproc)
+          $SUDO make install
+          cd ..
+          echo "PATH=/usr/local/bin:$PATH" >> $GITHUB_ENV
+
+          # Install MySQL Connector C++ based on distribution
+          if [[ "${{ matrix.distro }}" == "debian-12" ]]; then
+            wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10_9.4.0-1debian12_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2_9.4.0-1debian12_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb
+            $SUDO dpkg -i libmysqlcppconn10_9.4.0-1debian12_amd64.deb libmysqlcppconnx2_9.4.0-1debian12_amd64.deb libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb || true
+            $SUDO apt-get -f install -y
+          elif [[ "${{ matrix.distro }}" == "debian-trixie" ]]; then
+            wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10_9.4.0-1debian12_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2_9.4.0-1debian12_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb
+            $SUDO dpkg -i libmysqlcppconn10_9.4.0-1debian12_amd64.deb libmysqlcppconnx2_9.4.0-1debian12_amd64.deb libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb || true
+            $SUDO apt-get -f install -y
+          elif [[ "${{ matrix.distro }}" == "ubuntu-24.04" ]]; then
+            wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10_9.4.0-1ubuntu24.04_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2_9.4.0-1ubuntu24.04_amd64.deb
+            wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn-dev_9.4.0-1ubuntu24.04_amd64.deb
+            $SUDO dpkg -i libmysqlcppconn10_9.4.0-1ubuntu24.04_amd64.deb libmysqlcppconnx2_9.4.0-1ubuntu24.04_amd64.deb libmysqlcppconn-dev_9.4.0-1ubuntu24.04_amd64.deb || true
+            $SUDO apt-get -f install -y
+          fi
+
+          # Set MySQL Connector environment
+          INC=/usr/include/mysql-cppconn/jdbc
+          LIB=/usr/lib/x86_64-linux-gnu
+          export CPPFLAGS="-I$INC $CPPFLAGS"
+          export LDFLAGS="-L$LIB $LDFLAGS"
+          export PKG_CONFIG_PATH="$LIB/pkgconfig:$PKG_CONFIG_PATH"
+          echo "CPPFLAGS=$CPPFLAGS" >> $GITHUB_ENV
+          echo "LDFLAGS=$LDFLAGS" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
+
+      - name: Install dependencies (macOS)
+        if: ${{ matrix.distro == 'macos-arm64' }}
+        run: |
+          brew update
+          brew install \
+            autoconf automake libtool pkg-config gettext \
+            libxml2 curl mysql-client libpq libmicrohttpd
+
+          # Set Homebrew environment for ARM64
+          B=/opt/homebrew/opt
+          export PKG_CONFIG_PATH=$B/libxml2/lib/pkgconfig:$PKG_CONFIG_PATH
+          export PKG_CONFIG_PATH=$B/mysql-client/lib/pkgconfig:$PKG_CONFIG_PATH
+          export PKG_CONFIG_PATH=$B/libpq/lib/pkgconfig:$PKG_CONFIG_PATH
+          export PATH=$B/mysql-client/bin:$PATH
+          export PATH=$B/gettext/bin:$PATH
+          export CPPFLAGS="-I$B/mysql-client/include $CPPFLAGS"
+          export LDFLAGS="-L$B/mysql-client/lib $LDFLAGS"
+          echo "PATH=$PATH" >> $GITHUB_ENV
+          echo "CPPFLAGS=$CPPFLAGS" >> $GITHUB_ENV
+          echo "LDFLAGS=$LDFLAGS" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
+
+      - name: Setup MySQL Connector (macOS)
+        if: ${{ matrix.distro == 'macos-arm64' }}
+        uses: ./.github/actions/setup-mysql-connector
+        with:
+          version: mysql-connector-c++-9.4.0-macos15-arm64
+
+      - name: Build release package
+        run: |
+          # Determine appropriate DISTRO value for make release
+          case "${{ matrix.distro }}" in
+            "debian-12")
+              DISTRO_NAME="bookworm"
+              ;;
+            "debian-trixie")
+              DISTRO_NAME="trixie"
+              ;;
+            "ubuntu-24.04")
+              DISTRO_NAME="noble"
+              ;;
+            "macos-arm64")
+              DISTRO_NAME=""
+              ;;
+          esac
+
+          # Run make release with appropriate parameters
+          if [[ "${{ matrix.distro }}" == "macos-arm64" ]]; then
+            make release VERSION=${{ needs.prepare.outputs.version }}
+          else
+            make release VERSION=${{ needs.prepare.outputs.version }} DISTRO=$DISTRO_NAME
+          fi
+
+      - name: Calculate checksums
+        run: |
+          cd dist
+          if [[ "${{ matrix.distro }}" == "macos-arm64" ]]; then
+            # Calculate checksums for macOS artifacts
+            shasum -a 256 *.pkg > checksums.txt
+            shasum -a 256 *.rb >> checksums.txt
+          else
+            # Calculate checksums for Debian/Ubuntu packages
+            sha256sum *.deb > checksums.txt
+          fi
+          cat checksums.txt
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.distro }}-packages
+          path: |
+            dist/
+          retention-days: 30
+
+  # Create GitHub release with all artifacts
+  create-release:
+    needs: [prepare, build-packages]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          
+          # Collect all package files and checksums
+          find artifacts -name "*.deb" -exec cp {} release-assets/ \;
+          find artifacts -name "*.pkg" -exec cp {} release-assets/ \;
+          find artifacts -name "*.rb" -exec cp {} release-assets/ \;
+          
+          # Combine all checksum files
+          echo "# SCASTD ${{ needs.prepare.outputs.version }} Release Checksums" > release-assets/CHECKSUMS.txt
+          echo "" >> release-assets/CHECKSUMS.txt
+          
+          for checksum_file in artifacts/*/checksums.txt; do
+            if [[ -f "$checksum_file" ]]; then
+              echo "## $(basename $(dirname "$checksum_file"))" >> release-assets/CHECKSUMS.txt
+              cat "$checksum_file" >> release-assets/CHECKSUMS.txt
+              echo "" >> release-assets/CHECKSUMS.txt
+            fi
+          done
+          
+          # List all release assets
+          echo "Release assets prepared:"
+          ls -la release-assets/
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          cat > release_notes.md << 'EOF'
+          ## SCASTD ${{ needs.prepare.outputs.version }} Release
+
+          This release includes packages for multiple platforms and architectures.
+
+          ### 📦 Package Downloads
+
+          **Debian/Ubuntu Packages:**
+          - `scastd_${{ needs.prepare.outputs.version }}_bookworm_amd64.deb` - Debian 12 (Bookworm)
+          - `scastd_${{ needs.prepare.outputs.version }}_trixie_amd64.deb` - Debian Trixie
+          - `scastd_${{ needs.prepare.outputs.version }}_noble_amd64.deb` - Ubuntu 24.04 (Noble)
+
+          **macOS Packages:**
+          - `scastd-${{ needs.prepare.outputs.version }}.pkg` - macOS ARM64 installer package
+          - `scastd.rb` - Homebrew formula for ARM64 macOS
+
+          ### 🔐 Security
+
+          All packages include SHA256 checksums in `CHECKSUMS.txt`. Verify package integrity before installation:
+
+          ```bash
+          # For Debian/Ubuntu packages
+          sha256sum -c CHECKSUMS.txt
+
+          # For macOS packages
+          shasum -a 256 -c CHECKSUMS.txt
+          ```
+
+          ### 📚 Installation Instructions
+
+          **Debian/Ubuntu:**
+          ```bash
+          # Download and install the appropriate .deb package
+          sudo dpkg -i scastd_${{ needs.prepare.outputs.version }}_*_amd64.deb
+          sudo apt-get install -f  # Fix any dependency issues
+          sudo systemctl enable --now scastd
+          ```
+
+          **macOS (Traditional):**
+          ```bash
+          # Download and install the .pkg file
+          sudo installer -pkg scastd-${{ needs.prepare.outputs.version }}.pkg -target /
+          ```
+
+          **macOS (Homebrew):**
+          ```bash
+          # Install from the included formula
+          brew install --formula scastd.rb
+          brew services start scastd
+          ```
+
+          ### 🔧 Configuration
+
+          After installation, configure SCASTD by editing the appropriate configuration file:
+          - Linux: `/etc/scastd/scastd.conf`
+          - macOS (traditional): `/usr/local/etc/scastd/scastd.conf`
+          - macOS (Homebrew): `/opt/homebrew/etc/scastd/scastd.conf`
+
+          For detailed configuration instructions, see the [documentation](https://github.com/${{ github.repository }}/blob/master/docs/Packaging.md).
+          EOF
+
+          # Set output for use in release creation
+          echo "RELEASE_NOTES<<EOF" >> $GITHUB_OUTPUT
+          cat release_notes.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          name: "SCASTD ${{ needs.prepare.outputs.version }}"
+          body: ${{ steps.release_notes.outputs.RELEASE_NOTES }}
+          draft: false
+          prerelease: false
+          files: |
+            release-assets/*
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release Summary
+        run: |
+          echo "🎉 Release ${{ needs.prepare.outputs.tag }} created successfully!"
+          echo ""
+          echo "📦 Packages included:"
+          ls -la release-assets/
+          echo ""
+          echo "🔗 Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ needs.prepare.outputs.tag }}"

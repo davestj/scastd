@@ -19,33 +19,29 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-#define CATCH_CONFIG_RUNNER
+
 #include "catch.hpp"
 #include "../src/logger.h"
-#include "../src/StatusLogger.h"
-#include <sqlite3.h>
 #include <filesystem>
-#include <cstdlib>
-#include <cstdio>
 
-namespace scastd {
-extern Logger logger;
-extern StatusLogger statusLogger;
-}
+TEST_CASE("setLogDir creates directory with safe permissions") {
+    namespace fs = std::filesystem;
+    fs::path base = fs::temp_directory_path() / "scastd-logdir-test";
+    fs::remove_all(base);
 
-int main(int argc, char *argv[]) {
-    const char *env = std::getenv("SQLITE_DB_PATH");
-    std::filesystem::path dbPath = env ? env : (std::filesystem::temp_directory_path() / "scastd-test.db");
-    std::filesystem::create_directories(dbPath.parent_path());
-    sqlite3 *db = nullptr;
-    if (sqlite3_open(dbPath.c_str(), &db) == SQLITE_OK) {
-        sqlite3_close(db);
-    }
-    scastd::logger.setEnabled(true);
-    scastd::logger.setConsoleOutput(true);
-    scastd::statusLogger.setPath("/tmp/status.json");
-    int result = Catch::Session().run(argc, argv);
-    std::filesystem::remove(dbPath);
-    std::filesystem::remove("/tmp/status.json");
-    return result;
+    Logger logger(false);
+    logger.setLogDir(base.string());
+
+    REQUIRE(fs::exists(base));
+    fs::perms p = fs::status(base).permissions();
+    REQUIRE((p & fs::perms::owner_read) != fs::perms::none);
+    REQUIRE((p & fs::perms::owner_write) != fs::perms::none);
+    REQUIRE((p & fs::perms::owner_exec) != fs::perms::none);
+    REQUIRE((p & fs::perms::group_read) != fs::perms::none);
+    REQUIRE((p & fs::perms::group_exec) != fs::perms::none);
+    REQUIRE((p & fs::perms::group_write) == fs::perms::none);
+    REQUIRE((p & (fs::perms::others_read | fs::perms::others_write |
+                  fs::perms::others_exec)) == fs::perms::none);
+
+    fs::remove_all(base);
 }
