@@ -352,3 +352,58 @@ jobs:
           ls -la release-assets/
           echo ""
           echo "🔗 Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ needs.prepare.outputs.tag }}"
+
+  verify-install:
+    needs: [prepare, build-packages]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            container: debian:12
+            package: scastd_${{ needs.prepare.outputs.version }}_bookworm_amd64.deb
+          - os: ubuntu-22.04
+            container: debian:trixie
+            package: scastd_${{ needs.prepare.outputs.version }}_trixie_amd64.deb
+          - os: ubuntu-24.04
+            container: ubuntu:24.04
+            package: scastd_${{ needs.prepare.outputs.version }}_noble_amd64.deb
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    steps:
+      - name: Download release package
+        run: |
+          curl -L -o ${{ matrix.package }} https://github.com/${{ github.repository }}/releases/download/${{ needs.prepare.outputs.tag }}/${{ matrix.package }}
+
+      - name: Install package
+        run: |
+          apt-get update
+          apt-get install -y curl
+          dpkg -i ${{ matrix.package }} || (apt-get -f install -y && dpkg -i ${{ matrix.package }})
+
+      - name: Verify scastd version
+        run: |
+          out=$(scastd --version)
+          echo "$out"
+          grep "${{ needs.prepare.outputs.version }}" <<< "$out"
+
+      - name: HTTP test
+        run: |
+          cat > scastd.conf <<'EOF'
+          pid_file /tmp/scastd.pid
+          log_dir /tmp
+          access_log access.log
+          error_log error.log
+          debug_log debug.log
+          debug_level 1
+          log_console true
+          http_enabled true
+          http_port 8000
+          DatabaseType sqlite
+          sqlite_path /tmp/scastd.db
+          EOF
+          scastd --config scastd.conf &
+          PID=$!
+          sleep 2
+          curl -f http://localhost:8000/status.json
+          kill $PID
