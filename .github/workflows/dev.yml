@@ -7,6 +7,9 @@ name: DevelopmentBuildPipeline
   pull_request:
     branches: ["dev"]
 
+permissions:
+  contents: write
+
 jobs:
   test:
     name: Build and test (${{ matrix.distro }})
