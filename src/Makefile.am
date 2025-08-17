@@ -10,7 +10,6 @@ scastd_SOURCES = \
     icecast2.cpp \
     logger.cpp \
     StatusLogger.cpp \
-    db/MySQLDatabase.cpp \
     db/MariaDBDatabase.cpp \
     db/PostgresDatabase.cpp \
     db/SQLiteDatabase.cpp

@@ -30,7 +30,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <libxml/parser.h>
 #include <signal.h>
 #include "db/IDatabase.h"
-#include "db/MySQLDatabase.h"
 #include "db/MariaDBDatabase.h"
 #include "db/PostgresDatabase.h"
 #include "db/SQLiteDatabase.h"
@@ -228,20 +227,20 @@ int dumpDatabase(const std::string &configPath,
         std::string dumpFile = dumpDir + "/scastd-" + ts + ".sql";
 
         std::string cmd;
-        if (dbType == "mysql" || dbType == "mariadb") {
-                cmd = "MYSQL_PWD=" + shellEscape(dbPass) + " mysqldump";
-                if (!dbHost.empty()) cmd += " -h " + shellEscape(dbHost);
-                if (dbPort > 0) cmd += " -P " + std::to_string(dbPort);
-                if (!dbUser.empty()) cmd += " -u " + shellEscape(dbUser);
-                cmd += " " + shellEscape(dbName) + " > " + shellEscape(dumpFile);
-        } else if (dbType == "postgres") {
+        if (dbType == "postgres") {
                 cmd = "PGPASSWORD=" + shellEscape(dbPass) + " pg_dump";
                 if (!dbHost.empty()) cmd += " -h " + shellEscape(dbHost);
                 if (dbPort > 0) cmd += " -p " + std::to_string(dbPort);
                 if (!dbUser.empty()) cmd += " -U " + shellEscape(dbUser);
                 cmd += " " + shellEscape(dbName) + " > " + shellEscape(dumpFile);
-        } else {
+        } else if (dbType == "sqlite") {
                 cmd = "sqlite3 " + shellEscape(dbName) + " .dump > " + shellEscape(dumpFile);
+        } else {
+                cmd = "MYSQL_PWD=" + shellEscape(dbPass) + " mysqldump";
+                if (!dbHost.empty()) cmd += " -h " + shellEscape(dbHost);
+                if (dbPort > 0) cmd += " -P " + std::to_string(dbPort);
+                if (!dbUser.empty()) cmd += " -u " + shellEscape(dbUser);
+                cmd += " " + shellEscape(dbName) + " > " + shellEscape(dumpFile);
         }
 
         int rc = system(cmd.c_str());
@@ -508,31 +507,16 @@ int run(const std::string &configPath,
                 dbPort = 0;
                 dbSSLMode.clear();
         }
-        if (dbType == "mysql") {
-                db = new MySQLDatabase();
-                db2 = new MySQLDatabase();
-        } else if (dbType == "mariadb") {
-                db = new MariaDBDatabase();
-                db2 = new MariaDBDatabase();
-        } else if (dbType == "postgres") {
+        if (dbType == "postgres") {
                 db = new PostgresDatabase();
                 db2 = new PostgresDatabase();
         } else if (dbType == "sqlite") {
                 db = new SQLiteDatabase();
                 db2 = new SQLiteDatabase();
         } else {
-                char lbuf[256];
-                snprintf(lbuf, sizeof(lbuf), _("Unknown DatabaseType '%s'. Falling back to sqlite."), dbType.c_str());
-                logger.logError(lbuf);
-                db = new SQLiteDatabase();
-                db2 = new SQLiteDatabase();
-                dbType = "sqlite";
-                dbName = sqlitePath;
-                dbUser.clear();
-                dbPass.clear();
-                dbHost.clear();
-                dbPort = 0;
-                dbSSLMode.clear();
+                db = new MariaDBDatabase();
+                db2 = new MariaDBDatabase();
+                dbType = "mariadb";
         }
         bool needInit = false;
         if (dbType == "sqlite") {
@@ -644,32 +628,16 @@ int run(const std::string &configPath,
                                 if (newDbType != dbType) {
                                         if (db) { db->disconnect(); delete db; }
                                         if (db2) { db2->disconnect(); delete db2; }
-                                        if (newDbType == "mysql") {
-                                                db = new MySQLDatabase();
-                                                db2 = new MySQLDatabase();
-                                        } else if (newDbType == "mariadb") {
-                                                db = new MariaDBDatabase();
-                                                db2 = new MariaDBDatabase();
-                                        } else if (newDbType == "postgres") {
+                                        if (newDbType == "postgres") {
                                                 db = new PostgresDatabase();
                                                 db2 = new PostgresDatabase();
                                         } else if (newDbType == "sqlite") {
                                                 db = new SQLiteDatabase();
                                                 db2 = new SQLiteDatabase();
                                         } else {
-                                                logger.logError(_("Unknown DatabaseType. Falling back to sqlite\n"));
-                                                db = new SQLiteDatabase();
-                                                db2 = new SQLiteDatabase();
-                                                newDbType = "sqlite";
-                                                newDbName = newSqlitePath;
-                                                newDbUser.clear();
-                                                newDbPass.clear();
-                                                newDbHost.clear();
-                                                newDbPort = 0;
-                                                newDbSSLMode.clear();
-                                                if (access(newDbName.c_str(), F_OK) != 0) {
-                                                        newNeedInit = true;
-                                                }
+                                                db = new MariaDBDatabase();
+                                                db2 = new MariaDBDatabase();
+                                                newDbType = "mariadb";
                                         }
                                         dbType = newDbType;
                                 } else {

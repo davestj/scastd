@@ -31,8 +31,8 @@ static std::string read_file(const std::string &path) {
     return ss.str();
 }
 
-TEST_CASE("MySQL schema has required tables") {
-    std::string sql = read_file(std::string(TEST_SRCDIR) + "/src/mysql.sql");
+TEST_CASE("MariaDB schema has required tables") {
+    std::string sql = read_file(std::string(TEST_SRCDIR) + "/src/mariadb.sql");
     REQUIRE(sql.find("CREATE TABLE scastd_memberinfo") != std::string::npos);
     REQUIRE(sql.find("CREATE TABLE scastd_runtime") != std::string::npos);
 }
