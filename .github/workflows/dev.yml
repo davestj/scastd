@@ -104,3 +104,19 @@ jobs:
           prerelease: true
           files: dist/*
           body: ${{ steps.release_notes.outputs.body }}
+      - name: Verify release
+        env:
+          TAG: v${{ github.run_number }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          set -euo pipefail
+          response=$(curl -sSf -H "Authorization: Bearer $GITHUB_TOKEN" \
+                         -H "Accept: application/vnd.github+json" \
+                         https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/$TAG)
+          url=$(echo "$response" | jq -r '.html_url')
+          assets=$(echo "$response" | jq '.assets | length')
+          if [ "$assets" -eq 0 ]; then
+            echo "::error::Release has no assets"
+            exit 1
+          fi
+          echo "Release URL: $url"
