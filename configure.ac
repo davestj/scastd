@@ -31,9 +31,15 @@ PKG_CHECK_MODULES([LIBCURL], [libcurl], [], [AC_MSG_ERROR([libcurl library not f
 CXXFLAGS="$CXXFLAGS $LIBCURL_CFLAGS"
 LIBS="$LIBS $LIBCURL_LIBS"
 
-PKG_CHECK_MODULES([mysqlclient], [mysqlclient], [], [
-  AC_CHECK_HEADERS([mysql/mysql.h], [], [AC_MSG_ERROR([MySQL headers not found])])
-  AC_CHECK_LIB([mysqlclient], [mysql_init], [], [AC_MSG_ERROR([MySQL library not found])])
+PKG_CHECK_MODULES([mariadb], [libmariadb], [], [
+  AC_PATH_PROG([MARIADB_CONFIG], [mariadb_config], [no])
+  if test "x$MARIADB_CONFIG" = "xno"; then
+    AC_MSG_ERROR([MariaDB client library (libmariadb) not found])
+  fi
+  mariadb_CFLAGS=`$MARIADB_CONFIG --cflags`
+  mariadb_LIBS=`$MARIADB_CONFIG --libs`
+  AC_SUBST([mariadb_CFLAGS])
+  AC_SUBST([mariadb_LIBS])
 ])
 
 PKG_CHECK_MODULES([LIBPQ], [libpq], [], [AC_MSG_ERROR([PostgreSQL client library (libpq) not found; install libpq-dev.])])

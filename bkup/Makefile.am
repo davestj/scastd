@@ -1,8 +1,8 @@
 OBJS=DB.o
 
 EXEC=scastd
-CFLAGS=-g -I /usr/local/include -I /usr/include/libxml2 -I /usr/include/mysql
-LFLAGS=-L/usr/lib -L/usr/lib/mysql -lxml2 -lmysqlclient
+CFLAGS=-g -I /usr/local/include -I /usr/include/libxml2 -I /usr/include/mariadb
+LFLAGS=-L/usr/lib -lxml2 -lmariadb
 
 .SUFFIXES: .cpp .o
 

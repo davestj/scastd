@@ -262,6 +262,7 @@ LTLIBOBJS = @LTLIBOBJS@
 LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
+MARIADB_CONFIG = @MARIADB_CONFIG@
 MKDIR_P = @MKDIR_P@
 MSGFMT = @MSGFMT@
 MSGMERGE = @MSGMERGE@
@@ -338,9 +339,9 @@ libexecdir = @libexecdir@
 localedir = @localedir@
 localstatedir = @localstatedir@
 mandir = @mandir@
+mariadb_CFLAGS = @mariadb_CFLAGS@
+mariadb_LIBS = @mariadb_LIBS@
 mkdir_p = @mkdir_p@
-mysqlclient_CFLAGS = @mysqlclient_CFLAGS@
-mysqlclient_LIBS = @mysqlclient_LIBS@
 oldincludedir = @oldincludedir@
 pdfdir = @pdfdir@
 prefix = @prefix@
@@ -370,8 +371,8 @@ scastd_SOURCES = \
     db/PostgresDatabase.cpp \
     db/SQLiteDatabase.cpp
 
-scastd_CPPFLAGS = @mysqlclient_CFLAGS@
-scastd_LDADD = $(SYSLOG_LIBS) $(LIBINTL) @mysqlclient_LIBS@
+scastd_CPPFLAGS = @mariadb_CFLAGS@
+scastd_LDADD = $(SYSLOG_LIBS) $(LIBINTL) @mariadb_LIBS@
 all: all-am
 
 .SUFFIXES:
