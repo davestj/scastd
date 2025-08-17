@@ -354,14 +354,14 @@ jobs:
           prerelease: false
           files: |
             release-assets/*
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_PAT }}
 
       # List release assets via the GitHub API and fail if any expected file is missing
       - name: Verify uploaded release assets
         env:
           TAG: ${{ needs.prepare.outputs.tag }}
           VERSION: ${{ needs.prepare.outputs.version }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           set -euo pipefail
           echo "Listing assets for release $TAG"

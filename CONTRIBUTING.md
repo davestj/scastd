@@ -40,6 +40,13 @@ uses the GitHub API to list the published assets. If any expected package or
 checksum file is missing, the job fails. For the exact commands, see the
 "Verify uploaded release assets" step in `.github/workflows/release.yml`.
 
+## Release Authentication
+
+The workflows that publish releases require a Personal Access Token (PAT) with
+the `repo` scope stored as `GH_PAT` in the repository secrets. The release
+jobs use this token via the `with: token:` field to upload assets and create
+GitHub releases.
+
 ## Release Notes
 
 Release notes are generated with `scripts/generate_release_notes.sh`. The
