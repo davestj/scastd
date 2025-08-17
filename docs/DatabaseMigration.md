@@ -1,20 +1,18 @@
 # Database Backend Migration
 
 The original code base only supported MySQL. The database layer has been refactored to a pluggable
-interface and now supports MySQL, MariaDB and PostgreSQL.
+interface and now supports MariaDB and PostgreSQL.
 
 ## Selecting a Backend
 
 Configure the database engine using the `DatabaseType` field in `scastd.conf`. Valid values:
 
-- `mysql`
 - `mariadb`
 - `postgres`
 
 Schema setup scripts are loaded from `/etc/scastd/<dbtype>.sql` if present. Bundled copies live
 in the source tree under `src/`:
 
-- `src/mysql.sql`
 - `src/mariadb.sql`
 - `src/postgres.sql`
 - `src/sqlite.sql`
@@ -44,7 +42,7 @@ Refer to your database documentation when porting existing schemas.
 
 ### MySQL / MariaDB
 
-The provided dumps at `src/mysql.sql` and `src/mariadb.sql` have been modernized for MySQL 8 and
+The provided dump at `src/mariadb.sql` has been modernized for MySQL 8 and
 MariaDB 10.11:
 
 * Deprecated `timestamp(14)` and `int(11)` types were replaced with `TIMESTAMP` and `INT`.

@@ -24,7 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Config.h"
 #include "logger.h"
 #include "db/IDatabase.h"
-#include "db/MySQLDatabase.h"
 #include "db/MariaDBDatabase.h"
 #include "db/PostgresDatabase.h"
 #include "db/SQLiteDatabase.h"
@@ -81,10 +80,9 @@ static bool validateConfig(const Config &cfg) {
         dbName = sqlitePath;
     }
     IDatabase *db = nullptr;
-    if (dbType == "mysql") db = new MySQLDatabase();
-    else if (dbType == "mariadb") db = new MariaDBDatabase();
-    else if (dbType == "postgres") db = new PostgresDatabase();
-    else db = new SQLiteDatabase();
+    if (dbType == "postgres") db = new PostgresDatabase();
+    else if (dbType == "sqlite") db = new SQLiteDatabase();
+    else db = new MariaDBDatabase();
 
     bool ok = db->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
     if (ok) {
@@ -256,10 +254,9 @@ int main(int argc, char **argv) {
             dbName = sqlitePath;
         }
         IDatabase *db = nullptr;
-        if (dbType == "mysql") db = new MySQLDatabase();
-        else if (dbType == "mariadb") db = new MariaDBDatabase();
-        else if (dbType == "postgres") db = new PostgresDatabase();
-        else db = new SQLiteDatabase();
+        if (dbType == "postgres") db = new PostgresDatabase();
+        else if (dbType == "sqlite") db = new SQLiteDatabase();
+        else db = new MariaDBDatabase();
         bool ok = db->connect(dbUser, dbPass, dbHost, dbPort, dbName, dbSSLMode);
         if (ok) {
             ok = scastd::setupDatabase(setupdbType, db);
