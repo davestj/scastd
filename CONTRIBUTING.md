@@ -42,10 +42,10 @@ checksum file is missing, the job fails. For the exact commands, see the
 
 ## Release Authentication
 
-The workflows that publish releases require a Personal Access Token (PAT) with
-the `repo` scope stored as `GH_PAT` in the repository secrets. The release
-jobs use this token via the `with: token:` field to upload assets and create
-GitHub releases.
+The release workflows require a GitHub Personal Access Token (PAT) with the
+`repo` scope. Generate a PAT from your GitHub "Developer settings" page and
+add it to the repository secrets as `GH_PAT`. The jobs reference this token via
+`token: ${{ secrets.GH_PAT }}` to upload assets and create GitHub releases.
 
 ## Release Notes
 
