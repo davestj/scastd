@@ -474,6 +474,7 @@ LTLIBOBJS = @LTLIBOBJS@
 LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
+MARIADB_CONFIG = @MARIADB_CONFIG@
 MKDIR_P = @MKDIR_P@
 MSGFMT = @MSGFMT@
 MSGMERGE = @MSGMERGE@
@@ -550,9 +551,9 @@ libexecdir = @libexecdir@
 localedir = @localedir@
 localstatedir = @localstatedir@
 mandir = @mandir@
+mariadb_CFLAGS = @mariadb_CFLAGS@
+mariadb_LIBS = @mariadb_LIBS@
 mkdir_p = @mkdir_p@
-mysqlclient_CFLAGS = @mysqlclient_CFLAGS@
-mysqlclient_LIBS = @mysqlclient_LIBS@
 oldincludedir = @oldincludedir@
 pdfdir = @pdfdir@
 prefix = @prefix@
@@ -567,14 +568,14 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/tests $(DEPS_CFLAGS) @mysqlclient_CFLAGS@ -DTEST_SRCDIR=\"$(top_srcdir)\"
+AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/tests $(DEPS_CFLAGS) @mariadb_CFLAGS@ -DTEST_SRCDIR=\"$(top_srcdir)\"
 unit_tests_SOURCES = test_main.cpp test_config.cpp test_sql.cpp test_http.cpp test_icecast.cpp test_icecast_dev.cpp test_url_parser.cpp test_db_invalid.cpp test_setupdb.cpp test_missing_config.cpp test_pid.cpp test_logger.cpp test_scastd_cli.cpp \
     ../src/Config.cpp ../src/HttpServer.cpp ../src/icecast2.cpp ../src/UrlParser.cpp \
     ../src/CurlClient.cpp ../src/logger.cpp ../src/StatusLogger.cpp ../src/scastd.cpp \
     ../src/db/MariaDBDatabase.cpp \
     ../src/db/PostgresDatabase.cpp stubs.cpp
 
-unit_tests_LDADD = $(DEPS_LIBS) $(LIBINTL) @mysqlclient_LIBS@
+unit_tests_LDADD = $(DEPS_LIBS) $(LIBINTL) @mariadb_LIBS@
 all: all-am
 
 .SUFFIXES:
