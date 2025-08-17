@@ -97,7 +97,7 @@ jobs:
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: v${{ github.run_number }}
           name: Release ${{ github.run_number }}
           draft: false
@@ -107,7 +107,7 @@ jobs:
       - name: Verify release
         env:
           TAG: v${{ github.run_number }}
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           response=$(curl -sSf -H "Authorization: Bearer $GITHUB_TOKEN" \
