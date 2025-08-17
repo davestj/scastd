@@ -365,9 +365,16 @@ jobs:
         run: |
           set -euo pipefail
           echo "Listing assets for release $TAG"
-          assets=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
-                       -H "Accept: application/vnd.github+json" \
-                       https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$TAG | jq -r '.assets[].name')
+          response=$(curl -sSf -H "Authorization: Bearer $GITHUB_TOKEN" \
+                             -H "Accept: application/vnd.github+json" \
+                             https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$TAG)
+          url=$(echo "$response" | jq -r '.html_url')
+          assets=$(echo "$response" | jq -r '.assets[].name')
+          asset_count=$(echo "$response" | jq '.assets | length')
+          if [ "$asset_count" -eq 0 ]; then
+            echo "::error::Release has no assets"
+            exit 1
+          fi
           echo "$assets"
           expected="scastd_${VERSION}_bookworm_amd64.deb scastd_${VERSION}_trixie_amd64.deb scastd_${VERSION}_noble_amd64.deb scastd-${VERSION}.pkg scastd.rb CHECKSUMS.txt"
           missing=0
@@ -380,6 +387,7 @@ jobs:
           if [ $missing -ne 0 ]; then
             exit 1
           fi
+          echo "Release URL: $url"
 
       - name: Release Summary
         run: |
