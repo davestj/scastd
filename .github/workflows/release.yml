@@ -151,6 +151,9 @@ jobs:
             $SUDO apt-get -f install -y
           fi
 
+          dpkg -s libmysqlcppconn-dev | grep -q '^Status: install ok'
+          test -f /usr/include/mysql-cppconn/jdbc/mysql_driver.h
+
           # Verify MySQL headers and configure build flags
           if ! command -v mysql_config >/dev/null; then
             echo "mysql_config not found" >&2
