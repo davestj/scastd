@@ -16,7 +16,7 @@ runs:
         SUDO=""
         command -v sudo >/dev/null 2>&1 && SUDO="sudo"
         $SUDO apt-get update
-        
+
         $SUDO apt-get install -y \
           build-essential \
           autoconf automake libtool pkg-config \
@@ -57,25 +57,47 @@ runs:
         cd ..
         echo "PATH=/usr/local/bin:$PATH" >> $GITHUB_ENV
         if [[ "${{ inputs.distro }}" == "debian-12" || "${{ inputs.distro }}" == "debian-13" ]]; then
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb
           wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10_9.4.0-1debian12_amd64.deb
           wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2_9.4.0-1debian12_amd64.deb
           wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb
-          $SUDO dpkg -i libmysqlcppconn10_9.4.0-1debian12_amd64.deb libmysqlcppconnx2_9.4.0-1debian12_amd64.deb libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb || true
+          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10-dbgsym_9.4.0-1debian12_amd64.deb
+          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb
+          $SUDO dpkg -i \
+            libmysqlcppconn10_9.4.0-1debian12_amd64.deb \
+            libmysqlcppconnx2_9.4.0-1debian12_amd64.deb \
+            libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb \
+            libmysqlcppconn10-dbgsym_9.4.0-1debian12_amd64.deb \
+            libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb || true
           $SUDO apt-get -f install -y
         elif [[ "${{ inputs.distro }}" == "ubuntu-24.04" ]]; then
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10_9.4.0-1ubuntu24.04_amd64.deb
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2_9.4.0-1ubuntu24.04_amd64.deb
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn-dev_9.4.0-1ubuntu24.04_amd64.deb
-          $SUDO dpkg -i libmysqlcppconn10_9.4.0-1ubuntu24.04_amd64.deb libmysqlcppconnx2_9.4.0-1ubuntu24.04_amd64.deb libmysqlcppconn-dev_9.4.0-1ubuntu24.04_amd64.deb || true
+          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10_9.4.0-1debian12_amd64.deb
+          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2_9.4.0-1debian12_amd64.deb
+          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb
+          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10-dbgsym_9.4.0-1debian12_amd64.deb
+          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb
+          $SUDO dpkg -i \
+            libmysqlcppconn10_9.4.0-1debian12_amd64.deb \
+            libmysqlcppconnx2_9.4.0-1debian12_amd64.deb \
+            libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb \
+            libmysqlcppconn10-dbgsym_9.4.0-1debian12_amd64.deb \
+            libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb || true
           $SUDO apt-get -f install -y
         else
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10_9.4.0-1ubuntu22.04_amd64.deb
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2_9.4.0-1ubuntu22.04_amd64.deb
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn-dev_9.4.0-1ubuntu22.04_amd64.deb
-          $SUDO dpkg -i libmysqlcppconn10_9.4.0-1ubuntu22.04_amd64.deb libmysqlcppconnx2_9.4.0-1ubuntu22.04_amd64.deb libmysqlcppconn-dev_9.4.0-1ubuntu22.04_amd64.deb || true
+          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10_9.4.0-1debian12_amd64.deb
+          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2_9.4.0-1debian12_amd64.deb
+          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb
+          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10-dbgsym_9.4.0-1debian12_amd64.deb
+          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb
+          $SUDO dpkg -i \
+            libmysqlcppconn10_9.4.0-1debian12_amd64.deb \
+            libmysqlcppconnx2_9.4.0-1debian12_amd64.deb \
+            libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb \
+            libmysqlcppconn10-dbgsym_9.4.0-1debian12_amd64.deb \
+            libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb || true
           $SUDO apt-get -f install -y
         fi
+        test -d /usr/include/mysql-cppconn
+        mysql_config --version
         export CPPFLAGS="$(mysql_config --cflags) $CPPFLAGS"
         export LDFLAGS="$(mysql_config --libs) $LDFLAGS"
     - name: Install dependencies (macOS)
@@ -100,9 +122,18 @@ runs:
         echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
     - name: Setup MySQL Connector
       if: ${{ inputs.distro == 'macos-14' }}
-      uses: ./.github/actions/setup-mysql-connector
-      with:
-        version: mysql-connector-c++-9.4.0-macos15-arm64
+      shell: bash
+      run: |
+        set -euo pipefail
+        curl -LO https://dev.mysql.com/get/Downloads/Connector-C++/mysql-connector-c++-9.4.0-macos15-x86-64bit.dmg
+        hdiutil attach mysql-connector-c++-9.4.0-macos15-x86-64bit.dmg
+        sudo installer -pkg /Volumes/mysql-connector-c++-9.4.0-macos15-x86-64bit/mysql-connector-c++-9.4.0-macos15-x86-64bit.pkg -target /
+        hdiutil detach /Volumes/mysql-connector-c++-9.4.0-macos15-x86-64bit
+        export CPPFLAGS="-I/usr/local/include/mysql-cppconn $CPPFLAGS"
+        export LDFLAGS="-L/usr/local/lib $LDFLAGS"
+        echo "CPPFLAGS=$CPPFLAGS" >> $GITHUB_ENV
+        echo "LDFLAGS=$LDFLAGS" >> $GITHUB_ENV
+        echo "PATH=$PATH" >> $GITHUB_ENV
     - name: Show environment variables
       if: ${{ inputs.distro == 'macos-14' }}
       shell: bash
