@@ -453,7 +453,7 @@ We implement robust environment variable support for sensitive data and containe
 # Environment variables we recognize for secure configuration
 export SCASTD_USERNAME="statistics_user"
 export SCASTD_PASSWORD_FILE="/run/secrets/db_password"
-export SCASTD_DATABASE_HOST="mariadb-cluster.internal"
+export SCASTD_MARIADB_HOST="mariadb-cluster.internal"
 export SCASTD_API_TOKEN_SECRET="your-jwt-secret-here"
 export ICEADMINUSER="admin"
 export ICEUSERPASS="hackme"
