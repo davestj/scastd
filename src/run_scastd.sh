@@ -1,10 +1,11 @@
 #!/bin/bash
+# Helper script to configure the MariaDB database for scastd
 PATH=/usr/bin:/usr/sbin:/sbin:/bin
 
 echo "type ./install help"
 
 if [ $1 = "help" ]; then
-echo"Please enter a username and password for MariaDB i.e. ./install.sh root password"
+echo "Please enter a username and password for MariaDB i.e. ./install.sh root password"
 fi
 if [ $1 != "" ]; then
 echo "Creating and importing the default scastd database and schema"

@@ -236,7 +236,7 @@ int dumpDatabase(const std::string &configPath,
         } else if (dbType == "sqlite") {
                 cmd = "sqlite3 " + shellEscape(dbName) + " .dump > " + shellEscape(dumpFile);
         } else {
-                cmd = "MYSQL_PWD=" + shellEscape(dbPass) + " mysqldump";
+               cmd = "MARIADB_PWD=" + shellEscape(dbPass) + " mariadb-dump";
                 if (!dbHost.empty()) cmd += " -h " + shellEscape(dbHost);
                 if (dbPort > 0) cmd += " -P " + std::to_string(dbPort);
                 if (!dbUser.empty()) cmd += " -u " + shellEscape(dbUser);
