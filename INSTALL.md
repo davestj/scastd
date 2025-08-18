@@ -189,7 +189,7 @@ The following libraries are required to build scastd:
 
 * libxml2
 * libcurl
-* MySQL client library (libmysqlclient or MariaDB equivalent)
+* MariaDB client library (libmariadbclient or equivalent)
 * libpq (PostgreSQL client library)
 * libmicrohttpd
 
@@ -240,7 +240,7 @@ Install build tools and libraries:
 
 ```
 sudo apt-get install build-essential autoconf automake libtool pkg-config \
-                     libmysqlclient-dev libmicrohttpd-dev libcurl4-openssl-dev \
+                     libmariadb-dev libmicrohttpd-dev libcurl4-openssl-dev \
                      libpq-dev libxml2-dev gettext
 ```
 
@@ -254,14 +254,14 @@ tar xf gettext-latest.tar.gz
 cd gettext-* && ./configure && make && sudo make install
 ```
 
-Use `mysql_config` to populate compiler and linker flags when `pkg-config`
-cannot locate the MySQL client library:
+Use `mariadb_config` to populate compiler and linker flags when `pkg-config`
+cannot locate the MariaDB client library:
 
 ```
-mysql_libdir=$(mysql_config --variable=pkglibdir)
-export CPPFLAGS="$(mysql_config --cflags)"
-export LDFLAGS="$(mysql_config --libs)"
-export PKG_CONFIG_PATH="${mysql_libdir}/pkgconfig:${PKG_CONFIG_PATH}"
+mariadb_libdir=$(mariadb_config --variable=pkglibdir)
+export CPPFLAGS="$(mariadb_config --cflags)"
+export LDFLAGS="$(mariadb_config --libs)"
+export PKG_CONFIG_PATH="${mariadb_libdir}/pkgconfig:${PKG_CONFIG_PATH}"
 ```
 
 Then build the project:
