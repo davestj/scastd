@@ -90,6 +90,13 @@ runs:
       shell: bash
       run: |
         set -o pipefail
+        export MARIADB_TEST_HOST="${MARIADB_TEST_HOST}"
+        export MARIADB_TEST_USER="${MARIADB_TEST_USER}"
+        export MARIADB_TEST_PASS="${MARIADB_TEST_PASS}"
+        export ICECAST_DEV_HOST="${ICECAST_DEV_HOST}"
+        export ICECAST_DEV_PORT="${ICECAST_DEV_PORT}"
+        export ICEADMINUSER="${ICEADMINUSER}"
+        export ICEUSERPASS="${ICEUSERPASS}"
         make check 2>&1 | tee test.log
     - name: Verify scastd --help
       shell: bash
