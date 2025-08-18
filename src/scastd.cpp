@@ -25,9 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string.h>
 #include <string>
 #include <sys/types.h>
-#include <libxml/nanohttp.h>
-#include <libxml/tree.h>
-#include <libxml/parser.h>
 #include <signal.h>
 #include "db/IDatabase.h"
 #include "db/MariaDBDatabase.h"
@@ -37,7 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "CurlClient.h"
 #include "HttpServer.h"
-#include "UrlParser.h"
+#include "icecast2.h"
 #include "i18n.h"
 #include "scastd.h"
 #include "logger.h"
@@ -48,6 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <mutex>
 #include <vector>
 #include <utility>
+#include <tuple>
 #include <map>
 #include <unistd.h>
 #include <sched.h>
@@ -68,36 +66,7 @@ volatile sig_atomic_t reloadConfig = 0;
 
 std::mutex dbMutex;
 
-typedef struct tagServerData {
-        int     currentListeners;
-        int     peakListeners;
-        int     maxListeners;
-        int     reportedListeners;
-        int     avgTime;
-        int     webHits;
-        int     streamHits;
-        char    songTitle[1024];
-} serverData;
 
-void parseWebdata(xmlNodePtr cur)
-{
-    while (cur != NULL) {
-        char buf[256];
-        snprintf(buf, sizeof(buf), _("Webdata: %s"), cur->name);
-        logger.logDebug(buf);
-        cur = cur->next;
-    }
-}
-void trimRight(char *buf) {
-        for (char *p1 = buf + strlen(buf)-1;p1 > buf; p1--) {
-                if (*p1 != ' ') {
-                        break;
-                }
-                else {
-                        *p1 = '\000';
-                }
-        }
-}
 
 static std::string shellEscape(const std::string &in) {
         std::string out = "'";
@@ -254,117 +223,24 @@ int dumpDatabase(const std::string &configPath,
         return rc == 0 ? 0 : 1;
 }
 
-static bool processServer(const std::string &serverURL,
-                          const std::string &password,
-                          IDatabase *db) {
-        char IP[255] = "";
-        int port = 0;
-        std::string ipStr;
-        if (parseHostPort(serverURL, ipStr, port)) {
-                strncpy(IP, ipStr.c_str(), sizeof(IP) - 1);
-                IP[sizeof(IP) - 1] = '\0';
-        }
-        char buf[1024];
-        snprintf(buf, sizeof(buf), _("Connecting to server %s at port %d\n"), IP, port);
-        logger.logDebug(buf);
-
-        std::string urlV1 = std::string("http://") + IP + ":" + std::to_string(port) +
-                            "/admin.cgi?pass=" + password + "&mode=viewxml";
-        std::string urlV2 = std::string("http://") + IP + ":" + std::to_string(port) +
-                            "/admin.cgi?mode=viewxml&sid=1&pass=" + password;
-        std::string response;
+static std::vector<Icecast2::StreamInfo>
+processServer(const std::string &host,
+              int port,
+              const std::string &user,
+              const std::string &pass) {
         CurlClient curl;
-        bool fetched = curl.fetchUrl(urlV1, response);
-        if (!fetched || response.find("<CURRENTLISTENERS>") == std::string::npos) {
-                fetched = curl.fetchUrl(urlV2, response);
-        }
-        if (!fetched) {
-                snprintf(buf, sizeof(buf), _("Failed to fetch data from %s\n"), serverURL.c_str());
+        Icecast2 server(host, port, user, pass, curl);
+        std::vector<Icecast2::StreamInfo> stats;
+        std::string error;
+        if (!server.fetchStats(stats, error)) {
+                char buf[1024];
+                snprintf(buf, sizeof(buf), _("Failed to fetch data from %s:%d - %s"), host.c_str(), port, error.c_str());
                 logger.logError(buf);
-                statusLogger.log("poll", "error", serverURL);
-                return false;
+                statusLogger.log("poll", "error", host + ":" + std::to_string(port));
+                return {};
         }
-        if (response.find("<title>SHOUTcast Administrator</title>") != std::string::npos) {
-                snprintf(buf, sizeof(buf), _("Bad password (%s/%s)\n"), serverURL.c_str(), password.c_str());
-                logger.logError(buf);
-                statusLogger.log("poll", "error", serverURL);
-                return false;
-        }
-
-        const char *p1 = strchr(response.c_str(), '<');
-        if (!p1) {
-                logger.logError(_("Bad parse!"));
-                statusLogger.log("poll", "error", serverURL);
-                return false;
-        }
-        xmlDocPtr doc = xmlParseMemory(p1, strlen(p1));
-        if (!doc) {
-                logger.logError(_("Bad parse!"));
-                statusLogger.log("poll", "error", serverURL);
-                return false;
-        }
-        xmlNodePtr cur = xmlDocGetRootElement(doc);
-        if (cur == NULL) {
-                logger.logError(_("Empty Document!"));
-                xmlFreeDoc(doc);
-                statusLogger.log("poll", "error", serverURL);
-                return false;
-        }
-        serverData sData{};
-        cur = cur->xmlChildrenNode;
-        while (cur != NULL) {
-                if (!xmlStrcmp(cur->name, (const xmlChar *) "CURRENTLISTENERS")) {
-                        sData.currentListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-                }
-                if (!xmlStrcmp(cur->name, (const xmlChar *) "PEAKLISTENERS")) {
-                        sData.peakListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-                }
-                if (!xmlStrcmp(cur->name, (const xmlChar *) "MAXLISTENERS")) {
-                        sData.maxListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-                }
-                if (!xmlStrcmp(cur->name, (const xmlChar *) "REPORTEDLISTENERS")) {
-                        sData.reportedListeners = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-                }
-                if (!xmlStrcmp(cur->name, (const xmlChar *) "AVERAGETIME")) {
-                        sData.avgTime = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-                }
-                if (!xmlStrcmp(cur->name, (const xmlChar *) "WEBHITS")) {
-                        sData.webHits = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-                }
-                if (!xmlStrcmp(cur->name, (const xmlChar *) "STREAMHITS")) {
-                        sData.streamHits = atoi((char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-                }
-                if (!xmlStrcmp(cur->name, (const xmlChar *) "SONGTITLE")) {
-                        memset(sData.songTitle, '\0', sizeof(sData.songTitle));
-                        strcpy(sData.songTitle, (char *)xmlNodeListGetString(doc, cur->xmlChildrenNode, 1));
-                }
-                cur = cur->next;
-        }
-        xmlFreeDoc(doc);
-        trimRight(sData.songTitle);
-
-        char query[2046];
-        std::lock_guard<std::mutex> lock(dbMutex);
-        snprintf(query, sizeof(query), "select songTitle from scastd_songinfo where serverURL = '%s' order by time desc limit 1", serverURL.c_str());
-        db->query(query);
-        IDatabase::Row row = db->fetch();
-        int insert_flag = 1;
-        if (!row.empty() && !strcmp(sData.songTitle, row[0].c_str())) {
-                insert_flag = 0;
-        }
-        if (insert_flag) {
-                snprintf(query, sizeof(query), "insert into scastd_songinfo values('%s', '%s', NULL)", serverURL.c_str(), sData.songTitle);
-                db->query(query);
-        }
-        snprintf(query,
-                sizeof(query),
-                "insert into scastd_serverinfo (serverURL, currentlisteners, peaklisteners, maxlisteners, averagetime, streamhits, time) "
-                "values('%s', %d, %d, %d, %d, %d, NULL)",
-                serverURL.c_str(), sData.currentListeners, sData.peakListeners,
-                sData.maxListeners, sData.avgTime, sData.streamHits);
-        db->query(query);
-        statusLogger.log("poll", "ok", serverURL);
-        return true;
+        statusLogger.log("poll", "ok", host + ":" + std::to_string(port));
+        return stats;
 }
 
 void sigUSR1(int sig)
@@ -665,20 +541,48 @@ int run(const std::string &configPath,
 			break;
 		}
 		if (!paused) {
-                        snprintf(query, sizeof(query), "select serverURL, password from scastd_memberinfo where gather_flag = 1");
+                        snprintf(query, sizeof(query), "SELECT server_host, server_port, server_username, server_password FROM servers;");
                         db2->query(query);
-                        std::vector<std::pair<std::string, std::string>> servers;
+                        std::vector<std::tuple<std::string, int, std::string, std::string>> servers;
                         while (true) {
                                 if (exiting) break;
                                 row = db2->fetch();
                                 if (row.empty()) break;
-                                servers.emplace_back(row[0], row.size() > 1 ? row[1] : "");
+                                int port = row.size() > 1 ? atoi(row[1].c_str()) : 0;
+                                std::string user = row.size() > 2 ? row[2] : "";
+                                std::string pass = row.size() > 3 ? row[3] : "";
+                                servers.emplace_back(row[0], port, user, pass);
                         }
                         std::vector<std::thread> workers;
                         size_t maxThreads = threadCount > 0 ? static_cast<size_t>(threadCount) : 1;
                         for (const auto &srv : servers) {
                                 workers.emplace_back([&, srv] {
-                                        (void)processServer(srv.first, srv.second, db);
+                                        const std::string &host = std::get<0>(srv);
+                                        int port = std::get<1>(srv);
+                                        const std::string &user = std::get<2>(srv);
+                                        const std::string &pass = std::get<3>(srv);
+                                        auto stats = processServer(host, port, user, pass);
+                                        if (stats.empty()) return;
+                                        std::lock_guard<std::mutex> lock(dbMutex);
+                                        for (const auto &info : stats) {
+                                                std::string serverURL = std::string("http://") + host + ":" + std::to_string(port) + info.mount;
+                                                char q[2046];
+                                                snprintf(q, sizeof(q), "select songTitle from scastd_songinfo where serverURL = '%s' order by time desc limit 1", serverURL.c_str());
+                                                db->query(q);
+                                                IDatabase::Row r = db->fetch();
+                                                int insert_flag = 1;
+                                                if (!r.empty() && r[0] == info.title) {
+                                                        insert_flag = 0;
+                                                }
+                                                if (insert_flag) {
+                                                        snprintf(q, sizeof(q), "insert into scastd_songinfo values('%s', '%s', NULL)", serverURL.c_str(), info.title.c_str());
+                                                        db->query(q);
+                                                }
+                                                snprintf(q, sizeof(q),
+                                                         "insert into scastd_serverinfo (serverURL, currentlisteners, peaklisteners, maxlisteners, averagetime, streamhits, time) values('%s', %d, %d, %d, %d, %d, NULL)",
+                                                         serverURL.c_str(), info.listeners, 0, 0, 0, 0);
+                                                db->query(q);
+                                        }
                                 });
                                 if (workers.size() >= maxThreads) {
                                         for (auto &t : workers) {
@@ -690,7 +594,7 @@ int run(const std::string &configPath,
                         for (auto &t : workers) {
                                 if (t.joinable()) t.join();
                         }
-		}
+                }
 		if (exiting) break;
 			
 		snprintf(buf, sizeof(buf), _("Sleeping for %d ms\n"), poll_ms);
