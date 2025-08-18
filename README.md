@@ -476,6 +476,32 @@ These credentials configure access to the Icecast administrative interface. If
 `ICEADMINUSER` or `ICEUSERPASS` are not provided, the daemon falls back to the
 legacy `SCASTD_ADMINUSER` and `SCASTD_USERPASS` variables.
 
+### MariaDB Setup
+
+Install MariaDB and create a database for SCASTD:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y mariadb-server mariadb-client
+sudo mysql -e "CREATE DATABASE scastd; GRANT ALL ON scastd.* TO 'scastd'@'localhost' IDENTIFIED BY 'changeme';"
+```
+
+Add an Icecast server to the `servers` table:
+
+```bash
+mysql -u scastd -p scastd -e "INSERT INTO servers (server_host, server_port, server_username, server_password) VALUES ('stream.example.com', 8000, 'admin', 'hackme');"
+```
+
+Reference the MariaDB instance in `scastd.conf`:
+
+```conf
+db_type    mariadb
+db_host    localhost
+db_name    scastd
+db_user    scastd
+db_pass    changeme
+```
+
 For detailed configuration instructions, please refer to our comprehensive [Installation Guide](INSTALL.md).
 
 ---

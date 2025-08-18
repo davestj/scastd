@@ -63,6 +63,27 @@ Configuration file locations
 * `/usr/local/etc/scastd/scastd.conf` (macOS Intel)
 * `/opt/homebrew/etc/scastd/scastd.conf` (macOS Apple Silicon)
 
+Initialize the `servers` table
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Create the database schema and add an Icecast server:
+
+```bash
+scastd --setupdb mariadb
+mysql -u scastd -p scastd -e "INSERT INTO servers (server_host, server_port, server_username, server_password) VALUES ('stream.example.com', 8000, 'admin', 'hackme');"
+```
+
+Credentials via environment variables
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Sensitive credentials can be provided through environment variables:
+
+```bash
+export SCASTD_MARIADB_HOST=localhost
+export SCASTD_USERNAME=scastd
+export SCASTD_PASSWORD=changeme
+export ICEADMINUSER=admin
+export ICEUSERPASS=hackme
+```
+
 Service management
 ~~~~~~~~~~~~~~~~~~
 * Debian/Ubuntu:
@@ -145,9 +166,8 @@ TLS certificates
 
 ```bash
 sudo certbot certonly --standalone -d example.com
-# Certificates:
-#   /etc/letsencrypt/live/example.com/fullchain.pem
-#   /etc/letsencrypt/live/example.com/privkey.pem
+sudo ls /etc/letsencrypt/live/example.com/
+# fullchain.pem  privkey.pem
 ```
 
 Reference them in `/etc/scastd/scastd.conf`:
@@ -169,9 +189,10 @@ scastd --ssl-enable \
 ```bash
 brew install certbot
 sudo certbot certonly --standalone -d example.com
-# Certificates:
-#   /usr/local/etc/letsencrypt/live/example.com/... (Intel)
-#   /opt/homebrew/etc/letsencrypt/live/example.com/... (Apple Silicon)
+sudo ls /usr/local/etc/letsencrypt/live/example.com/   # Intel
+# fullchain.pem  privkey.pem
+sudo ls /opt/homebrew/etc/letsencrypt/live/example.com/  # Apple Silicon
+# fullchain.pem  privkey.pem
 ```
 
 Reference in `scastd.conf` under the Homebrew prefix:
