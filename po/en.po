@@ -185,3 +185,16 @@ msgstr "Sleeping for %d seconds\n"
 #, c-format
 #~ msgid "Bad data from %s\n"
 #~ msgstr "Bad data from %s\n"
+
+#: src/scastd.cpp
+#, c-format
+msgid ""
+"Unknown DatabaseType '%s'. Supported values are mariadb, postgres. "
+"Falling back to default 'mariadb'.\\n"
+msgstr ""
+"Unknown DatabaseType '%s'. Supported values are mariadb, postgres. "
+"Falling back to default 'mariadb'.\\n"
+
+#: src/scastd.cpp
+msgid "Unknown DatabaseType. Falling back to mariadb\\n"
+msgstr "Unknown DatabaseType. Falling back to mariadb\\n"
