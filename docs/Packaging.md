@@ -43,7 +43,7 @@ brew install scastd
 ```
 
 The Homebrew formula automatically:
-- Installs all required dependencies (libxml2, libcurl, MySQL client, PostgreSQL, etc.)
+  - Installs all required dependencies (libxml2, libcurl, MariaDB client, PostgreSQL, etc.)
 - Configures the build for ARM64 macOS with proper library paths
 - Sets up configuration files in `/opt/homebrew/etc/scastd/`
 - Creates log directory at `/opt/homebrew/var/log/scastd/`

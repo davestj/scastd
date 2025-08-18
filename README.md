@@ -13,7 +13,7 @@
  * 
  * Change Log:
  * - v1.0.0: Initial daemon implementation with basic HTTP API
- * - v1.1.0: Added multi-database backend support (MySQL, MariaDB, PostgreSQL)
+* - v1.1.0: Added multi-database backend support (MariaDB, PostgreSQL)
  * - v1.2.0: Implemented comprehensive logging system with rotation
  * - v1.3.0: Added HTTPS/TLS support with certificate management
  * - v1.4.0: Enhanced configuration management with environment variables
@@ -55,7 +55,6 @@
 [![ICY Protocol](https://img.shields.io/badge/ICY%20Protocol-Legacy%20Compatible-orange?style=for-the-badge&logo=wave&logoColor=white)](docs/Icecast2.md)
 
 ### 💾 Database Support
-[![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](docs/DatabaseMigration.md)
 [![MariaDB](https://img.shields.io/badge/MariaDB-003545?style=for-the-badge&logo=mariadb&logoColor=white)](docs/DatabaseMigration.md)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](docs/PostgreSQL.md)
 [![SQLite](https://img.shields.io/badge/SQLite-07405E?style=for-the-badge&logo=sqlite&logoColor=white)](docs/DatabaseMigration.md)
@@ -194,7 +193,7 @@ sudo apt-get update && sudo apt-get install -y \
     pkg-config \
     libxml2-dev \
     libcurl4-openssl-dev \
-    libmysqlclient-dev \
+    libmariadb-dev \
     libpq-dev \
     libmicrohttpd-dev \
     libssl-dev \
@@ -217,10 +216,10 @@ echo "🚀 Ready to build SCASTD"
 #!/bin/bash
 # We use Homebrew for consistent package management on macOS
 brew update
-brew install autoconf automake libtool pkg-config libxml2 curl mysql-client libpq libmicrohttpd libyaml
+brew install autoconf automake libtool pkg-config libxml2 curl mariadb-connector-c libpq libmicrohttpd libyaml
 
 # We set PKG_CONFIG_PATH so the build system can locate all libraries
-export PKG_CONFIG_PATH="/opt/homebrew/opt/libpq/lib/pkgconfig:/opt/homebrew/opt/mysql-client/lib/pkgconfig:/opt/homebrew/opt/libxml2/lib/pkgconfig:$PKG_CONFIG_PATH"
+export PKG_CONFIG_PATH="/opt/homebrew/opt/libpq/lib/pkgconfig:/opt/homebrew/opt/mariadb-connector-c/lib/pkgconfig:/opt/homebrew/opt/libxml2/lib/pkgconfig:$PKG_CONFIG_PATH"
 
 echo "✅ macOS dependencies installed"
 echo "📝 PKG_CONFIG_PATH configured for build"
@@ -454,7 +453,7 @@ We implement robust environment variable support for sensitive data and containe
 # Environment variables we recognize for secure configuration
 export SCASTD_USERNAME="statistics_user"
 export SCASTD_PASSWORD_FILE="/run/secrets/db_password"
-export SCASTD_DATABASE_HOST="mysql-cluster.internal"
+export SCASTD_DATABASE_HOST="mariadb-cluster.internal"
 export SCASTD_API_TOKEN_SECRET="your-jwt-secret-here"
 export ICEADMINUSER="admin"
 export ICEUSERPASS="hackme"
@@ -690,7 +689,7 @@ We focus on core functionality and stability in our current release:
 
 - ✅ Multi-protocol statistics collection (SHOUTcast v1/v2, Icecast2, ICY)
 - ✅ RESTful API with JSON/XML output formats
-- ✅ Multi-database backend support (MySQL, MariaDB, PostgreSQL, SQLite)
+- ✅ Multi-database backend support (MariaDB, PostgreSQL, SQLite)
 - ✅ Comprehensive logging and monitoring capabilities
 - ✅ JWT-based authentication and security features
 

@@ -1,6 +1,6 @@
 # PostgreSQL Setup
 
-This guide demonstrates how to apply the provided PostgreSQL schema and outlines key differences from the MySQL dialect.
+This guide demonstrates how to apply the provided PostgreSQL schema and outlines key differences from the MariaDB dialect.
 
 ## Applying the Schema
 
@@ -21,9 +21,9 @@ This guide demonstrates how to apply the provided PostgreSQL schema and outlines
 
 ## SQL Dialect Differences
 
-* **Auto-increment** – PostgreSQL uses `SERIAL` or `BIGSERIAL` instead of MySQL's `AUTO_INCREMENT`.
-* **Timestamp defaults** – `CURRENT_TIMESTAMP` is used for default values and PostgreSQL does not support MySQL's `ON UPDATE` clauses.
-* **Identifier quoting** – Double quotes (`"`) quote identifiers and preserve case; MySQL uses backticks and is case-insensitive.
+* **Auto-increment** – PostgreSQL uses `SERIAL` or `BIGSERIAL` instead of MariaDB's `AUTO_INCREMENT`.
+* **Timestamp defaults** – `CURRENT_TIMESTAMP` is used for default values and PostgreSQL does not support MariaDB's `ON UPDATE` clauses.
+* **Identifier quoting** – Double quotes (`"`) quote identifiers and preserve case; MariaDB uses backticks and is case-insensitive.
 
 ## Troubleshooting
 
