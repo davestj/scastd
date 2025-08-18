@@ -1,18 +1,21 @@
 -- SQLite schema for scastd
 
+-- Remove legacy member table
+DROP TABLE IF EXISTS scastd_memberinfo;
+
 -- Table structure for table 'servers'
 DROP TABLE IF EXISTS servers;
 CREATE TABLE servers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
   server_host TEXT NOT NULL,
   server_port INTEGER NOT NULL,
-  server_username TEXT NOT NULL DEFAULT '',
-  server_password TEXT NOT NULL DEFAULT '',
-  PRIMARY KEY (server_host, server_port)
+  server_username TEXT,
+  server_password TEXT
 );
 
 -- Dumping data for table 'servers'
 INSERT INTO servers (server_host, server_port, server_username, server_password) VALUES
-  ('example.com', 8000, '', '');
+  ('example.com', 8000, NULL, NULL);
 
 -- Table structure for table 'scastd_runtime'
 DROP TABLE IF EXISTS scastd_runtime;
