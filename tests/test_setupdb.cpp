@@ -33,7 +33,7 @@ TEST_CASE("setupdb flag initializes SQLite database") {
     sqlite3 *db = nullptr;
     REQUIRE(sqlite3_open(tmp.string().c_str(), &db) == SQLITE_OK);
     sqlite3_stmt *stmt = nullptr;
-    REQUIRE(sqlite3_prepare_v2(db, "SELECT name FROM sqlite_master WHERE type='table' AND name='scastd_memberinfo';", -1, &stmt, nullptr) == SQLITE_OK);
+    REQUIRE(sqlite3_prepare_v2(db, "SELECT name FROM sqlite_master WHERE type='table' AND name='servers';", -1, &stmt, nullptr) == SQLITE_OK);
     REQUIRE(sqlite3_step(stmt) == SQLITE_ROW);
     sqlite3_finalize(stmt);
     sqlite3_close(db);
