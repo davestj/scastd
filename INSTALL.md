@@ -100,6 +100,7 @@ Usage: scastd [options]
       --debug LEVEL    Debug level
       --poll INTERVAL  Poll interval (e.g., 60s, 5m)
       --test-mode      Validate configuration and exit
+      --db-type TYPE   Database type
       --db-host HOST   Database host
       --db-port PORT   Database port
       --db-name NAME   Database name
