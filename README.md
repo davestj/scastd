@@ -81,6 +81,18 @@ macOS users can run:
 shasum -a 256 -c CHECKSUMS.txt
 ```
 
+## 🧪 Required Secrets for CI and Local Testing
+
+| Secret | Purpose |
+| ------ | ------- |
+| `MARIADB_TEST_HOST` | Hostname of the MariaDB instance used for tests |
+| `MARIADB_TEST_USER` | User for the test MariaDB database |
+| `MARIADB_TEST_PASS` | Password for the test MariaDB user |
+| `ICECAST_DEV_HOST` | Hostname of the development Icecast server |
+| `ICECAST_DEV_PORT` | Port of the development Icecast server |
+| `ICEADMINUSER` | Icecast administrator username used in tests |
+| `ICEUSERPASS` | Icecast user password used in tests |
+
 ---
 
 ## 🎯 What is SCASTD?
