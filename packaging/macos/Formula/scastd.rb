@@ -15,7 +15,7 @@ class Scastd < Formula
   
   depends_on "libxml2"
   depends_on "curl"
-  depends_on "mysql-client"
+  depends_on "mariadb"
   depends_on "postgresql@14"
   depends_on "libmicrohttpd"
   depends_on "sqlite"
@@ -24,7 +24,7 @@ class Scastd < Formula
   def install
     # Set environment for ARM64 macOS builds
     ENV.prepend_path "PKG_CONFIG_PATH", "#{Formula["postgresql@14"].opt_lib}/pkgconfig"
-    ENV.prepend_path "PKG_CONFIG_PATH", "#{Formula["mysql-client"].opt_lib}/pkgconfig"
+    ENV.prepend_path "PKG_CONFIG_PATH", "#{Formula["mariadb"].opt_lib}/pkgconfig"
     ENV.prepend_path "PKG_CONFIG_PATH", "#{Formula["libxml2"].opt_lib}/pkgconfig"
     
     # Generate build system files

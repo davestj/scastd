@@ -10,7 +10,7 @@ if [[ "$UNAME" == "Darwin" && "$ARCH" == "arm64" ]]; then
     echo "Homebrew is required on macOS" >&2
     exit 1
   fi
-  BREW_PKGS=(libxml2 curl mysql-client libpq libmicrohttpd)
+  BREW_PKGS=(libxml2 curl mariadb libpq libmicrohttpd)
   MISSING=()
   for pkg in "${BREW_PKGS[@]}"; do
     if ! brew list "$pkg" >/dev/null 2>&1; then
@@ -27,7 +27,7 @@ if [[ "$UNAME" == "Darwin" && "$ARCH" == "arm64" ]]; then
   PATHS=(
     "$BREW_PREFIX/opt/libxml2/lib/pkgconfig"
     "$BREW_PREFIX/opt/curl/lib/pkgconfig"
-    "$BREW_PREFIX/opt/mysql-client/lib/pkgconfig"
+    "$BREW_PREFIX/opt/mariadb/lib/pkgconfig"
     "$BREW_PREFIX/opt/libpq/lib/pkgconfig"
     "$BREW_PREFIX/opt/libmicrohttpd/lib/pkgconfig"
   )
@@ -47,7 +47,7 @@ elif [[ "$UNAME" == "Linux" ]]; then
   VERSION="$(lsb_release -rs)"
   if [[ "$DISTRO" == "Debian" && "$VERSION" == "12" ]] ||
      [[ "$DISTRO" == "Ubuntu" && ( "$VERSION" == "22.04" || "$VERSION" == "24.04" ) ]]; then
-    APT_PKGS=(libxml2-dev curl libcurl4-openssl-dev mysql-client default-libmysqlclient-dev libpq-dev libmicrohttpd-dev)
+    APT_PKGS=(libxml2-dev curl libcurl4-openssl-dev mariadb-client libmariadb-dev libpq-dev libmicrohttpd-dev)
     MISSING=()
     for pkg in "${APT_PKGS[@]}"; do
       if ! dpkg -s "$pkg" >/dev/null 2>&1; then
