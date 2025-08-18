@@ -51,6 +51,7 @@ static void print_usage(const char *prog) {
               << "      --debug LEVEL    Debug level\n"
               << "      --poll INTERVAL  Poll interval (e.g., 60s, 5m)\n"
               << "      --test-mode      Validate configuration and exit\n"
+              << "      --db-type TYPE   Database type\n"
               << "      --db-host HOST   Database host\n"
               << "      --db-port PORT   Database port\n"
               << "      --db-name NAME   Database name\n"
@@ -106,7 +107,8 @@ int main(int argc, char **argv) {
     std::map<std::string, std::string> overrides;
 
     enum {
-        OPT_DB_HOST = 1000,
+        OPT_DB_TYPE = 1000,
+        OPT_DB_HOST,
         OPT_DB_PORT,
         OPT_DB_NAME,
         OPT_DB_USER,
@@ -130,6 +132,7 @@ int main(int argc, char **argv) {
         {"debug", required_argument, 0, 'd'},
         {"test-mode", no_argument, 0, 't'},
         {"daemon", no_argument, 0, 'D'},
+        {"db-type", required_argument, 0, OPT_DB_TYPE},
         {"db-host", required_argument, 0, OPT_DB_HOST},
         {"db-port", required_argument, 0, OPT_DB_PORT},
         {"db-name", required_argument, 0, OPT_DB_NAME},
@@ -171,6 +174,9 @@ int main(int argc, char **argv) {
             break;
         case 'D':
             daemonMode = true;
+            break;
+        case OPT_DB_TYPE:
+            overrides["DatabaseType"] = optarg;
             break;
         case OPT_DB_HOST:
             overrides["host"] = optarg;
