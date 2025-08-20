@@ -63,6 +63,27 @@ Configuration file locations
 * `/usr/local/etc/scastd/scastd.conf` (macOS Intel)
 * `/opt/homebrew/etc/scastd/scastd.conf` (macOS Apple Silicon)
 
+Initialize the `servers` table
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Create the database schema and add an Icecast server:
+
+```bash
+scastd --setupdb mariadb
+mysql -u scastd -p scastd -e "INSERT INTO servers (server_host, server_port, server_username, server_password) VALUES ('stream.example.com', 8000, 'admin', 'hackme');"
+```
+
+Credentials via environment variables
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Sensitive credentials can be provided through environment variables:
+
+```bash
+export SCASTD_MARIADB_HOST=localhost
+export SCASTD_USERNAME=scastd
+export SCASTD_PASSWORD=changeme
+export ICEADMINUSER=admin
+export ICEUSERPASS=hackme
+```
+
 Service management
 ~~~~~~~~~~~~~~~~~~
 * Debian/Ubuntu:
@@ -100,6 +121,7 @@ Usage: scastd [options]
       --debug LEVEL    Debug level
       --poll INTERVAL  Poll interval (e.g., 60s, 5m)
       --test-mode      Validate configuration and exit
+      --db-type TYPE   Database type
       --db-host HOST   Database host
       --db-port PORT   Database port
       --db-name NAME   Database name
@@ -144,9 +166,8 @@ TLS certificates
 
 ```bash
 sudo certbot certonly --standalone -d example.com
-# Certificates:
-#   /etc/letsencrypt/live/example.com/fullchain.pem
-#   /etc/letsencrypt/live/example.com/privkey.pem
+sudo ls /etc/letsencrypt/live/example.com/
+# fullchain.pem  privkey.pem
 ```
 
 Reference them in `/etc/scastd/scastd.conf`:
@@ -168,9 +189,10 @@ scastd --ssl-enable \
 ```bash
 brew install certbot
 sudo certbot certonly --standalone -d example.com
-# Certificates:
-#   /usr/local/etc/letsencrypt/live/example.com/... (Intel)
-#   /opt/homebrew/etc/letsencrypt/live/example.com/... (Apple Silicon)
+sudo ls /usr/local/etc/letsencrypt/live/example.com/   # Intel
+# fullchain.pem  privkey.pem
+sudo ls /opt/homebrew/etc/letsencrypt/live/example.com/  # Apple Silicon
+# fullchain.pem  privkey.pem
 ```
 
 Reference in `scastd.conf` under the Homebrew prefix:
@@ -189,7 +211,7 @@ The following libraries are required to build scastd:
 
 * libxml2
 * libcurl
-* MySQL client library (libmysqlclient or MariaDB equivalent)
+* MariaDB client library (libmariadbclient or equivalent)
 * libpq (PostgreSQL client library)
 * libmicrohttpd
 
@@ -240,7 +262,7 @@ Install build tools and libraries:
 
 ```
 sudo apt-get install build-essential autoconf automake libtool pkg-config \
-                     libmysqlclient-dev libmicrohttpd-dev libcurl4-openssl-dev \
+                     libmariadb-dev libmicrohttpd-dev libcurl4-openssl-dev \
                      libpq-dev libxml2-dev gettext
 ```
 
@@ -254,14 +276,14 @@ tar xf gettext-latest.tar.gz
 cd gettext-* && ./configure && make && sudo make install
 ```
 
-Use `mysql_config` to populate compiler and linker flags when `pkg-config`
-cannot locate the MySQL client library:
+Use `mariadb_config` to populate compiler and linker flags when `pkg-config`
+cannot locate the MariaDB client library:
 
 ```
-mysql_libdir=$(mysql_config --variable=pkglibdir)
-export CPPFLAGS="$(mysql_config --cflags)"
-export LDFLAGS="$(mysql_config --libs)"
-export PKG_CONFIG_PATH="${mysql_libdir}/pkgconfig:${PKG_CONFIG_PATH}"
+mariadb_libdir=$(mariadb_config --variable=pkglibdir)
+export CPPFLAGS="$(mariadb_config --cflags)"
+export LDFLAGS="$(mariadb_config --libs)"
+export PKG_CONFIG_PATH="${mariadb_libdir}/pkgconfig:${PKG_CONFIG_PATH}"
 ```
 
 Then build the project:

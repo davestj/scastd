@@ -10,10 +10,9 @@ scastd_SOURCES = \
     icecast2.cpp \
     logger.cpp \
     StatusLogger.cpp \
-    db/MySQLDatabase.cpp \
     db/MariaDBDatabase.cpp \
     db/PostgresDatabase.cpp \
     db/SQLiteDatabase.cpp
 
-scastd_CPPFLAGS = @mysqlclient_CFLAGS@
-scastd_LDADD = $(SYSLOG_LIBS) $(LIBINTL) @mysqlclient_LIBS@
+scastd_CPPFLAGS = @mariadb_CFLAGS@
+scastd_LDADD = $(SYSLOG_LIBS) $(LIBINTL) @mariadb_LIBS@

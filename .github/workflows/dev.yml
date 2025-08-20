@@ -35,6 +35,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/build-and-test
+        env:
+          MARIADB_TEST_HOST: ${{ secrets.MARIADB_TEST_HOST }}
+          MARIADB_TEST_USER: ${{ secrets.MARIADB_TEST_USER }}
+          MARIADB_TEST_PASS: ${{ secrets.MARIADB_TEST_PASS }}
+          ICECAST_DEV_HOST: ${{ secrets.ICECAST_DEV_HOST }}
+          ICECAST_DEV_PORT: ${{ secrets.ICECAST_DEV_PORT }}
+          ICEADMINUSER: ${{ secrets.ICEADMINUSER }}
+          ICEUSERPASS: ${{ secrets.ICEUSERPASS }}
         with:
           distro: ${{ matrix.distro }}
 

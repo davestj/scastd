@@ -1,16 +1,21 @@
 -- SQLite schema for scastd
 
--- Table structure for table 'scastd_memberinfo'
+-- Remove legacy member table
 DROP TABLE IF EXISTS scastd_memberinfo;
-CREATE TABLE scastd_memberinfo (
-  serverURL TEXT PRIMARY KEY,
-  password TEXT NOT NULL DEFAULT '',
-  gather_flag TEXT NOT NULL DEFAULT ''
+
+-- Table structure for table 'servers'
+DROP TABLE IF EXISTS servers;
+CREATE TABLE servers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  server_host TEXT NOT NULL,
+  server_port INTEGER NOT NULL,
+  server_username TEXT,
+  server_password TEXT
 );
 
--- Dumping data for table 'scastd_memberinfo'
-INSERT INTO scastd_memberinfo (serverURL, password, gather_flag) VALUES
-  ('http://boa.mediacast1.com:9908', 'party7324', '1');
+-- Dumping data for table 'servers'
+INSERT INTO servers (server_host, server_port, server_username, server_password) VALUES
+  ('example.com', 8000, NULL, NULL);
 
 -- Table structure for table 'scastd_runtime'
 DROP TABLE IF EXISTS scastd_runtime;

@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "catch.hpp"
-#include "../src/db/MySQLDatabase.h"
 #include "../src/db/MariaDBDatabase.h"
 #include "../src/db/PostgresDatabase.h"
 #include <sstream>
@@ -39,11 +38,6 @@ static void check_invalid_db(IDatabase &db) {
     int exit_code = ok ? 0 : 1;
     REQUIRE(exit_code == 1);
     REQUIRE(captured.str().find("Failed to connect to database:") != std::string::npos);
-}
-
-TEST_CASE("MySQL invalid credentials are logged and cause non-zero exit") {
-    MySQLDatabase db;
-    check_invalid_db(db);
 }
 
 TEST_CASE("MariaDB invalid credentials are logged and cause non-zero exit") {

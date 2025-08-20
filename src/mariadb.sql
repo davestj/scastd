@@ -5,22 +5,28 @@
 
 
 #
-# Table structure for table 'scastd_memberinfo'
+# Remove legacy member table
+#
+DROP TABLE IF EXISTS scastd_memberinfo;
+
+#
+# Table structure for table 'servers'
 #
 
-DROP TABLE IF EXISTS scastd_memberinfo;
-CREATE TABLE scastd_memberinfo (
-  serverURL varchar(255) DEFAULT '0' NOT NULL,
-  password varchar(155) DEFAULT '' NOT NULL,
-  gather_flag varchar(155) DEFAULT '' NOT NULL,
-  PRIMARY KEY (serverURL)
+DROP TABLE IF EXISTS servers;
+CREATE TABLE servers (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  server_host VARCHAR(255) NOT NULL,
+  server_port BIGINT NOT NULL,
+  server_username VARCHAR(255),
+  server_password VARCHAR(255)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 #
-# Dumping data for table 'scastd_memberinfo'
+# Dumping data for table 'servers'
 #
 
-INSERT INTO scastd_memberinfo VALUES ('http://boa.mediacast1.com:9908','party7324','1');
+INSERT INTO servers (server_host, server_port, server_username, server_password) VALUES ('example.com', 8000, NULL, NULL);
 
 #
 # Table structure for table 'scastd_runtime'

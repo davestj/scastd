@@ -23,31 +23,11 @@ runs:
           gettext \
           autopoint \
           libxml2-dev libcurl4-openssl-dev \
-          mariadb-client libpq-dev libmicrohttpd-dev libsqlite3-dev wget
+          mariadb-client libmariadb-dev libpq-dev libmicrohttpd-dev libsqlite3-dev wget
 
-        case "${{ inputs.distro }}" in
-          debian-12)
-            wget https://dev.mysql.com/get/Downloads/MySQL-8.4/libmysqlclient21_8.4.0-1debian12_amd64.deb
-            wget https://dev.mysql.com/get/Downloads/MySQL-8.4/libmysqlclient-dev_8.4.0-1debian12_amd64.deb
-            ;;
-          debian-13)
-            wget https://dev.mysql.com/get/Downloads/MySQL-8.4/libmysqlclient21_8.4.0-1debian13_amd64.deb
-            wget https://dev.mysql.com/get/Downloads/MySQL-8.4/libmysqlclient-dev_8.4.0-1debian13_amd64.deb
-            ;;
-          ubuntu-24.04)
-            wget https://dev.mysql.com/get/Downloads/MySQL-8.4/libmysqlclient21_8.4.0-1ubuntu24.04_amd64.deb
-            wget https://dev.mysql.com/get/Downloads/MySQL-8.4/libmysqlclient-dev_8.4.0-1ubuntu24.04_amd64.deb
-            ;;
-          ubuntu-22.04)
-            wget https://dev.mysql.com/get/Downloads/MySQL-8.4/libmysqlclient21_8.4.0-1ubuntu22.04_amd64.deb
-            wget https://dev.mysql.com/get/Downloads/MySQL-8.4/libmysqlclient-dev_8.4.0-1ubuntu22.04_amd64.deb
-            ;;
-        esac
-        $SUDO dpkg -i libmysqlclient21_8.4.0-1*.deb libmysqlclient-dev_8.4.0-1*.deb || true
-        $SUDO apt-get -f install -y
-        dpkg -s libmysqlclient-dev | grep -q '^Status: install ok'
-        test -f /usr/include/mysql/mysql.h
-        mysql_config --version
+        dpkg -s libmariadb-dev | grep -q '^Status: install ok'
+        test -f /usr/include/mariadb/mysql.h || test -f /usr/include/mysql/mysql.h
+        mariadb_config --version
         wget https://ftp.gnu.org/pub/gnu/gettext/gettext-0.22.tar.gz
         tar -xf gettext-0.22.tar.gz
         cd gettext-0.22
@@ -56,56 +36,8 @@ runs:
         $SUDO make install
         cd ..
         echo "PATH=/usr/local/bin:$PATH" >> $GITHUB_ENV
-        if [[ "${{ inputs.distro }}" == "debian-12" || "${{ inputs.distro }}" == "debian-13" ]]; then
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10_9.4.0-1debian12_amd64.deb
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2_9.4.0-1debian12_amd64.deb
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10-dbgsym_9.4.0-1debian12_amd64.deb
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb
-          $SUDO dpkg -i \
-            libmysqlcppconn10_9.4.0-1debian12_amd64.deb \
-            libmysqlcppconnx2_9.4.0-1debian12_amd64.deb \
-            libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb \
-            libmysqlcppconn10-dbgsym_9.4.0-1debian12_amd64.deb \
-            libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb || true
-          $SUDO apt-get -f install -y
-          dpkg -s libmysqlcppconn-dev | grep -q '^Status: install ok'
-          test -f /usr/include/mysql-cppconn/jdbc/mysql_driver.h
-        elif [[ "${{ inputs.distro }}" == "ubuntu-24.04" ]]; then
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10_9.4.0-1debian12_amd64.deb
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2_9.4.0-1debian12_amd64.deb
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10-dbgsym_9.4.0-1debian12_amd64.deb
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb
-          $SUDO dpkg -i \
-            libmysqlcppconn10_9.4.0-1debian12_amd64.deb \
-            libmysqlcppconnx2_9.4.0-1debian12_amd64.deb \
-            libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb \
-            libmysqlcppconn10-dbgsym_9.4.0-1debian12_amd64.deb \
-            libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb || true
-          $SUDO apt-get -f install -y
-          dpkg -s libmysqlcppconn-dev | grep -q '^Status: install ok'
-          test -f /usr/include/mysql-cppconn/jdbc/mysql_driver.h
-        else
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10_9.4.0-1debian12_amd64.deb
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2_9.4.0-1debian12_amd64.deb
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconn10-dbgsym_9.4.0-1debian12_amd64.deb
-          wget https://dev.mysql.com/get/Downloads/Connector-C++/libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb
-          $SUDO dpkg -i \
-            libmysqlcppconn10_9.4.0-1debian12_amd64.deb \
-            libmysqlcppconnx2_9.4.0-1debian12_amd64.deb \
-            libmysqlcppconn-dev_9.4.0-1debian12_amd64.deb \
-            libmysqlcppconn10-dbgsym_9.4.0-1debian12_amd64.deb \
-            libmysqlcppconnx2-dbgsym_9.4.0-1debian12_amd64.deb || true
-          $SUDO apt-get -f install -y
-          dpkg -s libmysqlcppconn-dev | grep -q '^Status: install ok'
-          test -f /usr/include/mysql-cppconn/jdbc/mysql_driver.h
-        fi
-        test -d /usr/include/mysql-cppconn
-        mysql_config --version
-        export CPPFLAGS="$(mysql_config --cflags) $CPPFLAGS"
-        export LDFLAGS="$(mysql_config --libs) $LDFLAGS"
+        export CPPFLAGS="$(mariadb_config --cflags) $CPPFLAGS"
+        export LDFLAGS="$(mariadb_config --libs) $LDFLAGS"
     - name: Install dependencies (macOS)
       if: ${{ inputs.distro == 'macos-14' }}
       shell: bash
@@ -113,33 +45,20 @@ runs:
         brew update
         brew install \
           autoconf automake libtool pkg-config gettext \
-          libxml2 curl mysql-client libpq libmicrohttpd
+          libxml2 curl mariadb libpq libmicrohttpd
         B=/opt/homebrew/opt
         export PKG_CONFIG_PATH=$B/libxml2/lib/pkgconfig:$PKG_CONFIG_PATH
-        export PKG_CONFIG_PATH=$B/mysql-client/lib/pkgconfig:$PKG_CONFIG_PATH
+        export PKG_CONFIG_PATH=$B/mariadb/lib/pkgconfig:$PKG_CONFIG_PATH
         export PKG_CONFIG_PATH=$B/libpq/lib/pkgconfig:$PKG_CONFIG_PATH
-        export PATH=$B/mysql-client/bin:$PATH
+        export PATH=$B/mariadb/bin:$PATH
         export PATH=$B/gettext/bin:$PATH
-        export CPPFLAGS=-I$B/mysql-client/include $CPPFLAGS
-        export LDFLAGS=-L$B/mysql-client/lib $LDFLAGS
+        export CPPFLAGS=-I$B/mariadb/include $CPPFLAGS
+        export LDFLAGS=-L$B/mariadb/lib $LDFLAGS
+        mariadb_config --version
         echo "PATH=$PATH" >> $GITHUB_ENV
         echo "CPPFLAGS=$CPPFLAGS" >> $GITHUB_ENV
         echo "LDFLAGS=$LDFLAGS" >> $GITHUB_ENV
         echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
-    - name: Setup MySQL Connector
-      if: ${{ inputs.distro == 'macos-14' }}
-      shell: bash
-      run: |
-        set -euo pipefail
-        curl -LO https://dev.mysql.com/get/Downloads/Connector-C++/mysql-connector-c++-9.4.0-macos15-x86-64bit.dmg
-        hdiutil attach mysql-connector-c++-9.4.0-macos15-x86-64bit.dmg
-        sudo installer -pkg /Volumes/mysql-connector-c++-9.4.0-macos15-x86-64bit/mysql-connector-c++-9.4.0-macos15-x86-64bit.pkg -target /
-        hdiutil detach /Volumes/mysql-connector-c++-9.4.0-macos15-x86-64bit
-        export CPPFLAGS="-I/usr/local/include/mysql-cppconn $CPPFLAGS"
-        export LDFLAGS="-L/usr/local/lib $LDFLAGS"
-        echo "CPPFLAGS=$CPPFLAGS" >> $GITHUB_ENV
-        echo "LDFLAGS=$LDFLAGS" >> $GITHUB_ENV
-        echo "PATH=$PATH" >> $GITHUB_ENV
     - name: Show environment variables
       if: ${{ inputs.distro == 'macos-14' }}
       shell: bash
@@ -171,6 +90,13 @@ runs:
       shell: bash
       run: |
         set -o pipefail
+        export MARIADB_TEST_HOST="${MARIADB_TEST_HOST}"
+        export MARIADB_TEST_USER="${MARIADB_TEST_USER}"
+        export MARIADB_TEST_PASS="${MARIADB_TEST_PASS}"
+        export ICECAST_DEV_HOST="${ICECAST_DEV_HOST}"
+        export ICECAST_DEV_PORT="${ICECAST_DEV_PORT}"
+        export ICEADMINUSER="${ICEADMINUSER}"
+        export ICEUSERPASS="${ICEUSERPASS}"
         make check 2>&1 | tee test.log
     - name: Verify scastd --help
       shell: bash
